@@ -46,6 +46,13 @@ async function boot(): Promise<void> {
   app.ready();
   const q = location.search;
   if (/[?&](test|shot)/.test(q)) window.__lb = { app, errors: capturedErrors, BNODES, UNIT_IDS };
+  const promo = /[?&]promo=(\w+)/.exec(q);
+  if (promo) {
+    const lang = /[?&]lang=(ru|en)/.exec(q);
+    if (lang) setLang(lang[1] as 'ru' | 'en');
+    const { showPromo } = await import('./world/promo');
+    showPromo(promo[1], t('title'), t('subtitle'));
+  }
 }
 
 void boot().catch((e) => {

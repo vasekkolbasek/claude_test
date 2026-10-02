@@ -11,7 +11,7 @@ export default tseslint.config(
         window: 'readonly', document: 'readonly', console: 'readonly', localStorage: 'readonly',
         navigator: 'readonly', performance: 'readonly', requestAnimationFrame: 'readonly',
         setTimeout: 'readonly', clearTimeout: 'readonly', setInterval: 'readonly', clearInterval: 'readonly',
-        process: 'readonly', URL: 'readonly', AudioContext: 'readonly',
+        process: 'readonly', URL: 'readonly', AudioContext: 'readonly', Buffer: 'readonly',
       },
     },
     rules: {

@@ -152,11 +152,11 @@ export class Stage {
     _a.set(0xfff3e0).lerp(_b.set(0x8eaaff), 1 - d);
     _a.lerp(_b.set(0xffa86b), golden * 0.8);
     this.sun.color.copy(_a);
-    this.sun.intensity = lerp(1.15, 2.5, d);
+    this.sun.intensity = lerp(1.35, 2.5, d);
     // Hemisphere
-    this.hemi.color.set(0xd6ecff).lerp(_b.set(0x6577cc), 1 - d).lerp(_a.set(0xffc49a), golden * 0.5);
+    this.hemi.color.set(0xd6ecff).lerp(_b.set(0x7686d8), 1 - d).lerp(_a.set(0xffc49a), golden * 0.5);
     this.hemi.groundColor.set(0x8f8470).lerp(_b.set(0x2e2856), 1 - d);
-    this.hemi.intensity = lerp(1.1, 1.35, d);
+    this.hemi.intensity = lerp(1.2, 1.35, d);
     // Sky & fog
     if (p) {
       _a.set(p.fogDay).lerp(_b.set(p.fogNight), 1 - d).lerp(_b.set(0xf2b38c), golden * 0.45);
@@ -189,8 +189,9 @@ export class Stage {
   }
 
   /** World → CSS pixel coordinates. */
+  private projTmp = new THREE.Vector3();
   project(v: THREE.Vector3, out: { x: number; y: number; behind: boolean }): typeof out {
-    const p = v.clone().project(this.camera);
+    const p = this.projTmp.copy(v).project(this.camera);
     out.x = (p.x * 0.5 + 0.5) * this.w;
     out.y = (-p.y * 0.5 + 0.5) * this.h;
     out.behind = p.z > 1;
