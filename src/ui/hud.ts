@@ -42,7 +42,7 @@ export class Hud {
     this.bossFill = h('i');
     this.boss = h('div', { cls: 'bossbar' }, this.bossName, h('div', { cls: 'bb' }, this.bossFill));
     this.banners = h('div');
-    this.danger = h('div', { cls: 'danger' });
+    this.danger = h('div', { cls: 'danger-vignette' });
     this.el = h(
       'div',
       { cls: 'hud' },

@@ -51,6 +51,7 @@ export function openPause(app: App, onResume: () => void): void {
           h('button', { cls: 'btn', onClick: () => openSettings(app, true) }, icon('settings'), t('menu.settings')),
           h('button', {
             cls: 'btn danger',
+            attrs: { 'data-test': 'quit' },
             onClick: async () => {
               const ok = await app.ui.confirm(t('pause.quit'), t('pause.quitConfirm'), t('common.yes'), t('common.no'), true);
               if (ok) {

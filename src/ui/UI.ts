@@ -107,7 +107,7 @@ export class UI {
             h(
               'div',
               { cls: 'btns' },
-              h('button', { cls: `btn ${danger ? 'danger' : ''}`, text: yes, onClick: () => done(true) }),
+              h('button', { cls: `btn ${danger ? 'danger' : ''}`, text: yes, attrs: { 'data-test': 'confirm-yes' }, onClick: () => done(true) }),
               h('button', { cls: 'btn ghost', text: no, onClick: () => done(false) }),
             ),
           ),

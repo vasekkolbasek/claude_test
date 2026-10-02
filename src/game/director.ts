@@ -58,7 +58,8 @@ export function waveStateAt(t: number, mode: GameMode, sector: SectorDef): WaveS
   } else {
     const i = segmentIndex(t);
     seg = WAVES[i];
-    const next = WAVES[i + 1];
+    // never blend into the final (post-boss) segment: the last minute holds its density
+    const next = i + 2 < WAVES.length ? WAVES[i + 1] : undefined;
     min = seg.min;
     rate = seg.rate;
     if (next) {
