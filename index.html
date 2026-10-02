@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#05030f" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>Neon Swarm</title>
+    <style>
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #05030f; }
+      body { position: fixed; inset: 0; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+      #loader { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; background: radial-gradient(ellipse at 50% 40%, #1a0b3a 0%, #05030f 70%); z-index: 100; transition: opacity .45s ease; font-family: system-ui, sans-serif; }
+      #loader.hide { opacity: 0; pointer-events: none; }
+      #loader .core { width: 84px; height: 84px; position: relative; animation: ldspin 2.4s linear infinite; }
+      #loader .core i { position: absolute; inset: 0; border: 3px solid #29f6ff; border-radius: 18px; box-shadow: 0 0 18px #29f6ff, inset 0 0 18px #29f6ff; transform: rotate(45deg); }
+      #loader .core b { position: absolute; inset: 26px; border-radius: 50%; background: #ff3df2; box-shadow: 0 0 22px 6px #ff3df2; animation: ldpulse 0.9s ease-in-out infinite alternate; }
+      #loader .bar { width: min(62vw, 320px); height: 8px; border-radius: 8px; background: #1b1238; box-shadow: 0 0 0 1px #3b2a75 inset; overflow: hidden; }
+      #loader .bar span { display: block; height: 100%; width: 4%; border-radius: 8px; background: linear-gradient(90deg, #29f6ff, #ff3df2); box-shadow: 0 0 12px #29f6ff; transition: width .25s ease; }
+      #loader .ttl { color: #e8f6ff; font-size: 22px; letter-spacing: 6px; font-weight: 800; text-shadow: 0 0 12px #29f6ff; min-height: 28px; text-transform: uppercase; }
+      @keyframes ldspin { to { transform: rotate(360deg); } }
+      @keyframes ldpulse { from { transform: scale(.75); } to { transform: scale(1.05); } }
+    </style>
+    <!-- Yandex Games SDK (served by the platform next to index.html) -->
+    <script src="/sdk.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="loader"><div class="core"><i></i><b></b></div><div class="ttl" id="loader-title"></div><div class="bar"><span id="loader-bar"></span></div></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
