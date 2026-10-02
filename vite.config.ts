@@ -1,3 +1,4 @@
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { defineConfig, type Plugin } from 'vite';
 
 /**
@@ -7,7 +8,7 @@ import { defineConfig, type Plugin } from 'vite';
  * without a 404 in the console.
  */
 function sdkStub(): Plugin {
-  const handler = (req: { url?: string }, res: { setHeader(k: string, v: string): void; end(s: string): void }, next: () => void) => {
+  const handler = (req: IncomingMessage, res: ServerResponse, next: () => void) => {
     if (req.url && req.url.split('?')[0] === '/sdk.js') {
       res.setHeader('Content-Type', 'application/javascript');
       res.end('/* local SDK stub: YaGames is intentionally undefined */');
