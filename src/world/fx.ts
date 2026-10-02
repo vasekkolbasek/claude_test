@@ -64,6 +64,7 @@ class ParticlePool {
       this.mesh.setColorAt(i, this.c);
     }
     this.mesh.count = n;
+    this.mesh.visible = n > 0;
     this.mesh.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
   }
@@ -209,6 +210,7 @@ export class Fx {
     }
     this.coins.length = n;
     this.coinMesh.count = vis;
+    this.coinMesh.visible = vis > 0;
     this.coinMesh.instanceMatrix.needsUpdate = true;
     for (const r of this.rings) {
       if (r.t >= r.max) { r.mesh.visible = false; continue; }

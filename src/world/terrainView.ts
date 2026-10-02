@@ -15,6 +15,7 @@ export class TerrainView {
   readonly group = new THREE.Group();
   private disposables: { dispose(): void }[] = [];
   private pathRibbons: THREE.Mesh[] = [];
+  private treeMeshes: THREE.InstancedMesh[] = [];
   private ribbonMat: THREE.ShaderMaterial;
 
   constructor(private map: MapDef, private hf: Heightfield, private material: THREE.Material) {
@@ -181,6 +182,7 @@ export class TerrainView {
       inst.castShadow = true;
       inst.receiveShadow = false;
       inst.computeBoundingSphere();
+      this.treeMeshes.push(inst);
       this.group.add(inst);
       this.disposables.push(inst);
     }
@@ -295,6 +297,9 @@ export class TerrainView {
       this.disposables.push(geo, mesh.material as THREE.Material);
     }
   }
+
+  /** Trees are the biggest shadow-pass cost; only cast them on high quality. */
+  setTreeShadows(on: boolean): void { for (const t of this.treeMeshes) t.castShadow = on; }
 
   /** Fade attack-path ribbons in/out; `active` = path indices of the next wave. */
   updateRibbons(active: readonly number[] | null, dt: number): void {

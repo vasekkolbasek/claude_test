@@ -102,7 +102,7 @@ export class Hud {
     const tl = h('div', { class: 'hud-tl' }, this.coinsEl, this.nightEl);
     const pauseBtn = h('button', { class: 'btn round', 'aria-label': 'pause', onclick: () => cb.pause() }, icon('pause'));
     const tr = h('div', { class: 'hud-tr' }, pauseBtn);
-    this.startBtn = h('button', { class: 'btn night-btn', onclick: () => cb.startNight() }, icon('moon'), t('hud.startNight'));
+    this.startBtn = h('button', { class: 'btn night-btn', onclick: () => cb.startNight() }, icon('moon'), t('hud.startNight'), h('span', { class: 'kbd' }, 'Enter'));
     this.adBtn = h('button', { class: 'btn gold small', onclick: () => cb.coinsAd() }, h('span', { class: 'ad' }, icon('video')), icon('coin'), t('hud.coinsAd', { n: CONFIG.rewardCoins }));
     const bc = h('div', { class: 'hud-bc' }, this.adBtn, this.startBtn);
 
@@ -135,7 +135,7 @@ export class Hud {
 
   setTouch(on: boolean): void {
     this.touch = on;
-    this.root.querySelectorAll('.act .key').forEach((k) => ((k as HTMLElement).style.display = on ? 'none' : ''));
+    this.root.querySelectorAll('.act .key, .kbd').forEach((k) => ((k as HTMLElement).style.display = on ? 'none' : ''));
   }
 
   get holding(): boolean { return this.bigHold; }
@@ -295,7 +295,8 @@ export class Hud {
       const act = day ? g.actionFor(b) : null;
       const isActive = b === active && !!act;
       const near = Math.hypot(b.x - g.hero.x, b.z - g.hero.z) < 20;
-      const show = !!act && (isActive || (!b.node && near));
+      const upgradable = !!act && !!b.node && act.cost <= g.coins && Math.hypot(b.x - g.hero.x, b.z - g.hero.z) < 14;
+      const show = !!act && (isActive || (!b.node && near) || upgradable);
       let lab = this.labels.get(b);
       if (!show) {
         if (lab && lab.state !== 'hide') { lab.el.style.display = 'none'; lab.state = 'hide'; }
@@ -320,6 +321,7 @@ export class Hud {
       const cost = act!.cost;
       if (lab.num.textContent !== String(cost)) lab.num.textContent = String(cost);
       lab.tag.classList.toggle('poor', cost > g.coins);
+      lab.el.classList.toggle('up', !!b.node);
       if (isActive) {
         const nm = b.node ? `${nodeName(b.node)} → ${t('hud.upgrade')}` : nodeName(BNODES[b.kind]);
         if (lab.name.textContent !== nm) lab.name.textContent = nm;

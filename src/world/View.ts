@@ -18,9 +18,11 @@ export class View {
   readonly entities: EntityView;
   readonly fx: Fx;
   private offs: (() => void)[] = [];
+  private onQuality = (q: string) => this.terrain.setTreeShadows(q === 'high');
   /** When true the camera slowly orbits the castle (menu background). */
   showcase = false;
   private orbit = 0;
+  private ambientT = 0;
 
   constructor(private stage: Stage, private g: Game, material: THREE.Material) {
     stage.setPalette(g.map.palette);
@@ -30,6 +32,8 @@ export class View {
     stage.scene.add(this.terrain.group, this.entities.group, this.fx.group);
     this.bind();
     stage.follow(g.hero.x, 0, g.hero.z, 0, true);
+    this.terrain.setTreeShadows(stage.quality === 'high');
+    stage.qualityListeners.add(this.onQuality);
   }
 
   private h(x: number, z: number): number { return this.g.heightAt(x, z); }
@@ -141,6 +145,18 @@ export class View {
     }
     this.terrain.updateRibbons(g.phase === 'day' && !this.showcase ? g.plan.paths : null, dt);
     this.entities.highlight = g.activeSlot();
+    // Ambient life: fireflies at night, drifting pollen by day.
+    this.ambientT += dt;
+    const night = 1 - st.dayness;
+    const rate = night > 0.5 ? 0.12 : 0.3;
+    while (this.ambientT > rate) {
+      this.ambientT -= rate;
+      const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * 26;
+      const x = st.target.x + Math.cos(a) * r, z = st.target.z + Math.sin(a) * r;
+      const y = Math.max(this.h(x, z), 0) + 0.6 + Math.random() * 2;
+      if (night > 0.5) this.fx.burst(x, y, z, 1, { color: 0xd8ff7a, speed: 0.4, up: 0.25, life: 2.6, size: 0.15, grav: -0.05, drag: 0.8, glow: true });
+      else this.fx.burst(x, y, z, 1, { color: 0xfffbe8, speed: 0.6, up: 0.1, life: 2.2, size: 0.05, grav: 0.05, drag: 0.9, glow: true });
+    }
     this.entities.update(dt, time, st.camera);
     this.fx.update(dt);
   }
@@ -148,6 +164,7 @@ export class View {
   dispose(): void {
     for (const off of this.offs) off();
     this.offs = [];
+    this.stage.qualityListeners.delete(this.onQuality);
     this.stage.scene.remove(this.terrain.group, this.entities.group, this.fx.group);
     this.terrain.dispose();
     this.entities.dispose();

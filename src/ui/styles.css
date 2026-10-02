@@ -86,6 +86,7 @@ html, body {
 .hud-bc { position: absolute; left: 50%; bottom: calc(14px + var(--sab)); transform: translateX(-50%); display: flex; gap: 12px; align-items: center; }
 .btn.night-btn { font-size: 20px; min-height: 56px; padding: 10px 26px; background: linear-gradient(#7e6ad8, #5a48b0); box-shadow: 0 4px 0 #3c2f80, 0 10px 22px rgba(30,20,80,.35); }
 .btn.night-btn .ic { width: 26px; height: 26px; }
+.kbd { font-size: 11px; background: rgba(255,255,255,.22); border-radius: 6px; padding: 1px 6px; margin-left: 2px; }
 .hud-br { position: absolute; right: calc(16px + var(--sar)); bottom: calc(16px + var(--sab)); display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; gap: 14px; align-items: end; justify-items: end; }
 .act { width: 70px; height: 70px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--hud); color: #fff; border: 3px solid rgba(255,255,255,.35); cursor: pointer; font: inherit; font-weight: 900; font-size: 12px; position: relative; backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,.25); padding: 0; touch-action: none; }
 .act .ic { width: 30px; height: 30px; }
@@ -106,6 +107,7 @@ html, body {
 .slot-label .tag { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,248,236,.92); color: var(--ink); border-radius: 999px; padding: 2px 10px 2px 4px; font-size: 16px; font-weight: 900; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
 .slot-label .tag .ic { width: 20px; height: 20px; }
 .slot-label .tag.poor { color: #b04a42; }
+.slot-label.up .tag::before { content: '▲'; font-size: 11px; color: var(--green-d); margin: 0 2px 0 4px; }
 .slot-label .name { font-size: 13px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); white-space: nowrap; }
 .slot-label.far .tag { font-size: 13px; padding: 1px 8px 1px 3px; opacity: .85; }
 .slot-label.far .tag .ic { width: 16px; height: 16px; }

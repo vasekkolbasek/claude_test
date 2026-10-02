@@ -215,6 +215,7 @@ export class EntityView {
       }
     }
     for (const m of this.unitMeshes.values()) {
+      m.visible = m.count > 0;
       m.instanceMatrix.needsUpdate = true;
       if (m.instanceColor) m.instanceColor.needsUpdate = true;
     }
@@ -243,7 +244,7 @@ export class EntityView {
       _m.compose(_p, _q, _s);
       mesh.setMatrixAt(mesh.count++, _m);
     }
-    for (const m of this.projMeshes.values()) m.instanceMatrix.needsUpdate = true;
+    for (const m of this.projMeshes.values()) { m.visible = m.count > 0; m.instanceMatrix.needsUpdate = true; }
 
     this.updateHero(dt, time);
     // Hero bar
@@ -252,6 +253,7 @@ export class EntityView {
 
     // Bars billboarding
     this.bars.count = this.barCount;
+    this.bars.visible = this.barCount > 0;
     this.bars.instanceMatrix.needsUpdate = true;
     if (this.bars.instanceColor) this.bars.instanceColor.needsUpdate = true;
   }

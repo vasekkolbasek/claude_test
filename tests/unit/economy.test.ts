@@ -69,3 +69,27 @@ describe('economy', () => {
     expect(g.phase).toBe('victory');
   });
 });
+
+describe('second chance', () => {
+  it('restores the castle, clears enemies and replays the same night once', () => {
+    const g = mk();
+    g.startNight();
+    for (let i = 0; i < 400 && g.units.filter((u) => u.team === 1).length === 0; i++) g.update(0.05);
+    g.castle.hp = 0;
+    g.castle.ruined = true;
+    g.update(0.05);
+    expect(g.phase).toBe('defeat');
+    expect(g.secondChance()).toBe(true);
+    expect(g.phase).toBe('day');
+    expect(g.night).toBe(1);
+    expect(g.castle.hp).toBe(g.castle.maxHp);
+    expect(g.castle.ruined).toBe(false);
+    expect(g.units.some((u) => u.team === 1)).toBe(false);
+    g.startNight();
+    g.castle.hp = 0;
+    g.castle.ruined = true;
+    g.update(0.05);
+    expect(g.phase).toBe('defeat');
+    expect(g.secondChance()).toBe(false);
+  });
+});

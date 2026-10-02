@@ -1,0 +1,14 @@
+import { chromium } from '@playwright/test';
+const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+await page.goto('http://localhost:4173/game/?test=1');
+await page.waitForFunction(() => window.__lb, null, { timeout: 30000 });
+await page.evaluate(() => { const a = window.__lb.app; a.save.change((d) => { d.tutorialDone = true; }); a.startRun('valley', false, 3); a.debugSetup({ tier: 0, coins: 40, skip: ['tower1','tower2','tower3','tower4','magic1','range1','forge1','wall1','wall2','wall3'] }); });
+await page.waitForTimeout(1500);
+await page.screenshot({ path: '/tmp/claude-0/scratch/upg.png' });
+await page.evaluate(() => { const a = window.__lb.app; a.debugSetup({ phase: 'night', dayness: 0, spawn: ['grunt','grunt','grunt','runner','grunt','shieldbearer'], spawnPath: 1, spawnS: 26 }); a.fastForward(4); });
+await page.waitForTimeout(1500);
+await page.screenshot({ path: '/tmp/claude-0/scratch/fireflies.png' });
+const info = await page.evaluate(() => { const r = window.__lb.app.stage.renderer.info; return { calls: r.render.calls, tris: r.render.triangles, q: window.__lb.app.stage.quality }; });
+console.log(JSON.stringify(info));
+await browser.close();

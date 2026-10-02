@@ -37,6 +37,7 @@ export class Stage {
   private lowStreak = 0;
   private highStreak = 0;
   onQualityChange: ((q: Quality) => void) | null = null;
+  readonly qualityListeners = new Set<(q: Quality) => void>();
 
   constructor(readonly canvas: HTMLCanvasElement) {
     const dpr = window.devicePixelRatio || 1;
@@ -86,6 +87,7 @@ export class Stage {
     });
     this.resize(this.w, this.h);
     this.onQualityChange?.(q);
+    this.qualityListeners.forEach((f) => f(q));
   }
 
   resize(w: number, h: number): void {
