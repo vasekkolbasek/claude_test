@@ -1,0 +1,128 @@
+import { expect, test, type Page } from '@playwright/test';
+
+type W = Window & { __lb: any; __sdkLog?: string[]; __sdkEmit?: (e: string) => void };
+
+function collect(page: Page): string[] {
+  const errors: string[] = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push(e.message));
+  return errors;
+}
+
+async function boot(page: Page, url = '?test=1'): Promise<void> {
+  await page.goto(url);
+  await page.waitForFunction(() => !!(window as unknown as W).__lb, null, { timeout: 60_000 });
+  await page.evaluate(() => (window as unknown as W).__lb.app.stage.setQualitySetting('low'));
+}
+
+async function appErrors(page: Page): Promise<string[]> {
+  return page.evaluate(() => { const w = window as unknown as W; return [...w.__lb.errors, ...w.__lb.app.errors]; });
+}
+
+test('menu → run → bot survives two nights → results → menu', async ({ page }) => {
+  const errors = collect(page);
+  await boot(page);
+  const play = page.locator('.menu .btn.play');
+  await expect(play).toBeVisible();
+  await play.click();
+  await expect(page.locator('#hud')).toBeVisible();
+  await page.evaluate(() => { const a = (window as unknown as W).__lb.app; a.enableBot(true); });
+  // Survive two nights (night counter reaches 3) or at least reach night 3 attempts.
+  const reached = await page.evaluate(async () => {
+    const a = (window as unknown as W).__lb.app;
+    for (let i = 0; i < 120; i++) {
+      a.fastForward(5);
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+      const g = a.game;
+      if (!g || a.mode !== 'run') break;
+      if (g.night >= 3 && g.phase === 'day') return { night: g.night, built: g.stats.built, kills: g.stats.kills, phase: g.phase };
+    }
+    const g = a.game;
+    return { night: g?.night, built: g?.stats.built, kills: g?.stats.kills, phase: g?.phase };
+  });
+  expect(reached.built).toBeGreaterThan(0);
+  expect(reached.kills).toBeGreaterThan(0);
+  expect(reached.night).toBeGreaterThanOrEqual(3);
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `test-results/smoke-${test.info().project.name}-run.png` });
+  await page.evaluate(() => (window as unknown as W).__lb.app.debugEndRun(false));
+  const cont = page.locator('.results .btn.green');
+  await expect(cont).toBeVisible();
+  await page.screenshot({ path: `test-results/smoke-${test.info().project.name}-results.png` });
+  await cont.click();
+  await expect(page.locator('.menu .btn.play')).toBeVisible();
+  expect(await appErrors(page)).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test('menu screens open and close without errors', async ({ page }) => {
+  const errors = collect(page);
+  await boot(page);
+  for (const idx of [0, 1, 2, 3, 4, 5]) {
+    await page.locator('.menu .grid2 .btn').nth(idx).click();
+    await expect(page.locator('.screen .panel')).toBeVisible();
+    await page.locator('.screen .panel-head .btn').first().click();
+    await expect(page.locator('.menu .btn.play')).toBeVisible();
+  }
+  expect(await appErrors(page)).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test('no scrollbars, no text selection, layout fits the viewport', async ({ page }) => {
+  await boot(page);
+  const m = await page.evaluate(() => ({
+    sw: document.documentElement.scrollWidth, sh: document.documentElement.scrollHeight,
+    w: window.innerWidth, h: window.innerHeight, sel: getComputedStyle(document.body).userSelect,
+  }));
+  expect(m.sw).toBeLessThanOrEqual(m.w);
+  expect(m.sh).toBeLessThanOrEqual(m.h);
+  expect(m.sel).toBe('none');
+  // All menu buttons are inside the viewport.
+  const boxes = await page.locator('.menu .btn').evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => [r.left, r.top, r.right, r.bottom]));
+  const vp = page.viewportSize()!;
+  for (const [l, t, r, b] of boxes) {
+    expect(l).toBeGreaterThanOrEqual(0);
+    expect(t).toBeGreaterThanOrEqual(0);
+    expect(r).toBeLessThanOrEqual(vp.width + 0.5);
+    expect(b).toBeLessThanOrEqual(vp.height + 0.5);
+  }
+});
+
+test('Yandex SDK integration (mock): ready, gameplay start/stop, ads pause and reward', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'once is enough');
+  const errors = collect(page);
+  await page.goto('http://localhost:4174/game/?test=1');
+  await page.waitForFunction(() => !!(window as unknown as W).__lb, null, { timeout: 60_000 });
+  const log = () => page.evaluate(() => [...((window as unknown as W).__sdkLog ?? [])]);
+  expect(await page.evaluate(() => (window as unknown as W).__lb.app.platform.id)).toBe('yandex');
+  expect(await log()).toContain('ready');
+  expect(await page.evaluate(() => document.documentElement.lang)).toBe('en');
+  await page.locator('.menu .btn.play').click();
+  await expect(page.locator('#hud')).toBeVisible();
+  expect((await log()).filter((x) => x === 'start').length).toBe(1);
+  // SDK pause event → gameplay stops, pause menu opens.
+  await page.evaluate(() => (window as unknown as W).__sdkEmit!('game_api_pause'));
+  expect((await log()).slice(-1)[0]).toBe('stop');
+  await expect(page.locator('.screen .panel h2')).toBeVisible();
+  await page.evaluate(() => (window as unknown as W).__sdkEmit!('game_api_resume'));
+  await page.locator('.screen .btn.gold').click();
+  expect((await log()).slice(-1)[0]).toBe('start');
+  // Rewarded coins: pauses during the ad and grants coins after onRewarded.
+  const before = await page.evaluate(() => (window as unknown as W).__lb.app.game.coins);
+  await page.locator('.hud-bc .btn.gold').click();
+  await page.waitForTimeout(600);
+  const after = await page.evaluate(() => (window as unknown as W).__lb.app.game.coins);
+  expect(after).toBe(before + 5);
+  const l = await log();
+  const ri = l.lastIndexOf('rewarded');
+  expect(l[ri - 1]).toBe('stop');
+  expect(l.slice(-1)[0]).toBe('start');
+  // Results → continue triggers an interstitial only between screens.
+  await page.evaluate(() => (window as unknown as W).__lb.app.debugEndRun(true));
+  await page.locator('.results .btn.green').click();
+  await expect(page.locator('.menu .btn.play')).toBeVisible();
+  expect(await log()).toContain('fullscreen');
+  expect((await log()).some((x) => x.startsWith('setData'))).toBe(true);
+  expect(await appErrors(page)).toEqual([]);
+  expect(errors).toEqual([]);
+});
