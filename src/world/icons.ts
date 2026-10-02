@@ -43,8 +43,8 @@ export class IconRenderer {
     if (!this.renderer) { this.cache.set(key, ''); return ''; }
     this.mesh.geometry = geo;
     this.mesh.rotation.y = yaw;
-    geo.computeBoundingBox();
-    const bb = geo.boundingBox!;
+    this.mesh.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(this.mesh);
     const center = bb.getCenter(new THREE.Vector3());
     const size = bb.getSize(new THREE.Vector3());
     const r = Math.max(size.x, size.y, size.z) * 0.62 + 0.05;
@@ -60,7 +60,14 @@ export class IconRenderer {
 
   unit(id: UnitId): string { return this.shoot(`u:${id}`, unitGeometry(id), 0.5, 0.25); }
   building(n: BNode): string { return this.shoot(`b:${n.kind}:${n.look}:${n.tier}`, buildingGeometry(n.kind, n.look, n.tier), 0.65, 0.5); }
-  weapon(id: string): string { return this.shoot(`w:${id}`, weaponGeometry(id), 1.2, 0.2); }
+  weapon(id: string): string {
+    this.mesh.rotation.order = 'ZYX';
+    this.mesh.rotation.z = -0.78;
+    const url = this.shoot(`w:${id}`, weaponGeometry(id), Math.PI / 2, 0.0);
+    this.mesh.rotation.z = 0;
+    this.mesh.rotation.order = 'XYZ';
+    return url;
+  }
 
   dispose(): void {
     this.material.dispose();

@@ -189,3 +189,30 @@ test('tab switches and repeated ads keep state consistent', async ({ page }) => 
   expect(await appErrors(page)).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('first-run tutorial reacts to real keyboard input', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'keyboard flow');
+  const errors = collect(page);
+  await boot(page);
+  await page.locator('.menu .btn.play').click();
+  const hint = page.locator('.hint');
+  await expect(hint).toContainText(/WASD/);
+  // Headless rendering is slow (software GL), so hold long enough for ~3 world units.
+  await page.keyboard.down('KeyD');
+  await expect.poll(() => page.evaluate(() => { const g = (window as unknown as W).__lb.app.game; return Math.hypot(g.hero.x - 3.2, g.hero.z - 5.2); }), { timeout: 20_000 }).toBeGreaterThan(3.2);
+  await page.keyboard.up('KeyD');
+  await expect(hint).toContainText(/circle|круг/i);
+  // Walk the hero to the nearest farm slot and hold Space to build.
+  await page.evaluate(() => { const g = (window as unknown as W).__lb.app.game; const b = g.bySlot.get('farm1'); g.hero.x = b.x + 2.2; g.hero.z = b.z; });
+  await expect(hint).toContainText(/Space|Пробел/);
+  await page.keyboard.down('Space');
+  await expect.poll(() => page.evaluate(() => (window as unknown as W).__lb.app.game.bySlot.get('farm1').node?.id ?? ''), { timeout: 20_000 }).toBe('farm');
+  await page.keyboard.up('Space');
+  expect(await page.evaluate(() => (window as unknown as W).__lb.app.game.bySlot.get('farm1').node?.id)).toBe('farm');
+  await expect(hint).toContainText(/Red roads|Красные/);
+  await page.keyboard.press('Enter');
+  await expect(hint).toContainText(/Q/);
+  expect(await page.evaluate(() => (window as unknown as W).__lb.app.game.phase)).toBe('night');
+  expect(await appErrors(page)).toEqual([]);
+  expect(errors).toEqual([]);
+});

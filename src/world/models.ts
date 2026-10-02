@@ -687,17 +687,36 @@ export function weaponGeometry(weapon: string): THREE.BufferGeometry {
   if (g) return g;
   const mb = new MB();
   switch (weapon) {
-    case 'bow':
-      mb.boxB(0.05, 1.0, 0.05, C.woodDark, 0, -0.3, 0, { rx: 0.1 }).boxB(0.02, 1.0, 0.02, C.white, 0, -0.3, -0.12);
+    case 'bow': {
+      // Curved limbs from short segments + string
+      const n = 7;
+      for (let i = 0; i < n; i++) {
+        const a0 = -0.95 + (i / n) * 1.9, a1 = -0.95 + ((i + 1) / n) * 1.9;
+        const y0 = Math.sin(a0) * 0.55, z0 = Math.cos(a0) * 0.22 - 0.22, y1 = Math.sin(a1) * 0.55, z1 = Math.cos(a1) * 0.22 - 0.22;
+        const len = Math.hypot(y1 - y0, z1 - z0);
+        mb.box(0.07, len + 0.02, 0.08, i === 3 ? C.gold : C.woodDark, 0, (y0 + y1) / 2 + 0.2, (z0 + z1) / 2, { rx: -Math.atan2(z1 - z0, y1 - y0) });
+      }
+      mb.box(0.015, 0.9, 0.015, C.white, 0, 0.2, -0.3);
       break;
+    }
     case 'spear':
-      mb.cyl(0.03, 0.03, 2.0, 4, C.wood, 0, -0.6, 0.2, { rx: 1.1 }).cone(0.07, 0.3, 4, C.iron, 0, 0.0, 1.15, { rx: 1.1 }).box(0.25, 0.15, 0.03, C.bannerRed, 0, -0.05, 0.85, { rx: 1.1 });
+      mb.cyl(0.035, 0.04, 1.7, 5, C.wood, 0, -0.55, 0);
+      mb.oct(0.12, C.iron, 0, 1.3, 0, { sy: 2.4, sx: 0.8, sz: 0.4 });
+      mb.box(0.2, 0.06, 0.06, C.gold, 0, 1.12, 0);
+      mb.box(0.03, 0.22, 0.14, C.bannerRed, 0, 0.98, 0.08);
       break;
     case 'staff':
-      mb.cyl(0.035, 0.035, 1.4, 5, C.woodLight, 0, -0.3, 0).oct(0.14, 0xfff2a8, 0, 1.2, 0, { glow: 2.6 });
+      mb.cyl(0.04, 0.05, 1.5, 5, C.woodLight, 0, -0.45, 0);
+      mb.cyl(0.07, 0.05, 0.14, 6, C.gold, 0, 0.98, 0);
+      mb.oct(0.17, 0xfff2a8, 0, 1.22, 0, { glow: 2.6, sy: 1.3 });
+      for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2; mb.cone(0.03, 0.22, 3, C.gold, Math.sin(a) * 0.08, 1.02, Math.cos(a) * 0.08, { rz: Math.sin(a) * 0.5, rx: Math.cos(a) * 0.5 }); }
       break;
     default:
-      mb.boxB(0.07, 0.9, 0.14, C.iron, 0, 0, 0).boxB(0.3, 0.06, 0.1, C.gold, 0, 0, 0).boxB(0.06, 0.2, 0.06, C.woodDark, 0, -0.2, 0);
+      mb.box(0.06, 0.95, 0.2, 0xd9dde8, 0, 0.55, 0);
+      mb.cone(0.1, 0.18, 4, 0xd9dde8, 0, 1.02, 0, { ry: Math.PI / 4, sz: 0.3 });
+      mb.box(0.1, 0.07, 0.48, C.gold, 0, 0.06, 0);
+      mb.box(0.07, 0.24, 0.07, C.woodDark, 0, -0.1, 0);
+      mb.ico(0.06, C.gold, 0, -0.25, 0);
   }
   g = mb.build();
   cache.set(key, g);
