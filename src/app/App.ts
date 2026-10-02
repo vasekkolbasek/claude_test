@@ -81,7 +81,7 @@ export class App {
     this.pixi = new Application();
     const s = this.save.data.settings;
     await this.pixi.init({
-      preference: 'webgl',
+      preference: ['webgl', 'canvas'],
       resizeTo: window,
       antialias: false,
       autoDensity: true,
@@ -298,6 +298,33 @@ export class App {
     if (this.world.state !== 'playing' && this.world.state !== 'levelup') return;
     this.setPause('user', true);
     openPause(this, () => this.setPause('user', false));
+  }
+
+  /** Test hook: sandbox helpers for screenshots and content checks. */
+  sandbox(cmd: { noWeapons?: boolean; give?: [string, number][]; evolve?: string[]; spawn?: [string, number, number?][]; time?: number; god?: boolean; passives?: [string, number][] }): void {
+    const w = this.world;
+    if (!w) return;
+    if (cmd.god !== undefined) this.godMode = cmd.god;
+    if (cmd.time !== undefined) w.t = cmd.time;
+    if (cmd.noWeapons) w.weapons.length = 0;
+    for (const [id, lv] of cmd.give ?? []) {
+      let wp = w.weapons.find((x) => x.id === id);
+      if (!wp) wp = w.addWeapon(id as never, 0);
+      wp.level = lv;
+    }
+    for (const [id, lv] of cmd.passives ?? []) {
+      for (let i = 0; i < lv; i++) {
+        const has = w.passives.find((p) => p.id === id);
+        w.applyCard({ kind: has ? 'passive_up' : 'passive_new', id, rarity: 0, levelFrom: 0, levelTo: 1, value: 0 });
+      }
+    }
+    for (const id of cmd.evolve ?? []) w.evolve(id as never);
+    for (const [id, n, r = 220] of cmd.spawn ?? []) {
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        w.spawnEnemy(id as never, w.player.x + Math.cos(a) * r, w.player.y + Math.sin(a) * r);
+      }
+    }
   }
 
   /** Test hook: hand control to the steering bot (also auto-picks upgrades). */

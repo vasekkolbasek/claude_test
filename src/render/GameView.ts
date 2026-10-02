@@ -15,6 +15,18 @@ export type QualityLevel = 0 | 1 | 2; // low, medium, high
 
 const DIRECTIONAL = new Set(['triangle', 'arrow', 'shardtri', 'stealth']);
 
+/** Soft glow (or any radial sprite of native radius 15 world units at scale 1) with a world-space radius. */
+function glow(l: QuadLayer, x: number, y: number, radius: number, color: number, alpha: number, tex?: Texture): void {
+  const k = radius / 15 / TS;
+  l.add(tex ?? getAtlas().tex.soft, x, y, k, k, 0, color, alpha);
+}
+
+/** Ring sprite whose drawn radius equals `radius` world units; `native` is the ring radius baked into the texture. */
+function ring(l: QuadLayer, tex: Texture, native: number, x: number, y: number, radius: number, rot: number, color: number, alpha: number): void {
+  const k = radius / native / TS;
+  l.add(tex, x, y, k, k, rot, color, alpha);
+}
+
 export interface ViewFeedback {
   /** seconds of hit-stop requested by the last frame's events */
   hitStop: number;
@@ -375,13 +387,13 @@ export class GameView {
       if (g.kind === GEM_XP) {
         this.gemsL.add(t[`gem${g.tier}`], g.x, g.y, inv * bob, inv * bob, Math.sin(time * 2 + g.y) * 0.3, 0xffffff, 1);
       } else if (g.kind === GEM_HEAL) {
-        this.gemsL.add(t.soft, g.x, g.y, 1.4, 1.4, 0, 0x3dff6e, 0.4);
+        glow(this.gemsL, g.x, g.y, 22, 0x3dff6e, 0.45);
         this.gemsL.add(t.heal, g.x, g.y, inv * bob, inv * bob, 0, 0xffffff, 1);
       } else if (g.kind === GEM_MAGNET) {
-        this.gemsL.add(t.soft, g.x, g.y, 1.5, 1.5, 0, 0x29a8ff, 0.45);
+        glow(this.gemsL, g.x, g.y, 24, 0x29a8ff, 0.5);
         this.gemsL.add(t.magnet, g.x, g.y, inv * bob, inv * bob, Math.sin(time * 3) * 0.3, 0xffffff, 1);
       } else if (g.kind === GEM_CHEST) {
-        this.gemsL.add(t.soft, g.x, g.y, 3.4 * bob, 3.4 * bob, 0, 0xffb52e, 0.55);
+        glow(this.gemsL, g.x, g.y, 52 * bob, 0xffb52e, 0.55);
         this.gemsL.add(t.thinring, g.x, g.y, inv * 1.3, inv * 1.3, time, 0xffd23d, 0.6 + Math.sin(time * 6) * 0.3);
         this.gemsL.add(t.chest, g.x, g.y, inv * bob, inv * bob, Math.sin(time * 2) * 0.2, 0xffffff, 1);
       }
@@ -392,14 +404,14 @@ export class GameView {
       if (!m.alive) continue;
       const armed = m.arm <= 0;
       const blink = armed ? 0.65 + Math.sin(m.t * 14) * 0.35 : 0.35;
-      this.underL.add(t.soft, m.x, m.y, 1.2, 1.2, 0, 0xffd23d, 0.35 * blink);
+      glow(this.underL, m.x, m.y, 20, 0xffd23d, 0.4 * blink);
       this.underL.add(t.mine, m.x, m.y, inv * (m.evo ? 1.25 : 1), inv * (m.evo ? 1.25 : 1), m.t * 2, m.evo ? 0xfff6b0 : 0xffffff, blink);
     }
     for (const g of world.rings) {
       if (!g.alive) continue;
       const f = g.t / g.dur;
-      this.underL.add(t.ring, g.x, g.y, g.r / 58, g.r / 58, 0, g.color, (1 - f) * 0.9);
-      if (this.quality > 0) this.underL.add(t.thinring, g.x, g.y, (g.r * 0.92) / 28, (g.r * 0.92) / 28, 0, 0xffffff, (1 - f) * 0.5);
+      ring(this.underL, t.ring, 58, g.x, g.y, g.r, 0, g.color, (1 - f) * 0.9);
+      if (this.quality > 0) ring(this.underL, t.thinring, 28, g.x, g.y, g.r * 0.92, 0, 0xffffff, (1 - f) * 0.5);
     }
 
     // ---- enemies
@@ -413,24 +425,22 @@ export class GameView {
       const alpha = e.alpha * (e.spawnT < 1 ? 0.3 + e.spawnT * 0.7 : 1);
       if (def.boss) this.drawBossExtras(e.x, e.y, e.r, def.color, e.state, def.boss === 'final');
       if (e.elite) {
-        this.enemiesL.add(t.soft, e.x, e.y, (e.r * 2.4) / 15, (e.r * 2.4) / 15, 0, def.color, 0.35 + Math.sin(time * 6 + e.uid) * 0.1);
+        glow(this.enemiesL, e.x, e.y, e.r * 2.6, def.color, 0.4 + Math.sin(time * 6 + e.uid) * 0.12);
       }
       this.enemiesL.add(tex, e.x, e.y, scale, scale, rot, 0xffffff, alpha);
       // AI telegraphs
       if (def.ai === 'dash' && e.state === 1) {
         this.enemiesL.add(t.beam, e.x, e.y, 210 / 32, 10 / (24 * TS), Math.atan2(e.ty, e.tx), def.color, 0.25 + (1 - e.t / 0.6) * 0.4, 0, 0.5);
       } else if (def.ai === 'bomber' && e.state === 1) {
-        const r = (def.p?.radius ?? 80) / 28;
-        this.enemiesL.add(t.thinring, e.x, e.y, r, r, 0, 0xff2a55, 0.35 + Math.sin(time * 30) * 0.25);
+        ring(this.enemiesL, t.thinring, 28, e.x, e.y, def.p?.radius ?? 80, 0, 0xff2a55, 0.35 + Math.sin(time * 30) * 0.25);
       } else if (def.ai === 'teleport' && e.state === 1) {
-        this.enemiesL.add(t.soft, e.tx, e.ty, 1.6, 1.6, 0, def.color, 0.45);
+        glow(this.enemiesL, e.tx, e.ty, 24, def.color, 0.5);
         this.enemiesL.add(tex, e.tx, e.ty, scale * 0.8, scale * 0.8, rot, 0xffffff, 0.35);
       } else if (def.ai === 'heal') {
-        this.enemiesL.add(t.soft, e.x, e.y, 2, 2, 0, 0x3dff6e, 0.18);
+        glow(this.enemiesL, e.x, e.y, 34, 0x3dff6e, 0.22);
       }
       if (e.maxShield > 0 && e.shield > 0) {
-        const s = (e.r * 1.45) / 28;
-        this.enemiesL.add(t.thinring, e.x, e.y, s, s, 0, 0x5d8bff, 0.35 + 0.55 * (e.shield / e.maxShield));
+        ring(this.enemiesL, t.thinring, 28, e.x, e.y, e.r * 1.45, 0, 0x5d8bff, 0.35 + 0.55 * (e.shield / e.maxShield));
       }
       if (e.elite && e.hp < e.maxHp) {
         const bw = e.r * 2;
@@ -482,12 +492,12 @@ export class GameView {
     for (let i = 0; i < world.blades.count; i++) {
       const b = world.blades.items[i];
       const s = (b.r / (b.evo ? 14 : 12)) * inv;
-      this.bulletsL.add(t.soft, b.x, b.y, (b.r * 1.6) / 15, (b.r * 1.6) / 15, 0, b.evo ? 0xff7df7 : 0xff3df2, 0.35);
+      glow(this.bulletsL, b.x, b.y, b.r * 1.8, b.evo ? 0xff7df7 : 0xff3df2, 0.4);
       this.bulletsL.add(b.evo ? t.blade_evo : t.blade, b.x, b.y, s, s, time * 9, 0xffffff, 1);
     }
     for (let i = 0; i < world.drones.count; i++) {
       const d = world.drones.items[i];
-      this.bulletsL.add(t.soft, d.x, d.y, 1.1, 1.1, 0, 0x7d8cff, 0.3);
+      glow(this.bulletsL, d.x, d.y, 18, 0x7d8cff, 0.35);
       this.bulletsL.add(d.evo ? t.drone_evo : t.drone, d.x, d.y, inv, inv, d.ang, 0xffffff, 1);
     }
     for (let i = 0; i < world.beams.count; i++) {
@@ -497,7 +507,7 @@ export class GameView {
       const col = b.evo ? 0xff9ab0 : 0xff4d6d;
       this.bulletsL.add(t.beam, b.x, b.y, b.len / 32, (b.width * 2.6 * flicker) / (24 * TS), b.ang, col, 0.9 * fade, 0, 0.5);
       this.bulletsL.add(t.beam, b.x, b.y, b.len / 32, (b.width * 0.8) / (24 * TS), b.ang, 0xffffff, fade, 0, 0.5);
-      this.bulletsL.add(t.soft, b.x + Math.cos(b.ang) * 14, b.y + Math.sin(b.ang) * 14, 1.4, 1.4, 0, col, 0.6 * fade);
+      glow(this.bulletsL, b.x + Math.cos(b.ang) * 14, b.y + Math.sin(b.ang) * 14, 22, col, 0.7 * fade);
     }
 
     // ---- player
@@ -508,14 +518,14 @@ export class GameView {
     const t = this.atlas.tex;
     const time = this.time;
     const c = final ? [color, 0xff9a3d, 0xff2a55][phase] ?? color : color;
-    this.enemiesL.add(t.soft, x, y, (r * 3) / 15, (r * 3) / 15, 0, c, 0.4 + Math.sin(time * 4) * 0.1);
-    const rr = (r * 1.35) / 28;
-    this.enemiesL.add(t.thinring, x, y, rr, rr, time, c, 0.6);
+    glow(this.enemiesL, x, y, r * 2.6, c, 0.45 + Math.sin(time * 4) * 0.1);
+    const rr = r * 1.35;
+    ring(this.enemiesL, t.thinring, 28, x, y, rr, time, c, 0.6);
     if (final) {
       const pulse = 1 + Math.sin(time * (3 + phase * 2)) * 0.15;
-      this.enemiesL.add(t.orb, x, y, (r * 0.5 * pulse) / 15, (r * 0.5 * pulse) / 15, 0, c, 0.9);
-      const r2 = (r * 1.8 + Math.sin(time * 2) * 6) / 28;
-      this.enemiesL.add(t.thinring, x, y, r2, r2, -time, 0xffffff, 0.25);
+      glow(this.enemiesL, x, y, r * 0.55 * pulse, c, 0.9, t.orb);
+      const r2 = r * 1.8 + Math.sin(time * 2) * 6;
+      ring(this.enemiesL, t.thinring, 28, x, y, r2, -time, 0xffffff, 0.25);
     }
   }
 
@@ -529,7 +539,7 @@ export class GameView {
     const hit = this.playerHitT > 0;
     if (this.playerHitT > 0) this.playerHitT -= 1 / 60;
     const core = hit ? 0xff6b8a : 0xffffff;
-    this.playerL.add(t.soft, p.x, p.y, 3.2, 3.2, 0, hit ? 0xff2a55 : 0x29f6ff, 0.5 * blink);
+    glow(this.playerL, p.x, p.y, 52, hit ? 0xff2a55 : 0x29f6ff, 0.5 * blink);
     this.playerL.add(t.player_ring, p.x, p.y, inv, inv, time * 1.5, 0xffffff, 0.75 * blink);
     const pulse = 1 + Math.sin(time * 6) * 0.05;
     this.playerL.add(t.player, p.x, p.y, inv * pulse, inv * pulse, time * 0.8, core, blink);

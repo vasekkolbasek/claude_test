@@ -123,10 +123,12 @@ export class FxSystem {
 
   number(x: number, y: number, value: number, crit: boolean, color = 0xffffff, big = false): void {
     if (!this.q.numbers) return;
-    if (this.nums.length > 70) this.nums.shift();
+    // keep the screen readable in big fights: thin out ordinary hits, always show crits
+    if (this.nums.length > 24 && !crit && !big && Math.random() < Math.min(0.85, (this.nums.length - 24) / 30)) return;
+    if (this.nums.length > 60) this.nums.shift();
     const v = Math.round(value);
     if (v <= 0) return;
-    this.nums.push({ x: x + (Math.random() - 0.5) * 10, y, vy: -60, life: 0.75, text: crit ? `${v}!` : `${v}`, crit, color, big });
+    this.nums.push({ x: x + (Math.random() - 0.5) * 10, y, vy: -60, life: 0.7, text: crit ? `${v}!` : `${v}`, crit, color, big });
   }
 
   text(x: number, y: number, text: string, color: number): void {
