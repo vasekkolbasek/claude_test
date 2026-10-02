@@ -28,7 +28,7 @@ export class Input {
     };
     on(window, 'keydown', (e: KeyboardEvent) => {
       this.gesture();
-      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (!this.keys.has(e.code)) this.edges.add(e.code);
       this.keys.add(e.code);

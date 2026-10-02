@@ -622,11 +622,17 @@ export interface HeroRig {
   cape: THREE.Mesh;
 }
 
+function cached(key: string, make: () => THREE.BufferGeometry): THREE.BufferGeometry {
+  let g = cache.get(key);
+  if (!g) { g = make(); cache.set(key, g); }
+  return g;
+}
+
 export function buildHero(material: THREE.Material, weapon: string): HeroRig {
   const root = new THREE.Group();
   const body = new THREE.Group();
   root.add(body);
-  const horse = new MB()
+  const horse = () => new MB()
     .boxB(0.55, 0.5, 1.3, 0xf3efe8, 0, 0.75, 0)
     .boxB(0.3, 0.6, 0.35, 0xf3efe8, 0, 1.05, 0.62, { rx: 0.5 })
     .boxB(0.28, 0.28, 0.55, 0xf3efe8, 0, 1.5, 0.9, { rx: 0.2 })
@@ -634,11 +640,12 @@ export function buildHero(material: THREE.Material, weapon: string): HeroRig {
     .cone(0.1, 0.55, 4, 0x8a6a4a, 0, 0.75, -0.75, { rx: -2.4 })
     .boxB(0.6, 0.12, 0.6, C.banner, 0, 1.22, -0.05)
     .boxB(0.62, 0.3, 0.05, C.gold, 0, 0.95, 0.3)
-    .box(0.04, 0.04, 0.04, 0x222233, -0.14, 1.66, 1.08).box(0.04, 0.04, 0.04, 0x222233, 0.14, 1.66, 1.08);
-  const horseMesh = new THREE.Mesh(horse.build(), material);
+    .box(0.04, 0.04, 0.04, 0x222233, -0.14, 1.66, 1.08).box(0.04, 0.04, 0.04, 0x222233, 0.14, 1.66, 1.08)
+    .build();
+  const horseMesh = new THREE.Mesh(cached('hero:horse', horse), material);
   horseMesh.castShadow = true;
   body.add(horseMesh);
-  const legGeo = new MB().boxB(0.13, 0.8, 0.13, 0xe6e0d6, 0, -0.8, 0).boxB(0.15, 0.1, 0.15, 0x6a5a4a, 0, -0.8, 0).build();
+  const legGeo = cached('hero:leg', () => new MB().boxB(0.13, 0.8, 0.13, 0xe6e0d6, 0, -0.8, 0).boxB(0.15, 0.1, 0.15, 0x6a5a4a, 0, -0.8, 0).build());
   const legs: THREE.Mesh[] = [];
   for (const [x, z] of [[-0.18, 0.5], [0.18, 0.5], [-0.18, -0.48], [0.18, -0.48]]) {
     const leg = new THREE.Mesh(legGeo, material);
@@ -650,19 +657,19 @@ export function buildHero(material: THREE.Material, weapon: string): HeroRig {
   const rider = new THREE.Group();
   rider.position.set(0, 1.25, -0.05);
   const riderMesh = new THREE.Mesh(
-    new MB()
+    cached('hero:rider', () => new MB()
       .cyl(0.2, 0.26, 0.6, 6, C.banner, 0, 0.05, 0)
       .boxB(0.5, 0.12, 0.2, C.gold, 0, 0.5, 0)
       .ico(0.18, C.skin, 0, 0.82, 0)
       .cyl(0.2, 0.2, 0.1, 7, C.gold, 0, 0.94, 0, { glow: 1.6 })
       .cone(0.05, 0.12, 4, C.gold, 0.12, 1.02, 0).cone(0.05, 0.12, 4, C.gold, -0.12, 1.02, 0).cone(0.05, 0.12, 4, C.gold, 0, 1.02, 0.12)
       .boxB(0.1, 0.4, 0.12, C.banner, -0.22, 0.2, 0.05).boxB(0.1, 0.4, 0.12, C.banner, 0.22, 0.2, 0.05)
-      .build(),
+      .build()),
     material,
   );
   riderMesh.castShadow = true;
   rider.add(riderMesh);
-  const cape = new THREE.Mesh(new MB().box(0.5, 0.7, 0.04, C.bannerRed, 0, -0.35, 0).build(), material);
+  const cape = new THREE.Mesh(cached('hero:cape', () => new MB().box(0.5, 0.7, 0.04, C.bannerRed, 0, -0.35, 0).build()), material);
   cape.position.set(0, 0.6, -0.2);
   cape.castShadow = true;
   rider.add(cape);

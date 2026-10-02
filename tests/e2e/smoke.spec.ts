@@ -126,3 +126,66 @@ test('Yandex SDK integration (mock): ready, gameplay start/stop, ads pause and r
   expect(await appErrors(page)).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test('restarting runs does not leak GPU resources or listeners', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'once is enough');
+  const errors = collect(page);
+  await boot(page);
+  const sample = () => page.evaluate(() => {
+    const a = (window as unknown as W).__lb.app;
+    const m = a.stage.renderer.info.memory;
+    return { geo: m.geometries, tex: m.textures, sceneChildren: a.stage.scene.children.length, ui: document.getElementById('ui')!.querySelectorAll('*').length };
+  });
+  const cycle = () => page.evaluate(async () => {
+    const a = (window as unknown as W).__lb.app;
+    a.startRun('valley', false, 12345);
+    a.enableBot(true);
+    a.fastForward(40);
+    await new Promise((r) => setTimeout(r, 100));
+    a.showMenu(false);
+    await new Promise((r) => setTimeout(r, 100));
+  });
+  await cycle();
+  const base = await sample();
+  for (let i = 0; i < 4; i++) await cycle();
+  const after = await sample();
+  expect(after.geo).toBeLessThanOrEqual(base.geo + 2);
+  expect(after.tex).toBeLessThanOrEqual(base.tex);
+  expect(after.sceneChildren).toBe(base.sceneChildren);
+  expect(after.ui).toBeLessThanOrEqual(base.ui + 5);
+  expect(await appErrors(page)).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test('tab switches and repeated ads keep state consistent', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'once is enough');
+  const errors = collect(page);
+  await page.goto('http://localhost:4174/game/?test=1');
+  await page.waitForFunction(() => !!(window as unknown as W).__lb, null, { timeout: 60_000 });
+  await page.locator('.menu .btn.play').click();
+  await page.mouse.click(400, 400); // user gesture → audio unlocked
+  const state = () => page.evaluate(() => { const a = (window as unknown as W).__lb.app; return { paused: a.game.paused, muted: a.audio.isMuted, pauses: [...a.pauses] }; });
+  for (let i = 0; i < 3; i++) {
+    await page.evaluate(() => { Object.defineProperty(document, 'hidden', { value: true, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+    let s = await state();
+    expect(s.paused).toBe(true);
+    expect(s.muted).toBe(true);
+    await page.evaluate(() => { Object.defineProperty(document, 'hidden', { value: false, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+    s = await state();
+    expect(s.muted).toBe(false);
+    expect(s.pauses).toEqual(['user']); // the pause menu stays open until the player resumes
+    await page.locator('.screen .btn.gold').click();
+    s = await state();
+    expect(s.paused).toBe(false);
+  }
+  // Several rewarded videos in a row (the button is once per day, so call the flow directly).
+  for (let i = 0; i < 4; i++) {
+    const ok = await page.evaluate(() => (window as unknown as W).__lb.app.rewarded());
+    expect(ok).toBe(true);
+    const s = await state();
+    expect(s.paused).toBe(false);
+    expect(s.muted).toBe(false);
+  }
+  expect(await appErrors(page)).toEqual([]);
+  expect(errors).toEqual([]);
+});

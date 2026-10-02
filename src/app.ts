@@ -148,7 +148,7 @@ export class App implements UiHost {
     };
   }
 
-  private async rewarded(): Promise<boolean> {
+  async rewarded(): Promise<boolean> {
     const ok = await this.platform.showRewarded(this.adHooks());
     if (!ok) this.hudToast(t('hud.adFail'));
     return ok;
@@ -177,7 +177,7 @@ export class App implements UiHost {
     return g;
   }
 
-  private showMenu(withAd: boolean): void {
+  showMenu(withAd: boolean): void {
     const go = () => {
       this.teardownRun();
       this.mode = 'menu';
@@ -195,9 +195,9 @@ export class App implements UiHost {
   }
 
   // ------------------------------------------------------------ runs
-  startRun(map: MapId, endless: boolean): void {
+  startRun(map: MapId, endless: boolean, seed?: number): void {
     const s = this.save.data;
-    const cfg: RunConfig = { map, weapon: s.weapon, perks: [...s.perks], mutators: [...s.mutators], endless, seed: (Math.random() * 1e9) | 0 };
+    const cfg: RunConfig = { map, weapon: s.weapon, perks: [...s.perks], mutators: [...s.mutators], endless, seed: seed ?? (Math.random() * 1e9) | 0 };
     this.save.change((d) => { d.run = null; });
     this.beginRun(cfg);
   }
