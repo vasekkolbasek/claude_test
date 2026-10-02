@@ -7,6 +7,16 @@ const page = await browser.newPage({ viewport: { width: Number(w), height: Numbe
 const logs = [];
 page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`));
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
+if (process.env.SAVE) {
+  const { readFileSync } = await import('node:fs');
+  const data = readFileSync(process.env.SAVE, 'utf8');
+  await page.addInitScript((d) => {
+    if (!sessionStorage.getItem('seeded')) {
+      localStorage.setItem('neon-swarm:save', d);
+      sessionStorage.setItem('seeded', '1');
+    }
+  }, data);
+}
 await page.goto(url);
 await page.waitForTimeout(1500);
 for (const a of JSON.parse(actions)) {

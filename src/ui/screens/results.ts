@@ -58,6 +58,30 @@ export function showResults(app: App, s: RunSummary): void {
   };
   renderNews();
 
+  // gentle sign-in offer for guests (cloud saves + leaderboard), at most a few times
+  const save = app.save.data;
+  let auth: HTMLElement | null = null;
+  if (app.platform.kind === 'yandex' && !app.platform.isAuthorized() && save.authOffered < 3 && (s.won || save.stats.runs % 3 === 0)) {
+    save.authOffered++;
+    app.save.save();
+    auth = h(
+      'div',
+      { cls: 'panel', style: { padding: '0.8rem', width: 'min(100%, 28rem)', 'margin-top': '0.6rem', display: 'flex', 'flex-direction': 'column', gap: '0.45rem', 'text-align': 'center' } },
+      h('b', { text: t('auth.offerTitle') }),
+      h('div', { cls: 'note', text: t('auth.offerText') }),
+      h('button', {
+        cls: 'btn small',
+        onClick: async () => {
+          const ok = await app.platform.openAuth();
+          if (ok) {
+            await app.save.resync();
+            auth?.remove();
+          }
+        },
+      }, icon('user'), t('lb.login')),
+    );
+  }
+
   const cont = h('button', {
     cls: 'btn primary',
     attrs: { 'data-test': 'continue' },
@@ -76,6 +100,7 @@ export function showResults(app: App, s: RunSummary): void {
     dmg,
     h('div', { cls: 'reward panel' }, h('div', { cls: 'dim-text', text: t('res.bits') }), h('div', { cls: 'amount' }, icon('bits'), amount), doubleBtn),
     news,
+    auth,
     h('div', { cls: 'res-actions' }, cont),
   );
   el.setAttribute('data-screen', 'results');

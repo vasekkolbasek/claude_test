@@ -76,6 +76,8 @@ export class App {
   async boot(progress: (f: number) => void): Promise<void> {
     this.save = new SaveManager(this.platform);
     await this.save.load();
+    // grant anything earned but not yet applied (e.g. unlocks added in an update)
+    if (checkAchievements(this.save.data, null, false).length) this.save.save();
     progress(0.6);
 
     this.pixi = new Application();
