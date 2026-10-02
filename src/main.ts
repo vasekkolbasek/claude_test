@@ -20,10 +20,34 @@ window.addEventListener('unhandledrejection', (e) => {
   console.warn('[unhandled rejection]', e.reason);
 });
 
+/** `?art=icon|cover` renders store art only (used by scripts/shots.mjs). */
+async function renderArt(kind: string): Promise<void> {
+  const { drawCover, drawIcon } = await import('./render/art');
+  setLang(new URLSearchParams(location.search).get('lang') ?? 'ru');
+  await loadFonts(4000);
+  const c = document.createElement('canvas');
+  c.id = 'art';
+  if (kind === 'icon') {
+    c.width = c.height = 512;
+    drawIcon(c);
+  } else {
+    c.width = 800;
+    c.height = 470;
+    drawCover(c, t('game.title'), t('game.tagline'));
+  }
+  Object.assign(c.style, { position: 'fixed', left: '0', top: '0', width: `${c.width}px`, height: `${c.height}px` });
+  document.body.appendChild(c);
+  loader?.remove();
+  document.body.dataset.art = 'ready';
+}
+
 async function start(): Promise<void> {
+  const art = new URLSearchParams(location.search).get('art');
+  if (art) return renderArt(art);
   progress(0.1);
   const platform = await createPlatform();
   setLang(platform.lang());
+  document.title = t('game.title');
   if (title) title.textContent = t('game.title');
   progress(0.3);
   await loadFonts();

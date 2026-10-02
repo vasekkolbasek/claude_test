@@ -14,7 +14,8 @@
     "smoke": "playwright test",
     "sim": "tsx scripts/simulate.ts",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run package && npm run smoke",
-    "bench": "tsx scripts/bench.ts"
+    "bench": "tsx scripts/bench.ts",
+    "shots": "node scripts/shots.mjs"
   },
   "dependencies": {
     "@fontsource-variable/exo-2": "^5.3.0",

@@ -53,6 +53,8 @@ export class App {
   bot: Bot | null = null;
   /** test hook: player cannot die */
   godMode = false;
+  /** smoke tests always go through the sector screen */
+  readonly testFlow = new URLSearchParams(location.search).has('test');
 
   private hitStop = 0;
   private deathT = 0;
@@ -293,7 +295,9 @@ export class App {
   startRun(sector: SectorId, mode: GameModeId): void {
     const save = this.save.data;
     this.ui.closeAllModals();
+    const seedParam = new URLSearchParams(location.search).get('seed');
     this.world = new World({
+      seed: seedParam ? Number(seedParam) : undefined,
       mode,
       sector,
       character: save.char,
@@ -333,11 +337,12 @@ export class App {
   }
 
   /** Test hook: sandbox helpers for screenshots and content checks. */
-  sandbox(cmd: { noWeapons?: boolean; give?: [string, number][]; evolve?: string[]; spawn?: [string, number, number?][]; time?: number; god?: boolean; passives?: [string, number][] }): void {
+  sandbox(cmd: { skip?: number; noWeapons?: boolean; give?: [string, number][]; evolve?: string[]; spawn?: [string, number, number?][]; time?: number; god?: boolean; passives?: [string, number][] }): void {
     const w = this.world;
     if (!w) return;
     if (cmd.god !== undefined) this.godMode = cmd.god;
     if (cmd.time !== undefined) w.t = cmd.time;
+    if (cmd.skip !== undefined) w.skipTo(cmd.skip);
     if (cmd.noWeapons) w.weapons.length = 0;
     for (const [id, lv] of cmd.give ?? []) {
       let wp = w.weapons.find((x) => x.id === id);

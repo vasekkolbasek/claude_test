@@ -68,7 +68,7 @@ export function describeCard(c: UpgradeCard): CardInfo {
     }
     case 'evolution': {
       const id = c.id as EvolutionId;
-      return { name: t(`w.${id}`), desc: t(`w.${id}.desc`), icon: EVOLUTIONS[id].from, color: 0xffb52e, level: t('card.evolution'), isNew: false };
+      return { name: t(`w.${id}`), desc: t(`w.${id}.desc`), icon: EVOLUTIONS[id].from, color: 0xffb52e, level: '', isNew: false };
     }
     case 'heal':
       return { name: t('card.heal.name'), desc: t('card.heal.desc', { n: Math.round(c.value * 100) }), icon: 'heal', color: 0x6dff8a, level: '', isNew: false };

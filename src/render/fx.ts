@@ -124,7 +124,11 @@ export class FxSystem {
   number(x: number, y: number, value: number, crit: boolean, color = 0xffffff, big = false): void {
     if (!this.q.numbers) return;
     // keep the screen readable in big fights: thin out ordinary hits, always show crits
-    if (this.nums.length > 24 && !crit && !big && Math.random() < Math.min(0.85, (this.nums.length - 24) / 30)) return;
+    const n = this.nums.length;
+    if (!big && n > 14) {
+      const skip = Math.min(0.92, (n - 14) / 22) * (crit ? 0.6 : 1);
+      if (Math.random() < skip) return;
+    }
     if (this.nums.length > 60) this.nums.shift();
     const v = Math.round(value);
     if (v <= 0) return;

@@ -168,7 +168,7 @@ export class GameView {
       switch (e.type) {
         case EV.HIT:
           fx.number(e.x, e.y, e.a, e.b === 1, 0xffffff, e.c === 1);
-          if (this.quality > 0 && Math.random() < 0.5) fx.burst(e.x, e.y + 8, 0xffffff, 2, 160, 0.5, 0.25);
+          if (this.quality > 0 && Math.random() < 0.3) fx.burst(e.x, e.y + 8, 0xffe9b0, 1, 150, 0.45, 0.2);
           break;
         case EV.KILL: {
           const flags = e.c;
@@ -222,7 +222,7 @@ export class GameView {
           break;
         case EV.EXPLODE:
           fx.ring(e.x, e.y, e.b, e.a, 0.32);
-          fx.flare(e.x, e.y, e.b, e.a * 0.8, 0.25);
+          fx.flare(e.x, e.y, e.b, e.a * (e.a < 60 ? 0.5 : 0.8), e.a < 60 ? 0.16 : 0.25);
           fx.burst(e.x, e.y, e.b, 10 + e.a * 0.08, 140 + e.a * 2.5, 0.9, 0.45);
           this.addTrauma(0.08 + e.a * 0.0008);
           break;
@@ -420,7 +420,9 @@ export class GameView {
       const def = e.def;
       const sp = e.spawnT < 1 ? easeOutBack(e.spawnT) : 1;
       const scale = (e.r / def.r) * sp * inv;
-      const tex = e.flash > 0 ? t[`e_${def.id}_f`] : t[`e_${def.id}`];
+      // hit flash is an overlay (not a texture swap) so dense fights do not wash out to white
+      const big = !!def.boss;
+      const tex = t[`e_${def.id}`];
       const rot = DIRECTIONAL.has(def.shape) ? e.ang : e.ang;
       const alpha = e.alpha * (e.spawnT < 1 ? 0.3 + e.spawnT * 0.7 : 1);
       if (def.boss) this.drawBossExtras(e.x, e.y, e.r, def.color, e.state, def.boss === 'final');
@@ -428,6 +430,7 @@ export class GameView {
         glow(this.enemiesL, e.x, e.y, e.r * 2.6, def.color, 0.4 + Math.sin(time * 6 + e.uid) * 0.12);
       }
       this.enemiesL.add(tex, e.x, e.y, scale, scale, rot, 0xffffff, alpha);
+      if (e.flash > 0) this.enemiesL.add(t[`e_${def.id}_f`], e.x, e.y, scale, scale, rot, 0xffffff, big ? 0.22 : 0.55 * alpha);
       // AI telegraphs
       if (def.ai === 'dash' && e.state === 1) {
         this.enemiesL.add(t.beam, e.x, e.y, 210 / 32, 10 / (24 * TS), Math.atan2(e.ty, e.tx), def.color, 0.25 + (1 - e.t / 0.6) * 0.4, 0, 0.5);
@@ -505,8 +508,9 @@ export class GameView {
       const fade = b.evo ? 1 : Math.min(1, b.life / 0.15, (b.max - b.life) / 0.08 + 0.2);
       const flicker = 0.85 + Math.random() * 0.15;
       const col = b.evo ? 0xff9ab0 : 0xff4d6d;
-      this.bulletsL.add(t.beam, b.x, b.y, b.len / 32, (b.width * 2.6 * flicker) / (24 * TS), b.ang, col, 0.9 * fade, 0, 0.5);
-      this.bulletsL.add(t.beam, b.x, b.y, b.len / 32, (b.width * 0.8) / (24 * TS), b.ang, 0xffffff, fade, 0, 0.5);
+      const core = b.evo ? 0.55 : 1;
+      this.bulletsL.add(t.beam, b.x, b.y, b.len / 32, (b.width * (b.evo ? 2 : 2.6) * flicker) / (24 * TS), b.ang, col, (b.evo ? 0.7 : 0.9) * fade, 0, 0.5);
+      this.bulletsL.add(t.beam, b.x, b.y, b.len / 32, (b.width * 0.8 * core) / (24 * TS), b.ang, 0xffffff, fade * core, 0, 0.5);
       glow(this.bulletsL, b.x + Math.cos(b.ang) * 14, b.y + Math.sin(b.ang) * 14, 22, col, 0.7 * fade);
     }
 

@@ -54,7 +54,13 @@ export function showMenu(app: App): void {
     tile('daily', t('daily.title'), () => openDaily(app, () => showMenu(app)), login.can),
   );
 
-  const play = h('button', { cls: 'btn primary', attrs: { 'data-test': 'play' }, onClick: () => showPrerun(app) }, icon('play'), t('menu.play'));
+  // a brand-new player goes straight into the first sector
+  const play = h(
+    'button',
+    { cls: 'btn primary', attrs: { 'data-test': 'play' }, onClick: () => (save.stats.runs === 0 && !app.testFlow ? app.startRun('ram', 'normal') : showPrerun(app)) },
+    icon('play'),
+    t('menu.play'),
+  );
 
   // daily quest card
   const q = currentQuest(save);
@@ -110,5 +116,5 @@ export function showMenu(app: App): void {
   );
   app.ui.show(el);
 
-  if (login.can && save.stats.runs > 0) setTimeout(() => el.isConnected && openDaily(app, () => showMenu(app)), 450);
+  if (login.can && save.stats.runs > 0) setTimeout(() => el.isConnected && app.mode === 'menu' && !app.ui.hasModal() && openDaily(app, () => showMenu(app)), 450);
 }

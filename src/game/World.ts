@@ -750,6 +750,13 @@ export class World {
     }
   }
 
+  /** Jumps the run clock without replaying scripted events (test / screenshot helper). */
+  skipTo(t: number): void {
+    this.t = t;
+    this.prevT = t;
+    this.wave = waveStateAt(t, this.mode, this.sector);
+  }
+
   queueSpawn(id: EnemyId, x: number, y: number, elite = false): void {
     this.spawnQueue.push({ id, x, y, elite });
   }
@@ -871,7 +878,7 @@ export class World {
         b.hits.push(e.uid);
         const sp = Math.hypot(b.vx, b.vy) || 1;
         if (b.aoe > 0) {
-          this.explode(b.x, b.y, b.aoe, b.dmg * (b.turn > 0 ? 1 : 0.5), b.slot, b.knock, b.turn > 0 ? 0xff9a3d : 0xffffff);
+          this.explode(b.x, b.y, b.aoe, b.dmg * (b.turn > 0 ? 1 : 0.5), b.slot, b.knock, b.turn > 0 ? 0xff9a3d : 0x5ff2ff);
           if (b.turn > 0) {
             b.alive = false;
             break;

@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 interface TestApp {
   mode: string;
+  godMode: boolean;
   world: { state: string; t: number; run: { kills: number }; player: { hp: number } } | null;
   pauses: Set<string>;
   audio: { muted: boolean };
@@ -42,7 +43,11 @@ test('loads cleanly, plays a run with random input and reaches the results scree
   await page.waitForTimeout(300);
   expect((await platformLog(page)).at(-1)).toBe('gameplay:start');
 
-  // random keyboard input for ~60 s; upgrade cards are picked at random as they appear
+  // random keyboard input for 60 s (invulnerable, so the whole minute is exercised);
+  // upgrade cards are picked at random as they appear
+  await page.evaluate(() => {
+    (window as unknown as { __ns: { godMode: boolean } }).__ns.godMode = true;
+  });
   const keys = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'];
   const start = Date.now();
   let held: string | null = null;
@@ -51,48 +56,61 @@ test('loads cleanly, plays a run with random input and reaches the results scree
     held = keys[Math.floor(Math.random() * keys.length)];
     await page.keyboard.down(held);
     const cards = page.locator('.card:not(.locked)');
-    if ((await cards.count()) > 0) {
-      await cards.nth(Math.floor(Math.random() * (await cards.count()))).click({ timeout: 2000 }).catch(() => undefined);
-    }
-    const revive = page.locator('[data-test=revive-decline]');
-    if (await revive.isVisible().catch(() => false)) break;
+    const n = await cards.count();
+    if (n > 0) await cards.nth(Math.floor(Math.random() * n)).click({ timeout: 2000 }).catch(() => undefined);
     await page.waitForTimeout(400);
   }
   if (held) await page.keyboard.up(held);
+  // let any level-up dialog resolve
+  for (let i = 0; i < 10 && (await page.locator('.card').count()) > 0; i++) {
+    await page.locator('.card:not(.locked)').first().click({ timeout: 2000 }).catch(() => undefined);
+    await page.waitForTimeout(500);
+  }
 
   const st = await appState(page);
-  expect(st.t).toBeGreaterThan(10);
-  expect(['run', 'results']).toContain(st.mode);
+  expect(st.t).toBeGreaterThan(15);
+  expect(st.mode).toBe('run');
 
   // background tab → pause + mute, gameplay stop; return → resume
-  if (st.mode === 'run' && st.state === 'playing') {
-    await page.evaluate(() => {
-      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
-      document.dispatchEvent(new Event('visibilitychange'));
-    });
-    const hidden = await appState(page);
-    expect(hidden.pauses).toContain('hidden');
-    expect((await platformLog(page)).at(-1)).toBe('gameplay:stop');
-    const t0 = hidden.t;
-    await page.waitForTimeout(600);
-    expect((await appState(page)).t).toBe(t0);
-    await page.evaluate(() => {
-      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
-      document.dispatchEvent(new Event('visibilitychange'));
-    });
-    expect((await appState(page)).pauses).not.toContain('hidden');
-    expect((await platformLog(page)).at(-1)).toBe('gameplay:start');
-  }
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const hidden = await appState(page);
+  expect(hidden.pauses).toContain('hidden');
+  expect((await platformLog(page)).at(-1)).toBe('gameplay:stop');
+  expect(await page.evaluate(() => (window as unknown as { __ns: TestApp }).__ns.audio.muted)).toBe(true);
+  await page.waitForTimeout(600);
+  expect((await appState(page)).t).toBe(hidden.t);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  expect((await appState(page)).pauses).not.toContain('hidden');
 
-  // finish: via revive "give up" if dead, otherwise pause → end run
-  if (await page.locator('[data-test=revive-decline]').isVisible().catch(() => false)) {
-    await page.locator('[data-test=revive-decline]').click();
-  } else if ((await appState(page)).mode === 'run') {
-    await page.keyboard.press('Escape');
-    await page.locator('[data-test=quit]').click();
-    await page.locator('[data-test=confirm-yes]').click();
-  }
-  await expect(page.locator('[data-screen=results]')).toBeVisible({ timeout: 10_000 });
+  // the platform's own pause event (game_api_pause / resume)
+  await page.evaluate(() => (window as unknown as { __ns: { platform: { emitPause(): void } } }).__ns.platform.emitPause());
+  expect((await appState(page)).pauses).toContain('platform');
+  await page.evaluate(() => (window as unknown as { __ns: { platform: { emitResume(): void } } }).__ns.platform.emitResume());
+  expect((await appState(page)).pauses).not.toContain('platform');
+
+  // death → revive for a (mock) rewarded video → death again → results
+  const kill = () =>
+    page.evaluate(() => {
+      const a = (window as unknown as { __ns: { godMode: boolean; world: { player: { inv: number }; hurtPlayer(d: number, x: number, y: number): void } } }).__ns;
+      a.godMode = false;
+      a.world.player.inv = 0;
+      a.world.hurtPlayer(99999, 0, 0);
+    });
+  await kill();
+  await page.locator('[data-test=revive-ad]').click({ timeout: 15_000 });
+  await expect.poll(async () => (await appState(page)).state, { timeout: 15_000 }).toBe('playing');
+  expect((await platformLog(page))).toContain('ad:rewarded');
+  await page.waitForTimeout(800);
+  await kill();
+  // the ad revive is spent and there are no free revives: straight to the results
+  await expect(page.locator('[data-screen=results]')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('[data-test=revive-decline]')).toHaveCount(0);
   expect((await platformLog(page)).at(-1)).toBe('gameplay:stop');
 
   // ×2 bits through a (mock) rewarded video

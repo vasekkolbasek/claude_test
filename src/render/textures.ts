@@ -95,7 +95,7 @@ function ngon(ctx: CanvasRenderingContext2D, n: number, r: number, rot = 0): voi
   ctx.closePath();
 }
 
-function star(ctx: CanvasRenderingContext2D, n: number, r1: number, r2: number, rot = -Math.PI / 2): void {
+export function star(ctx: CanvasRenderingContext2D, n: number, r1: number, r2: number, rot = -Math.PI / 2): void {
   for (let i = 0; i < n * 2; i++) {
     const a = rot + (i / (n * 2)) * Math.PI * 2;
     const r = i % 2 === 0 ? r1 : r2;
@@ -105,7 +105,7 @@ function star(ctx: CanvasRenderingContext2D, n: number, r1: number, r2: number, 
   ctx.closePath();
 }
 
-const SHAPES: Record<ShapeId, PathFn> = {
+export const SHAPES: Record<ShapeId, PathFn> = {
   diamond: (c, r) => poly(c, [0, -1, 0.78, 0, 0, 1, -0.78, 0], r),
   triangle: (c, r) => poly(c, [1, 0, -0.75, 0.72, -0.35, 0, -0.75, -0.72], r),
   square: (c, r) => {
@@ -176,7 +176,7 @@ const SHAPES: Record<ShapeId, PathFn> = {
 };
 
 /** Neon stroke: coloured glow + coloured line + hot white core. */
-function neon(ctx: CanvasRenderingContext2D, path: () => void, color: number, line: number, glow: number, fillAlpha = 0.14): void {
+export function neon(ctx: CanvasRenderingContext2D, path: () => void, color: number, line: number, glow: number, fillAlpha = 0.14): void {
   const c = hex(color);
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
@@ -205,7 +205,7 @@ function neon(ctx: CanvasRenderingContext2D, path: () => void, color: number, li
   ctx.stroke();
 }
 
-function glowDot(ctx: CanvasRenderingContext2D, r: number, color: number, core = 0.35): void {
+export function glowDot(ctx: CanvasRenderingContext2D, r: number, color: number, core = 0.35): void {
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
   const c = mix(color, 0xffffff, 0);
   g.addColorStop(0, 'rgba(255,255,255,1)');
