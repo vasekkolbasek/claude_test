@@ -5,7 +5,7 @@ export const BALANCE = {
   player: {
     radius: 14,
     baseSpeed: 150,
-    baseMagnet: 58,
+    baseMagnet: 72,
     invulnAfterHit: 0.45,
     reviveInvuln: 3,
   },
@@ -18,10 +18,18 @@ export const BALANCE = {
   /** while a boss is alive the director spawns this fraction of the usual */
   bossSpawnFactor: 0.45,
   /** per minute enemy HP growth: hpMult = 1 + a*m + b*m^2 */
-  hpGrowth: { a: 0.1, b: 0.014 },
+  hpGrowth: { a: 0.18, b: 0.045 },
+  /** enemy HP also scales with the player's level (rubber band against snowballing) */
+  hpPerLevel: 0.025,
+  /** rate-based spawns stop above this multiple of the wave minimum */
+  overflowCap: 1.6,
   /** endless mode: extra growth after bossTime */
   endlessHpGrowth: 0.22,
-  dmgGrowth: 0.045,
+  dmgGrowth: 0.1,
+  /** enemy speed grows by this fraction per minute */
+  speedGrowth: 0.025,
+  /** normal mode: seconds after the final boss appears before overtime pressure kicks in */
+  overtimeAfter: 100,
   eliteHpMult: 5,
   eliteXpMult: 6,
   eliteScale: 1.45,
@@ -37,9 +45,9 @@ export const BALANCE = {
   passiveRarityMult: [1, 1.5, 2, 2.75] as const,
   weaponRarityDmgBonus: [0, 0.12, 0.2, 0.35] as const,
   bits: {
-    perMinute: 9,
-    perKill: 0.045,
-    perLevel: 1.5,
+    perMinute: 12,
+    perKill: 0.01,
+    perLevel: 1,
     perMiniBoss: 20,
     win: 120,
   },
@@ -69,7 +77,7 @@ export const BASE_STATS: PlayerStats = {
 /** XP needed to go from `level` to `level + 1`. */
 export function xpForLevel(level: number): number {
   const l = level - 1;
-  return Math.round(5 + 6 * l + 0.32 * l * l);
+  return Math.round(5 + 8 * l + 0.55 * l * l);
 }
 
 export function rarityWeights(luck: number): number[] {

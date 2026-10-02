@@ -211,7 +211,7 @@ function megaTrojan(w: World, e: Enemy, nx: number, ny: number, spd: number, dt:
   } else if (e.state === 1) {
     e.ang += dt * 6;
     e.flash = Math.sin(e.t2 * 30) > 0 ? 0.04 : 0;
-    if (e.t2 >= 0.65) {
+    if (e.t2 >= 0.85) {
       e.state = 2;
       e.t2 = 0;
       w.events.push(EV.DASH, e.x, e.y, e.def.color);
@@ -253,9 +253,9 @@ function cryptolocker(w: World, e: Enemy, nx: number, ny: number, d: number, spd
     }
     w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
   }
-  if (e.t2 >= 10) {
+  if (e.t2 >= 12) {
     e.t2 = 0;
-    e.maxShield = e.maxHp * 0.12;
+    e.maxShield = e.maxHp * 0.08;
     e.shield = e.maxShield;
   }
 }
@@ -287,7 +287,9 @@ function hydra(w: World, e: Enemy, nx: number, ny: number, spd: number, dt: numb
 
 function chaosCore(w: World, e: Enemy, nx: number, ny: number, d: number, spd: number, dt: number): void {
   const frac = e.hp / e.maxHp;
-  const phase = frac > 0.66 ? 0 : frac > 0.33 ? 1 : 2;
+  // enrage after ~100 s: straight to the final phase, faster and angrier
+  const enraged = e.age > 90;
+  const phase = enraged ? 2 : frac > 0.66 ? 0 : frac > 0.33 ? 1 : 2;
   if (phase !== e.state) {
     e.state = phase;
     e.t = 0;
@@ -298,7 +300,7 @@ function chaosCore(w: World, e: Enemy, nx: number, ny: number, d: number, spd: n
   }
   const sp = p(e, 'bulletSpeed', 160);
   const dmg = p(e, 'bulletDmg', 14);
-  const speedMul = phase === 2 ? 1.5 : 1;
+  const speedMul = enraged ? 4 : phase === 2 ? 1.5 : 1;
   // drift to a comfortable distance
   if (e.ty > 0) {
     // dashing
@@ -313,7 +315,7 @@ function chaosCore(w: World, e: Enemy, nx: number, ny: number, d: number, spd: n
   if (phase === 0) {
     if (e.t >= 2) {
       e.t = 0;
-      const n = 16;
+      const n = 20;
       const off = (Math.floor(e.t2 / 2) % 2) * (Math.PI / n);
       for (let i = 0; i < n; i++) w.fireEnemyBullet(e.x, e.y, off + (i / n) * TAU, sp, dmg, 0xff2a55, 9);
       w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
@@ -328,8 +330,8 @@ function chaosCore(w: World, e: Enemy, nx: number, ny: number, d: number, spd: n
   } else {
     // spiral volley: on for 3 s, off for 1.5 s
     const cycle = e.t2 % 4.5;
-    const interval = phase === 1 ? 0.13 : 0.1;
-    const arms = phase === 1 ? 2 : 3;
+    const interval = enraged ? 0.07 : phase === 1 ? 0.13 : 0.1;
+    const arms = enraged ? 4 : phase === 1 ? 2 : 3;
     if (cycle < 3 && e.t >= interval) {
       e.t = 0;
       e.aux += 0.32; // spiral angle

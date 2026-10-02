@@ -59,9 +59,10 @@ export class Bot {
       const dx = p.x - e.x;
       const dy = p.y - e.y;
       const d = Math.hypot(dx, dy) || 1;
-      const range = sense + e.r + (e.def.boss ? 120 : 0);
+      const healthy = p.hp > w.stats.maxHp * 0.6;
+      const range = sense + e.r + (e.def.boss ? (healthy ? 40 : 120) : 0);
       if (d > range) continue;
-      const wgt = Math.pow((range - d) / range, 2) * (e.def.boss ? 3 : 1) * (1 + e.dmg / 20);
+      const wgt = Math.pow((range - d) / range, 2) * (e.def.boss ? (healthy ? 1.5 : 3) : 1) * (1 + e.dmg / 20);
       ax += (dx / d) * wgt;
       ay += (dy / d) * wgt;
     }

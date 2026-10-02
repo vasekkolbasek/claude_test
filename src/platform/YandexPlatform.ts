@@ -97,10 +97,18 @@ export class YandexPlatform implements Platform {
         hooks.onClose?.();
         resolve();
       };
+      let opened = false;
+      // safety net: if the SDK never reports anything, do not leave the game hanging
+      setTimeout(() => {
+        if (!opened) finish();
+      }, 12_000);
       try {
         hooks.onOpen?.();
         this.sdk.adv.showFullscreenAdv({
           callbacks: {
+            onOpen: () => {
+              opened = true;
+            },
             onClose: () => finish(),
             onError: (e) => {
               console.warn('[ysdk] fullscreen ad error', e);
@@ -126,10 +134,17 @@ export class YandexPlatform implements Platform {
         hooks.onClose?.();
         resolve(rewarded);
       };
+      let opened = false;
+      setTimeout(() => {
+        if (!opened) finish();
+      }, 12_000);
       try {
         hooks.onOpen?.();
         this.sdk.adv.showRewardedVideo({
           callbacks: {
+            onOpen: () => {
+              opened = true;
+            },
             onRewarded: () => {
               rewarded = true;
             },

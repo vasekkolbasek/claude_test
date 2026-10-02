@@ -38,6 +38,8 @@ export class Enemy implements GridItem {
   ty = 0;
   /** extra AI scratch value */
   aux = 0;
+  /** seconds alive */
+  age = 0;
   slow = 0;
   /** gives no reward when it dies by its own hand (bomber) */
   noReward = false;

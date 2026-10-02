@@ -165,6 +165,8 @@ export class World {
   private readonly evScratch: WaveEvent[] = [];
   private readonly spawnQueue: { id: EnemyId; x: number; y: number; elite: boolean }[] = [];
   private magnetT = 0;
+  private frame = 0;
+  private rosterWeights: number[] = [];
 
   constructor(cfg: RunConfig) {
     this.cfg = cfg;
@@ -444,6 +446,7 @@ export class World {
       if (def.boss === 'mini') {
         this.run.miniBosses++;
         this.dropGem(e.x, e.y, GEM_CHEST, 1);
+        this.dropGem(e.x + 30, e.y, GEM_HEAL, 0);
       } else {
         this.run.bossKills++;
         if (this.boss === e) this.boss = null;
@@ -483,13 +486,21 @@ export class World {
 
   dropGem(x: number, y: number, kind: number, value: number): Gem {
     if (kind === GEM_XP && this.gems.length >= BALANCE.maxGems) {
-      // fuse into the oldest crystal instead of growing the list
+      // fuse into the nearest crystal instead of growing the list (keeps XP close to the action)
+      let best: Gem | null = null;
+      let bd = Infinity;
       for (const g of this.gems) {
-        if (g.alive && g.kind === GEM_XP && !g.pulled) {
-          g.value += value;
-          g.tier = gemTier(g.value);
-          return g;
+        if (!g.alive || g.kind !== GEM_XP || g.pulled) continue;
+        const d = (g.x - x) * (g.x - x) + (g.y - y) * (g.y - y);
+        if (d < bd) {
+          bd = d;
+          best = g;
         }
+      }
+      if (best) {
+        best.value += value;
+        best.tier = gemTier(best.value);
+        return best;
       }
     }
     const g = this.gemPool.get();
@@ -517,7 +528,9 @@ export class World {
     e.y = y;
     e.kx = 0;
     e.ky = 0;
-    const hpMult = def.boss ? this.sector.hpMult * (1 + 0.04 * (this.t / 60)) * (this.mode === 'endless' && this.t > BALANCE.bossTime ? 1 + (this.t - BALANCE.bossTime) / 240 : 1) : this.wave.hpMult;
+    const levelMult = 1 + BALANCE.hpPerLevel * (this.player.level - 1);
+    // bosses follow the same time curve as the swarm (and a softer level curve)
+    const hpMult = def.boss ? this.wave.hpMult * Math.sqrt(levelMult) : this.wave.hpMult * levelMult;
     e.elite = elite && !def.boss;
     e.maxHp = def.hp * hpMult * (e.elite ? BALANCE.eliteHpMult : 1);
     e.hp = e.maxHp;
@@ -525,7 +538,9 @@ export class World {
     e.shield = e.maxShield;
     e.sinceHit = 99;
     e.r = def.r * (e.elite ? BALANCE.eliteScale : 1);
-    e.speed = def.speed * this.sector.speedMult * (def.boss ? 1 : this.rng.range(0.9, 1.1)) * (e.elite ? 0.9 : 1);
+    const overtime = this.mode === 'normal' && this.t > BALANCE.bossTime + BALANCE.overtimeAfter;
+    const speedGrowth = (1 + BALANCE.speedGrowth * Math.min(this.t / 60, 16)) * (overtime && !def.boss ? 1.6 : 1);
+    e.speed = def.speed * this.sector.speedMult * speedGrowth * (def.boss ? 1 : this.rng.range(0.9, 1.1)) * (e.elite ? 0.9 : 1);
     e.dmg = def.dmg * this.wave.dmgMult * (e.elite ? 1.5 : 1);
     e.xp = def.xp * (e.elite ? BALANCE.eliteXpMult : 1);
     e.flash = 0;
@@ -539,6 +554,7 @@ export class World {
     e.tx = 0;
     e.ty = 0;
     e.aux = 0;
+    e.age = 0;
     e.slow = 0;
     e.noReward = false;
     e.hitT.fill(-99);
@@ -668,9 +684,11 @@ export class World {
     let regular = 0;
     for (const e of this.enemies) if (!e.def.boss) regular++;
     const bossFactor = this.bosses.length > 0 ? BALANCE.bossSpawnFactor : 1;
-    const min = w.min * bossFactor;
+    // overtime: the Chaos Core has been up too long in normal mode — the swarm stops holding back
+    const overtime = this.mode === 'normal' && this.t > BALANCE.bossTime + BALANCE.overtimeAfter;
+    const min = overtime ? w.min * 2.5 : w.min * bossFactor;
     if (regular < min) this.spawnAcc += (min - regular) * dt * 2.5;
-    this.spawnAcc += w.rate * bossFactor * dt;
+    if (overtime || regular < min * BALANCE.overflowCap) this.spawnAcc += w.rate * (overtime ? 3 : bossFactor) * dt;
     const pt = { x: 0, y: 0 };
     let guard = 0;
     while (this.spawnAcc >= 1 && guard++ < 40) {
@@ -679,7 +697,10 @@ export class World {
         this.spawnAcc = 0;
         break;
       }
-      const i = this.rng.weighted(w.roster.map((r) => r[1]));
+      const rw = this.rosterWeights;
+      rw.length = w.roster.length;
+      for (let k = 0; k < w.roster.length; k++) rw[k] = w.roster[k][1];
+      const i = this.rng.weighted(rw);
       if (i < 0) break;
       this.spawnPoint(pt);
       this.spawnEnemy(w.roster[i][0], pt.x, pt.y, this.rng.chance(w.elite));
@@ -752,6 +773,7 @@ export class World {
     for (const e of this.enemies) {
       if (!e.alive) continue;
       if (e.spawnT < 1) e.spawnT = Math.min(1, e.spawnT + dt * 3);
+      e.age += dt;
       if (e.flash > 0) e.flash -= dt;
       if (e.slow > 0) e.slow -= dt;
       updateEnemy(this, e, dt);
@@ -780,15 +802,16 @@ export class World {
       }
       grid.insert(e);
     }
-    // soft separation + contact damage
+    // soft separation (each enemy every other frame) + contact damage
     const near = sepNear;
+    const parity = this.frame++ & 1;
     for (const e of this.enemies) {
       if (!e.alive) continue;
       const dxp = p.x - e.x;
       const dyp = p.y - e.y;
       const rr = p.r + e.r * 0.85;
       if (dxp * dxp + dyp * dyp < rr * rr && e.spawnT > 0.6) this.hurtPlayer(e.dmg, e.x, e.y);
-      if (e.def.boss) continue;
+      if (e.def.boss || (e.uid & 1) !== parity) continue;
       grid.query(e.x, e.y, e.r * 2, near);
       let n = 0;
       for (let i = 0; i < near.length && n < 6; i++) {
@@ -800,7 +823,7 @@ export class World {
         const d2 = dx * dx + dy * dy;
         if (d2 < min * min && d2 > 0.0001) {
           const d = Math.sqrt(d2);
-          const push = ((min - d) / d) * 0.35;
+          const push = ((min - d) / d) * 0.6;
           const wE = o.def.boss ? 1 : 0.5;
           e.x += dx * push * wE * 2;
           e.y += dy * push * wE * 2;

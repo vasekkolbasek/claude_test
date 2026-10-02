@@ -434,4 +434,5 @@ export const tr: Dict = {
   'res.bestTime': "Sektör rekoru: {t}",
   'ch.free': "Başarımla açıldı",
   'prerun.endlessHint': "Olabildiğince uzun hayatta kal. En iyi süren liderlik tablosuna girer.",
+  'hud.tapToContinue': "Devam etmek için dokun",
 };

@@ -434,4 +434,5 @@ export const en: Dict = {
   'res.bestTime': "Sector best: {t}",
   'ch.free': "Unlocked by achievement",
   'prerun.endlessHint': "Survive as long as you can. Your best time goes to the leaderboard.",
+  'hud.tapToContinue': "Tap to continue",
 };

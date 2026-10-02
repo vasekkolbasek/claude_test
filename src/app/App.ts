@@ -68,6 +68,8 @@ export class App {
   private tutorial: Tutorial | null = null;
   private quality!: QualityController;
   private runMenuMusic = false;
+  private debugEl: HTMLElement | null = null;
+  private dbg = { acc: 0, frames: 0, sim: 0, view: 0 };
 
   constructor(readonly platform: Platform) {}
 
@@ -118,6 +120,10 @@ export class App {
     this.onResize();
     window.addEventListener('resize', () => this.onResize());
     this.pixi.ticker.add((tk) => this.tick(Math.min(tk.deltaMS / 1000, 0.1)));
+    if (new URLSearchParams(location.search).has('debug')) {
+      this.debugEl = Object.assign(document.createElement('div'), { className: 'debug-overlay' });
+      document.body.appendChild(this.debugEl);
+    }
     this.goMenu(false);
   }
 
@@ -185,7 +191,31 @@ export class App {
     else this.platform.gameplayStop();
     const running = inRun && this.pauses.size === 0 && this.world?.state === 'playing';
     this.input.setEnabled(running);
+    // visible but unfocused (e.g. focus stayed on the host page after an ad): offer a tap to continue
+    const needTap = inRun && this.pauses.has('hidden') && document.visibilityState === 'visible' && !this.pauses.has('ad');
+    this.setTapOverlay(needTap);
     this.audio.setMusicMuffled(inRun && (this.pauses.has('user') || this.pauses.has('levelup') || this.pauses.has('revive')));
+  }
+
+  private tapEl: HTMLElement | null = null;
+
+  private setTapOverlay(on: boolean): void {
+    if (on && !this.tapEl) {
+      const el = document.createElement('button');
+      el.className = 'tap-overlay';
+      el.textContent = t('hud.tapToContinue');
+      el.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        window.focus();
+        this.setPause('hidden', false);
+        this.audio.mute('hidden', false);
+      });
+      document.body.appendChild(el);
+      this.tapEl = el;
+    } else if (!on && this.tapEl) {
+      this.tapEl.remove();
+      this.tapEl = null;
+    }
   }
 
   get running(): boolean {
@@ -353,14 +383,18 @@ export class App {
     this.input.update();
     this.quality.sample(dt);
     const w = this.world;
+    const t0 = performance.now();
+    let t1 = t0;
     if ((this.mode === 'run' || this.mode === 'results') && w) {
       if (this.mode === 'run') this.stepRun(w, dt);
+      t1 = performance.now();
       const frozen = this.mode === 'run' && this.pauses.size > 0 && this.deathT <= 0;
       this.view.render(w, frozen ? 0 : dt);
       if (this.mode === 'run') this.hud.update(w);
     } else {
       this.view.renderAttract(dt);
     }
+    if (this.debugEl) this.debugTick(dt, t1 - t0, performance.now() - t1);
     if (this.gemComboT > 0) {
       this.gemComboT -= dt;
       if (this.gemComboT <= 0) this.gemCombo = 0;
@@ -495,6 +529,18 @@ export class App {
       this.runMenuMusic = true;
       this.audio.setMusic('run');
     }
+  }
+
+  private debugTick(dt: number, sim: number, view: number): void {
+    const d = this.dbg;
+    d.acc += dt;
+    d.frames++;
+    d.sim += sim;
+    d.view += view;
+    if (d.acc < 0.5 || !this.debugEl) return;
+    const w = this.world;
+    this.debugEl.textContent = `${Math.round(d.frames / d.acc)} fps | sim ${(d.sim / d.frames).toFixed(2)} ms | view ${(d.view / d.frames).toFixed(2)} ms | q${this.quality.level} | e ${w?.enemies.length ?? 0} b ${w?.bullets.length ?? 0} g ${w?.gems.length ?? 0} fx ${this.view.stats().particles}`;
+    d.acc = d.frames = d.sim = d.view = 0;
   }
 
   sfx(id: SfxId, vol = 1, rate = 1): void {
