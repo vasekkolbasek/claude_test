@@ -74,6 +74,8 @@ try {
     ['icon', 'ru', 512, 512, 'icon-512.png'],
     ['cover', 'ru', 800, 470, 'cover-800x470-ru.png'],
     ['cover', 'en', 800, 470, 'cover-800x470-en.png'],
+    ['hero', 'ru', 1560, 520, 'hero-1560x520-ru.png'],
+    ['hero', 'en', 1560, 520, 'hero-1560x520-en.png'],
   ]) {
     const p = await browser.newPage({ viewport: { width: w, height: h } });
     await p.goto(`${BASE}?art=${kind}&lang=${lang}`);
@@ -82,7 +84,7 @@ try {
     await p.close();
     console.log('✓', file);
   }
-  for (const lang of ['ru', 'en']) {
+  for (const lang of process.argv.includes('--art-only') ? [] : ['ru', 'en']) {
     for (const set of SETS) {
       let i = 0;
       for (const scene of set.scenes) {

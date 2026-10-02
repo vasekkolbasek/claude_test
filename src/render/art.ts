@@ -50,7 +50,7 @@ function dust(ctx: CanvasRenderingContext2D, w: number, h: number, n: number, r:
   for (let i = 0; i < n; i++) {
     const x = r() * w;
     const y = r() * h;
-    const s = (0.5 + r() * 1.8) * (w / 512);
+    const s = (0.5 + r() * 1.8) * (Math.min(w, h) / 512);
     ctx.fillStyle = r() < 0.5 ? 'rgba(41,246,255,0.55)' : 'rgba(255,61,242,0.45)';
     ctx.shadowColor = ctx.fillStyle;
     ctx.shadowBlur = s * 4;
@@ -205,7 +205,7 @@ export function drawCover(c: HTMLCanvasElement, title: string, tagline: string):
   const h = c.height;
   const ctx = c.getContext('2d') as CanvasRenderingContext2D;
   const r = rng(29);
-  const u = h / 470;
+  const u = Math.min(h / 470, w / 800);
   const px = w * 0.25;
   const py = h * 0.76;
   background(ctx, w, h, w * 0.45, h * 0.55);

@@ -58,6 +58,7 @@ export class App {
 
   private hitStop = 0;
   private deathT = 0;
+  private winT = 0;
   private lastInterstitial = Date.now();
   private adBusy = false;
   private reviveAdUsed = false;
@@ -122,6 +123,7 @@ export class App {
     this.onResize();
     window.addEventListener('resize', () => this.onResize());
     this.pixi.ticker.add((tk) => this.tick(Math.min(tk.deltaMS / 1000, 0.1)));
+    if (this.testFlow && new URLSearchParams(location.search).has('capture')) this.pixi.ticker.stop();
     if (new URLSearchParams(location.search).has('debug')) {
       this.debugEl = Object.assign(document.createElement('div'), { className: 'debug-overlay' });
       document.body.appendChild(this.debugEl);
@@ -317,6 +319,7 @@ export class App {
     this.rerollAdUsed = false;
     this.levelUpOpen = false;
     this.deathT = 0;
+    this.winT = 0;
     this.hitStop = 0;
     this.pauses.delete('user');
     this.pauses.delete('levelup');
@@ -330,7 +333,7 @@ export class App {
   }
 
   openPauseMenu(): void {
-    if (this.mode !== 'run' || !this.world || this.pauses.has('user') || this.pauses.has('revive') || this.deathT > 0) return;
+    if (this.mode !== 'run' || !this.world || this.pauses.has('user') || this.pauses.has('revive') || this.deathT > 0 || this.winT > 0) return;
     if (this.world.state !== 'playing' && this.world.state !== 'levelup') return;
     this.setPause('user', true);
     openPause(this, () => this.setPause('user', false));
@@ -364,6 +367,12 @@ export class App {
     }
   }
 
+  /** Capture hook: advance exactly one frame of `dt` seconds and render it (ticker stopped). */
+  captureFrame(dt: number): void {
+    this.tick(dt);
+    this.pixi.render();
+  }
+
   /** Test hook: hand control to the steering bot (also auto-picks upgrades). */
   enableBot(skill = 0.6): void {
     this.bot = new Bot({ skill, seed: 99 });
@@ -393,7 +402,7 @@ export class App {
     if ((this.mode === 'run' || this.mode === 'results') && w) {
       if (this.mode === 'run') this.stepRun(w, dt);
       t1 = performance.now();
-      const frozen = this.mode === 'run' && this.pauses.size > 0 && this.deathT <= 0;
+      const frozen = this.mode === 'run' && this.pauses.size > 0 && this.deathT <= 0 && this.winT <= 0;
       this.view.render(w, frozen ? 0 : dt);
       if (this.mode === 'run') this.hud.update(w);
     } else {
@@ -407,6 +416,12 @@ export class App {
   }
 
   private stepRun(w: World, dt: number): void {
+    if (this.winT > 0) {
+      // victory slow-motion: let the Chaos Core's explosion play out before the results
+      this.winT -= dt;
+      if (this.winT <= 0) this.finishRun(true);
+      return;
+    }
     if (this.deathT > 0) {
       this.deathT -= dt;
       if (this.deathT <= 0) this.onDeath();
@@ -438,7 +453,11 @@ export class App {
     }
     if (w.state === 'levelup' && !this.levelUpOpen) this.openLevelUp(w);
     else if (w.state === 'dead' && !this.pauses.has('death') && !this.pauses.has('revive')) this.startDeath(w);
-    else if (w.state === 'won') this.finishRun(true);
+    else if (w.state === 'won' && this.winT <= 0) {
+      this.winT = 1.7;
+      this.input.setEnabled(false);
+      this.audio.setMusicMuffled(true);
+    }
   }
 
   private onEvents(w: World): void {
@@ -674,6 +693,7 @@ export class App {
     this.levelUpOpen = false;
     this.mode = 'results';
     this.deathT = 0;
+    this.winT = 0;
     this.pauses.delete('user');
     this.pauses.delete('levelup');
     this.pauses.delete('revive');

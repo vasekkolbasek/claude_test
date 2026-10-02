@@ -30,6 +30,10 @@ async function renderArt(kind: string): Promise<void> {
   if (kind === 'icon') {
     c.width = c.height = 512;
     drawIcon(c);
+  } else if (kind === 'hero') {
+    c.width = 1560;
+    c.height = 520;
+    drawCover(c, t('game.title'), t('game.tagline'));
   } else {
     c.width = 800;
     c.height = 470;
