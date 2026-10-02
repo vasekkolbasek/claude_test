@@ -80,7 +80,7 @@ export class TerrainView {
       }
       if (h < 0.15) _c.lerp(sand, smoothstep(0.15, -0.05, h));
       if (h < -0.25) _c.copy(bed).lerp(sand, smoothstep(-1.0, -0.25, h) * 0.6);
-      if (slope > 0.6 || h > 2.6) _c.lerp(slope > 1.1 ? cliff : rock, smoothstep(0.6, 1.0, slope) * 0.9 + smoothstep(2.6, 4.5, h) * 0.6);
+      if (slope > 0.6 || h > 2.6) _c.lerp(slope > 1.1 ? cliff : rock, Math.min(1, smoothstep(0.6, 1.0, slope) * 0.9 + smoothstep(2.6, 4.5, h) * 0.6));
       if (h > 7.5) _c.lerp(snow, smoothstep(7.5, 9, h));
       const j = 1 + (rng.next() - 0.5) * 0.035;
       _c.multiplyScalar(j);

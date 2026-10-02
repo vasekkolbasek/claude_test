@@ -36,7 +36,7 @@ describe('upgrade tree', () => {
   it('tier-2 mods actually improve the specialisation', () => {
     expect(BNODES.tower_archer_keen.stats.attack!.damage).toBeGreaterThan(BNODES.tower_archer.stats.attack!.damage);
     expect(BNODES.tower_ballista_volley.stats.attack!.multishot).toBe(3);
-    expect(BNODES.farm_mill_harvest.stats.income).toBe(3);
+    expect(BNODES.farm_mill_harvest.stats.income).toBe(BNODES.farm_mill.stats.income! + 1);
     expect(BNODES.barracks_spear_veterans.stats.troops!.count).toBe(4);
     expect(BNODES.wall_stone_reinforced.stats.hp).toBeGreaterThan(BNODES.wall_stone.stats.hp);
   });

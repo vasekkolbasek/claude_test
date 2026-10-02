@@ -180,7 +180,7 @@ export class Bot {
       if (s.troops) v += s.troops.count * 4 * pressure * this.coverage(b, active, 10);
       if (b.kind === 'wall') v += (active.has(b.slot.path!) ? 7 : 1.5) * pressure * this.o.skill + (1 - this.o.skill) * 3;
       if (b.kind === 'forge') v += 6 * pressure;
-      if (b.kind === 'castle') v += 4 * pressure;
+      if (b.kind === 'castle') v += (g.cfg.endless || g.night >= g.map.nights - 2 ? 14 : 4) * pressure;
       v += (s.hp - (prev?.stats.hp ?? 0)) / 150;
       const sc = v / act.cost + this.r() * this.o.noise;
       if (sc > bs) { bs = sc; best = b; }

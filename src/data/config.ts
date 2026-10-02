@@ -8,7 +8,7 @@ export const CONFIG = {
   interstitialCooldownMs: 65000,
   hero: { hp: 220, speed: 8.2, regen: 14, regenDelay: 3, respawn: 7, radius: 0.7, buildRadius: 2.6 },
   build: { secondsPerCoin: 0.09, minHold: 0.45, maxHold: 1.4 },
-  economy: { castleIncome: 3, cleanBonus: 2, startCoins: 8 },
+  economy: { castleIncome: 4, cleanBonus: 3, startCoins: 10 },
   dawnSeconds: 3.2,
   duskSeconds: 2.2,
   rewardCoins: 5,

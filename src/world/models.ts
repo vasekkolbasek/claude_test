@@ -513,7 +513,7 @@ export function unitGeometry(id: UnitId): THREE.BufferGeometry {
       mb.ico(0.32, MIST, 0, 1.68, 0.05);
       eyes(mb, 1.7, 0.32, 0.12, 0xff6a5a);
       mb.cone(0.08, 0.45, 4, 0xe9e2d0, -0.3, 1.8, 0, { rz: 0.6 }).cone(0.08, 0.45, 4, 0xe9e2d0, 0.3, 1.8, 0, { rz: -0.6 });
-      mb.cyl(0.36, 0.36, 0.14, 6, C.gold, 0, 1.92, 0.05, { glow: 1.8 });
+      for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2; mb.cone(0.05, 0.16, 4, C.gold, Math.sin(a) * 0.22, 1.9, 0.05 + Math.cos(a) * 0.22, { glow: 1.6 }); }
       mb.boxB(0.28, 0.75, 0.28, MIST2, -0.68, 0.6, 0).boxB(0.28, 0.75, 0.28, MIST2, 0.68, 0.6, 0.1);
       mb.boxB(0.12, 1.2, 0.5, C.iron, 0.78, 0.4, 0.45, { rx: 0.6 });
       break;

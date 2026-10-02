@@ -77,10 +77,10 @@ export const BUILD_RADIUS: Record<BKind, number> = {
 
 const KINDS: Record<BKind, KindDef> = {
   castle: {
-    base: { cost: 0, stats: { hp: 600, income: 3, attack: { damage: 6, range: 9, cooldown: 1.2, projectile: 'arrow' } } },
+    base: { cost: 0, stats: { hp: 800, income: 4, attack: { damage: 6, range: 9, cooldown: 1.2, projectile: 'arrow' } } },
     specs: [
-      { id: 'citadel', cost: 10, stats: { hp: 950, income: 3, attack: { damage: 8, range: 10, cooldown: 0.75, projectile: 'arrow' } } },
-      { id: 'court', cost: 10, stats: { hp: 700, income: 6, attack: { damage: 6, range: 9, cooldown: 1.1, projectile: 'arrow' } } },
+      { id: 'citadel', cost: 10, stats: { hp: 1250, income: 4, attack: { damage: 8, range: 10, cooldown: 0.75, projectile: 'arrow' } } },
+      { id: 'court', cost: 10, stats: { hp: 900, income: 7, attack: { damage: 6, range: 9, cooldown: 1.1, projectile: 'arrow' } } },
     ],
     modCost: 18,
     mods: [{ id: 'bastions', hpMul: 1.5, multishotAdd: 1 }, { id: 'treasury', incomeAdd: 3 }],
@@ -131,28 +131,28 @@ const KINDS: Record<BKind, KindDef> = {
     mods: [{ id: 'firearrows', burnAdd: 4 }, { id: 'squad', troopsAdd: 1, hpTroopsAdd: 0.3 }],
   },
   farm: {
-    base: { cost: 3, stats: { hp: 90, income: 1 } },
+    base: { cost: 3, stats: { hp: 90, income: 2 } },
     specs: [
-      { id: 'mill', cost: 5, stats: { hp: 110, income: 2 } },
-      { id: 'militia', cost: 5, stats: { hp: 130, income: 1, troops: { unit: 'militia', count: 2 } } },
+      { id: 'mill', cost: 5, stats: { hp: 110, income: 3 } },
+      { id: 'militia', cost: 5, stats: { hp: 130, income: 2, troops: { unit: 'militia', count: 2 } } },
     ],
     modCost: 8,
     mods: [{ id: 'harvest', incomeAdd: 1 }, { id: 'fence', hpMul: 2.5, troopsAdd: 1 }],
   },
   mine: {
-    base: { cost: 7, stats: { hp: 140, income: 2 } },
+    base: { cost: 7, stats: { hp: 140, income: 3 } },
     specs: [
-      { id: 'deep', cost: 8, stats: { hp: 150, income: 4 } },
-      { id: 'fort', cost: 8, stats: { hp: 320, income: 3, attack: { damage: 6, range: 8, cooldown: 1.1, projectile: 'arrow' } } },
+      { id: 'deep', cost: 8, stats: { hp: 150, income: 5 } },
+      { id: 'fort', cost: 8, stats: { hp: 320, income: 4, attack: { damage: 6, range: 8, cooldown: 1.1, projectile: 'arrow' } } },
     ],
     modCost: 12,
     mods: [{ id: 'vein', incomeAdd: 2 }, { id: 'vaults', hpMul: 2, incomeAdd: 1 }],
   },
   fish: {
-    base: { cost: 4, stats: { hp: 80, income: 1 } },
+    base: { cost: 4, stats: { hp: 80, income: 2 } },
     specs: [
-      { id: 'pier', cost: 6, stats: { hp: 100, income: 3 } },
-      { id: 'market', cost: 6, stats: { hp: 110, income: 2, cleanBonus: 2 } },
+      { id: 'pier', cost: 6, stats: { hp: 100, income: 4 } },
+      { id: 'market', cost: 6, stats: { hp: 110, income: 3, cleanBonus: 2 } },
     ],
     modCost: 9,
     mods: [{ id: 'nets', incomeAdd: 1 }, { id: 'stilts', hpMul: 2.5, cleanAdd: 1 }],

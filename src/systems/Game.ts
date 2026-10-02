@@ -416,7 +416,7 @@ export class Game {
     // Dawn: income, repairs, troops.
     const parts: { b: Building; n: number }[] = [];
     let clean = true;
-    for (const b of this.buildings) if (b.lostThisNight) clean = false;
+    for (const b of this.buildings) if (b.lostThisNight && b.kind !== 'wall') clean = false;
     let total = 0;
     for (const b of this.buildings) {
       if (!b.alive) continue;

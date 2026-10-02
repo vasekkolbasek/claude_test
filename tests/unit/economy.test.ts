@@ -17,8 +17,8 @@ function clearNight(g: Game): void {
 
 describe('economy', () => {
   it('starts with map coins and perk bonus', () => {
-    expect(mk().coins).toBe(8);
-    expect(mk({ perks: ['purse'] }).coins).toBe(12);
+    expect(mk().coins).toBe(10);
+    expect(mk({ perks: ['purse'] }).coins).toBe(14);
   });
 
   it('pays castle income + clean bonus at dawn', () => {
@@ -44,8 +44,8 @@ describe('economy', () => {
       for (const u of g.units) if (u.team === 1) u.alive = false;
       g.update(0.05);
     }
-    // castle 3 + farm 1, no clean bonus because the mine fell
-    expect(g.coins - before).toBe(4);
+    // castle + farm, no clean bonus because the mine fell
+    expect(g.coins - before).toBe(BNODES.castle.stats.income! + BNODES.farm.stats.income!);
     expect(mine.ruined).toBe(false); // repaired at dawn
   });
 
@@ -53,8 +53,8 @@ describe('economy', () => {
     const g = mk({ mutators: ['poverty'], perks: ['tithe'] });
     const before = g.coins;
     clearNight(g);
-    // floor(3*0.7)=2 + clean 2 + tithe 1
-    expect(g.coins - before).toBe(5);
+    // floor(castle*0.7) + clean bonus + tithe 1
+    expect(g.coins - before).toBe(Math.floor(BNODES.castle.stats.income! * 0.7) + CONFIG.economy.cleanBonus + 1);
   });
 
   it('advances to the next day after dawn and to victory after the last night', () => {

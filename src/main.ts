@@ -3,6 +3,8 @@ import { App } from './app';
 import { capturedErrors, installErrorHandlers } from './core/errors';
 import { normalizeLang, setLang, t } from './i18n';
 import { createPlatform } from './platform';
+import { BNODES } from './data/buildings';
+import { UNIT_IDS } from './data/units';
 
 declare global {
   interface Window { __lb?: unknown }
@@ -43,7 +45,7 @@ async function boot(): Promise<void> {
   setTimeout(() => loading?.remove(), 500);
   app.ready();
   const q = location.search;
-  if (/[?&](test|shot)/.test(q)) window.__lb = { app, errors: capturedErrors };
+  if (/[?&](test|shot)/.test(q)) window.__lb = { app, errors: capturedErrors, BNODES, UNIT_IDS };
 }
 
 void boot().catch((e) => {

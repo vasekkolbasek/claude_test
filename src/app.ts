@@ -549,6 +549,37 @@ export class App implements UiHost {
     g.timeScale = scale;
   }
 
+  /** Test/screenshot hook: stage a scene. */
+  debugSetup(o: { tier?: number; spec?: number; coins?: number; night?: number; phase?: 'day' | 'night'; spawn?: string[]; spawnPath?: number; spawnS?: number; hero?: [number, number]; facing?: number; dayness?: number; hideHud?: boolean; zoom?: number; target?: [number, number]; skip?: string[] }): void {
+    const g = this.game;
+    if (!g) return;
+    if (o.tier !== undefined) {
+      for (const b of g.buildings) {
+        if (o.skip?.includes(b.slot.id)) continue;
+        let node = BNODES[b.kind];
+        const spec = (o.spec ?? (b.id % 2));
+        if (o.tier >= 1) node = BNODES[node.next[spec]];
+        if (o.tier >= 2) node = BNODES[node.next[(b.id >> 1) % 2]];
+        g.applyNode(b, node, false, true);
+      }
+    }
+    if (o.coins !== undefined) g.coins = o.coins;
+    if (o.night !== undefined) { g.night = o.night; g.plan = g.makePlan(); }
+    if (o.phase === 'night') { g.startNight(); g.nightTime = 0; }
+    if (o.hero) { g.hero.x = o.hero[0]; g.hero.z = o.hero[1]; }
+    if (o.facing !== undefined) g.hero.facing = o.facing;
+    if (o.spawn) {
+      o.spawn.forEach((id, i) => {
+        const u = g.spawnEnemy(id as never, o.spawnPath ?? 0, (o.spawnS ?? 20) + i * 1.4);
+        u.age = 5;
+      });
+    }
+    if (o.dayness !== undefined) { this.stage.dayness = o.dayness; this.stage.dayTarget = o.dayness; }
+    if (o.hideHud && this.hud) this.hud.root.style.display = 'none';
+    if (o.zoom !== undefined) this.stage.zoom = o.zoom;
+    if (o.target) this.stage.follow(o.target[0], 0, o.target[1], 0, true);
+  }
+
   /** Test hook: end the current run immediately. */
   debugEndRun(victory: boolean): void {
     if (this.mode === 'run') this.finishRun(victory);
