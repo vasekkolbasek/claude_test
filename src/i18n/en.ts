@@ -2,7 +2,6 @@ import type { Dict } from './index';
 
 export const en: Dict = {
   'game.title': "Neon Swarm",
-  'game.tagline': 'Antivirus vs. the swarm',
   loading: 'Loading…',
 
   'menu.play': 'Play',

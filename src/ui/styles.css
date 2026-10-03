@@ -319,7 +319,6 @@ body {
   text-shadow: 0 0 6px #fff, 0 0 18px var(--mag), 0 0 42px var(--mag), 0 0 80px rgba(255, 61, 242, 0.6);
   margin-top: 0.05em;
 }
-.logo .tag { display: block; margin-top: 0.8rem; color: var(--dim); letter-spacing: 0.32em; text-transform: uppercase; font-size: 0.8rem; }
 @keyframes flicker {
   0%, 92%, 96%, 100% { opacity: 1; }
   93%, 95% { opacity: 0.55; }

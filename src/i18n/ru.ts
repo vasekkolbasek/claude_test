@@ -2,7 +2,6 @@ import type { Dict } from './index';
 
 export const ru: Dict = {
   'game.title': "Неоновый Рой",
-  'game.tagline': 'Антивирус против роя',
   loading: 'Загрузка…',
 
   // menu

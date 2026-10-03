@@ -200,7 +200,7 @@ export function drawIcon(c: HTMLCanvasElement): void {
   vignette(ctx, w, h);
 }
 
-export function drawCover(c: HTMLCanvasElement, title: string, tagline: string): void {
+export function drawCover(c: HTMLCanvasElement, title: string): void {
   const w = c.width;
   const h = c.height;
   const ctx = c.getContext('2d') as CanvasRenderingContext2D;
@@ -244,10 +244,5 @@ export function drawCover(c: HTMLCanvasElement, title: string, tagline: string):
     }
     ty += size * 0.92;
   });
-  ctx.shadowBlur = 8 * u;
-  ctx.shadowColor = '#000';
-  ctx.font = `700 ${15 * u}px "Exo 2", system-ui, sans-serif`;
-  ctx.fillStyle = 'rgba(210,220,255,0.9)';
-  ctx.fillText(tagline.toUpperCase().split('').join('\u2009'), tx + 6 * u, ty - size * 0.45);
   ctx.restore();
 }

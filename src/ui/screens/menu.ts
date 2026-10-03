@@ -110,7 +110,7 @@ export function showMenu(app: App): void {
     'div',
     { cls: 'menu' },
     h('div', { cls: 'head' }, pill, h('button', { cls: 'btn icon-only', attrs: { 'aria-label': t('menu.settings') }, onClick: () => openSettings(app, false, () => showMenu(app)) }, icon('settings'))),
-    h('div', { cls: 'logo' }, h('span', { cls: 'l1', text: words[0] }), h('span', { cls: 'l2', text: words.slice(1).join(' ') || '' }), h('span', { cls: 'tag', text: t('game.tagline') })),
+    h('div', { cls: 'logo' }, h('span', { cls: 'l1', text: words[0] }), h('span', { cls: 'l2', text: words.slice(1).join(' ') || '' })),
     h('div', { cls: 'center-block' }, play, grid),
     h('div', { cls: 'menu-foot' }, questCard, chest),
   );

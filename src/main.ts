@@ -33,11 +33,11 @@ async function renderArt(kind: string): Promise<void> {
   } else if (kind === 'hero') {
     c.width = 1560;
     c.height = 520;
-    drawCover(c, t('game.title'), t('game.tagline'));
+    drawCover(c, t('game.title'));
   } else {
     c.width = 800;
     c.height = 470;
-    drawCover(c, t('game.title'), t('game.tagline'));
+    drawCover(c, t('game.title'));
   }
   Object.assign(c.style, { position: 'fixed', left: '0', top: '0', width: `${c.width}px`, height: `${c.height}px` });
   document.body.appendChild(c);
