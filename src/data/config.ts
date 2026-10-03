@@ -10,6 +10,8 @@ export const CONFIG = {
   build: { secondsPerCoin: 0.09, minHold: 0.45, maxHold: 1.4 },
   economy: { castleIncome: 4, cleanBonus: 3, startCoins: 10 },
   dawnSeconds: 3.2,
+  /** Seconds for a fallen soldier to be replaced at its building. */
+  troopRespawn: 12,
   duskSeconds: 2.2,
   rewardCoins: 5,
   maxUnits: 260,

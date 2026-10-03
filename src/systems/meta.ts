@@ -15,7 +15,7 @@ export interface RunResult {
   mutators: MutatorId[];
 }
 
-const VICTORY_BONUS: Record<MapId, number> = { valley: 100, swamp: 170, pass: 260 };
+const VICTORY_BONUS: Record<MapId, number> = { valley: 60, swamp: 110, coast: 170, pass: 240, frost: 330 };
 
 export function computeGlory(r: RunResult): number {
   let g = r.nights * (r.endless ? 12 : 15) + Math.floor(r.stats.kills / 4) + r.stats.bossKills * 30;
@@ -90,7 +90,9 @@ export function checkAchievements(save: SaveData, r?: RunResult, live?: RunStats
     first_night: (r?.nights ?? 0) >= 1 || save.maps.valley.best >= 1,
     win_valley: save.maps.valley.won,
     win_swamp: save.maps.swamp.won,
+    win_coast: save.maps.coast.won,
     win_pass: save.maps.pass.won,
+    win_frost: save.maps.frost.won,
     boss_slayer: (s?.bossKills ?? 0) > 0,
     clean5: (s?.bestClean ?? 0) >= 5,
     kills500: save.totals.kills + (live?.kills ?? 0) >= 500,

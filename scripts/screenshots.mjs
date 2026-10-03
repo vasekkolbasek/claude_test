@@ -31,7 +31,7 @@ const scenes = {
   async golden(page) {
     await page.evaluate(() => {
       const a = window.__lb.app;
-      a.startRun('valley', false, 11);
+      a.startRun('coast', false, 11);
       a.debugSetup({ tier: 2, coins: 34, night: 6, hero: [6.4, 9.6], facing: -2.4, dayness: 0.62, skip: ['tower3', 'range1'] });
       a.setSpeed(0.0001);
       a.stage.zoom = 0.95;
@@ -82,12 +82,12 @@ const scenes = {
   async boss(page) {
     await page.evaluate(() => {
       const a = window.__lb.app;
-      a.startRun('valley', false, 31);
+      a.startRun('coast', false, 31);
       const g = a.game;
       a.debugSetup({ tier: 1, night: 8, phase: 'night', dayness: 0.2 });
       const w = g.bySlot.get('wall1');
       const L = g.paths[0].length, sw = L * w.slot.at;
-      a.debugSetup({ spawn: ['boss_warlord', 'grunt', 'grunt', 'grunt', 'shieldbearer', 'grunt', 'runner', 'grunt', 'skirmisher', 'grunt'], spawnPath: 0, spawnS: sw - 12 });
+      a.debugSetup({ spawn: ['boss_tide', 'grunt', 'grunt', 'grunt', 'shieldbearer', 'grunt', 'runner', 'grunt', 'skirmisher', 'grunt'], spawnPath: 0, spawnS: sw - 12 });
       const pt = g.paths[0].sample(sw + 3.5, { x: 0, z: 0, tx: 0, tz: 0 });
       g.hero.x = pt.x; g.hero.z = pt.z;
       a.fastForward(4.5);

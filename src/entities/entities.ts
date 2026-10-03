@@ -74,6 +74,7 @@ export class Building {
   hitT = 9;
   attackT = 9;
   lostThisNight = false;
+  respawnT = 0;
   constructor(readonly slot: SlotDef, x: number, z: number, radius: number) {
     this.kind = slot.kind;
     this.x = x;

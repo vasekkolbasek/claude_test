@@ -44,14 +44,13 @@ function loadout(save: SaveData): { weapon: WeaponId; perks: PerkId[] } {
 }
 
 function main(): void {
-  const firstWin: Record<MapId, number[]> = { valley: [], swamp: [], pass: [] };
-  const levelAtWin: Record<MapId, number[]> = { valley: [], swamp: [], pass: [] };
-  const nightsHist: Record<MapId, number[]> = { valley: [], swamp: [], pass: [] };
+  const rec = () => Object.fromEntries(MAP_IDS.map((id) => [id, [] as number[]])) as Record<MapId, number[]>;
+  const firstWin = rec(), levelAtWin = rec(), nightsHist = rec();
   const t0 = Date.now();
   for (let p = 0; p < PLAYERS; p++) {
     const save = defaultSave();
     const skill = Math.min(0.95, Math.max(0.3, SKILL + ((p % 5) - 2) * 0.06));
-    const attempts: Record<MapId, number> = { valley: 0, swamp: 0, pass: 0 };
+    const attempts = Object.fromEntries(MAP_IDS.map((id) => [id, 0])) as Record<MapId, number>;
     for (let a = 0; a < MAX_ATTEMPTS; a++) {
       const map = MAP_IDS.find((id) => isMapUnlocked(save, id) && !save.maps[id].won);
       if (!map) break;

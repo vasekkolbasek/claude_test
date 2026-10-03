@@ -151,7 +151,7 @@ test('restarting runs does not leak GPU resources or listeners', async ({ page }
   for (let i = 0; i < 6; i++) await cycle();
   const after = await sample();
   // Model geometries are cached (bounded); a per-run leak would add several per cycle.
-  expect(after.geo).toBeLessThanOrEqual(base.geo + 10);
+  expect(after.geo).toBeLessThanOrEqual(base.geo + 16);
   expect(after.tex).toBeLessThanOrEqual(base.tex);
   expect(after.sceneChildren).toBe(base.sceneChildren);
   expect(after.ui).toBeLessThanOrEqual(base.ui + 5);

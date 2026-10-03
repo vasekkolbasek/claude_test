@@ -71,19 +71,20 @@ npm run sim                                # симулятор баланса
 Ночью из тумана выходят Мглистые: пехота, бегуны, щитоносцы, стрелки, тараны, летучие духи, налётчики, великаны и
 могучие боссы. Башни и войска сражаются сами, а герой бьётся в первых рядах и использует особую способность.
 
-• 3 карты: Долина, Болотная переправа, Горный перевал — у каждой свои дороги и палитра
+• 5 карт с плавным ростом сложности: Долина, Болотная переправа, Морской берег, Горный перевал, Зимний рубеж
 • 10 построек и 60 вариантов улучшений
 • 4 вида оружия героя со своими способностями, 10 перков и уровни правителя
 • Мутаторы для опытных и режим «Бесконечные ночи» с таблицей лидеров
-• 24 достижения, обучение в первой партии, сохранение прогресса
+• Воины казарм возрождаются сами и по команде держат позиции или идут в атаку
+• 26 достижений, обучение, справочник построек и врагов, сохранение прогресса
 • Уютная low-poly графика, смена дня и ночи, процедурная музыка
 
 **Как играть:**
 Компьютер: WASD или стрелки — движение (или удерживайте левую кнопку мыши на земле); Пробел (удерживать) у круга —
-построить или улучшить; 1/2 — выбор ветки улучшения; Q — способность героя; R — собрать отряд / оставить его на месте;
+построить или улучшить; 1/2 — выбор ветки улучшения; Q — способность героя; R — воины: держать позиции / в атаку; ×2 — ускорить ночь;
 Enter — начать ночь; Esc — пауза.
 Телефон и планшет: ведите пальцем по экрану — появится джойстик; удерживайте кнопку с молотком — строить;
-кнопки справа — способность и отряд; «Начать ночь» — когда будете готовы.
+кнопки справа — способность и команда воинам; «Начать ночь» — когда будете готовы.
 Цель — пережить все ночи карты. Если замок падёт, партия окончена, но очки славы останутся и откроют новое оружие и перки.
 
 **Ключевые слова (SEO):** стратегия, защита замка, tower defense, оборона башнями, строительство, крепость, королевство,
@@ -107,18 +108,19 @@ Before sunset you can see which roads the enemy will take and who is coming — 
 At night the Mist creatures emerge: warriors, runners, shieldbearers, skirmishers, rams, flying wisps, raiders, giants
 and mighty bosses. Towers and troops fight on their own, and your hero leads from the front with a special ability.
 
-• 3 maps: The Valley, Marsh Crossing, Mountain Pass — each with its own roads and palette
+• 5 maps with a gentle difficulty curve: The Valley, Marsh Crossing, Sea Shore, Mountain Pass, Frozen Frontier
 • 10 buildings and 60 upgrade options
 • 4 hero weapons with unique abilities, 10 perks and ruler levels
 • Mutators for veterans and an Endless Nights mode with a leaderboard
-• 24 achievements, a first-run tutorial, saved progress
+• Barracks soldiers respawn on their own and, on command, hold their posts or charge
+• 26 achievements, a tutorial, a guide to buildings and enemies, saved progress
 • Cozy low-poly visuals, day and night cycle, procedural music
 
 **How to play:**
 PC: WASD or arrow keys to move (or hold the left mouse button on the ground); hold Space at a circle to build or upgrade;
-1/2 to pick an upgrade branch; Q — hero ability; R — rally troops / hold position; Enter — start the night; Esc — pause.
+1/2 to pick an upgrade branch; Q — hero ability; R — soldiers: hold posts / charge; ×2 — speed up the night; Enter — start the night; Esc — pause.
 Phone and tablet: drag on the screen to show the joystick; hold the hammer button to build; the right-hand buttons
-are the ability and troops; tap “Start night” when you are ready.
+are the ability and the soldiers' command; tap “Start night” when you are ready.
 Survive every night of the map. If the castle falls the run ends, but glory points remain and unlock new weapons and perks.
 
 **Keywords:** strategy, castle defense, tower defense, base building, fortress, kingdom, day and night, low poly,
@@ -177,7 +179,7 @@ casual strategy, hero, knight, medieval, upgrades, enemy waves, endless mode
 | 8.4 | Нет внешних ссылок | ✅ | В бандле нет пользовательских URL (только XML-неймспейсы SVG и комментарий в шейдере Three.js) |
 | 1.23 | Нет интерактивного ИИ | ✅ | — |
 | 2.2 | Описано управление | ✅ | Поле «Как играть» + управление в меню паузы + обучение |
-| 2.8, 2.9 | Нарастающая сложность, реиграбельность | ✅ | 3 карты, симулятор баланса (`npm run sim`), мутаторы, «Бесконечные ночи» |
+| 2.8, 2.9 | Нарастающая сложность, реиграбельность | ✅ | 5 карт с плавным ростом сложности, симулятор баланса (`npm run sim`), мутаторы, «Бесконечные ночи» |
 | 6.2, 6.3 | Отключение звука, пауза | ✅ | Отдельные слайдеры музыки/звука; кнопка паузы, авто-пауза |
 | 6.8 | Обучение | ✅ | Контекстные подсказки в первой партии; e2e с реальным вводом |
 | 5.6 | Иконка/обложка — не скриншоты | ✅ | Отдельная арт-диорама (`src/world/promo.ts`) на нарисованном фоне |

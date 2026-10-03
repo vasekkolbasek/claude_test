@@ -24,6 +24,8 @@ export interface SaveData {
   tutorialDone: boolean;
   run: RunSnapshot | null;
   endlessBest: number;
+  /** Enemy types the player has already been introduced to. */
+  seen: string[];
 }
 
 export const LOCAL_KEY = 'lastbastion.save';
@@ -45,6 +47,7 @@ export function defaultSave(): SaveData {
     tutorialDone: false,
     run: null,
     endlessBest: 0,
+    seen: [],
   };
 }
 
@@ -121,6 +124,7 @@ export function migrate(raw: unknown): SaveData {
   out.tutorialDone = !!d.tutorialDone;
   out.run = d.run && typeof d.run === 'object' && MAP_IDS.includes(d.run.map) && typeof d.run.night === 'number' ? (d.run as RunSnapshot) : null;
   out.endlessBest = Math.floor(num(d.endlessBest, 0, 0));
+  out.seen = Array.isArray(d.seen) ? d.seen.filter((x: unknown) => typeof x === 'string').slice(0, 40) : [];
   return out;
 }
 

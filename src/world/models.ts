@@ -524,6 +524,23 @@ export function unitGeometry(id: UnitId): THREE.BufferGeometry {
       eyes(mb, 1.6, 0.24, 0.1, 0x9dff9a);
       mb.cyl(0.04, 0.04, 1.9, 4, C.woodDark, 0.5, 0, 0.2).oct(0.2, 0x8dff8a, 0.5, 2.0, 0.2, { glow: 2.5 });
       break;
+    case 'boss_tide':
+      mb.cone(0.62, 1.4, 7, 0x2f6f7a, 0, 0, 0);
+      mb.ico(0.3, 0x3f8a92, 0, 1.55, 0.05);
+      mb.cone(0.1, 0.4, 4, 0x8fe0e8, -0.24, 1.72, 0, { rz: 0.6 }).cone(0.1, 0.4, 4, 0x8fe0e8, 0.24, 1.72, 0, { rz: -0.6 });
+      eyes(mb, 1.58, 0.28, 0.11, 0x8ffcff);
+      mb.ico(0.2, 0xe8d8b8, -0.45, 1.15, 0).ico(0.2, 0xe8d8b8, 0.45, 1.15, 0);
+      mb.cyl(0.04, 0.04, 2.1, 4, C.woodDark, 0.6, 0, 0.25);
+      for (const dx of [-0.14, 0, 0.14]) mb.cone(0.04, 0.3, 4, C.gold, 0.6 + dx, 2.1, 0.25, { glow: 1.6 });
+      break;
+    case 'boss_frost':
+      mb.dodec(0.75, 0xbfe0f0, 0, 0.95, 0, { sy: 1.1 });
+      mb.dodec(0.38, 0xd6eef8, 0, 1.95, 0.1);
+      mb.dodec(0.32, 0xa6cfe6, -0.85, 1.1, 0).dodec(0.32, 0xa6cfe6, 0.85, 1.1, 0);
+      mb.dodec(0.3, 0x8ab8d6, -0.35, 0.25, 0).dodec(0.3, 0x8ab8d6, 0.35, 0.25, 0);
+      for (let i = 0; i < 4; i++) mb.cone(0.12, 0.6, 4, 0xd8f4ff, -0.45 + i * 0.3, 1.35, -0.55, { rx: -0.6, glow: 1.6 });
+      eyes(mb, 2.0, 0.42, 0.13, 0xffffff);
+      break;
     case 'boss_colossus':
       mb.dodec(0.75, 0x7d7690, 0, 0.95, 0, { sy: 1.1 });
       mb.dodec(0.38, 0x8b84a0, 0, 1.95, 0.1);

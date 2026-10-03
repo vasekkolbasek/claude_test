@@ -34,8 +34,8 @@ describe('economy', () => {
     const g = mk();
     const farm = g.bySlot.get('farm1')!;
     g.applyNode(farm, BNODES.farm);
-    const mine = g.bySlot.get('mine1')!;
-    g.applyNode(mine, BNODES.mine);
+    const mine = g.bySlot.get('fish1')!;
+    g.applyNode(mine, BNODES.fish);
     g.startNight();
     mine.ruined = true;
     mine.lostThisNight = true;
@@ -44,7 +44,7 @@ describe('economy', () => {
       for (const u of g.units) if (u.team === 1) u.alive = false;
       g.update(0.05);
     }
-    // castle + farm, no clean bonus because the mine fell
+    // castle + farm, no clean bonus because the fishing hut fell
     expect(g.coins - before).toBe(BNODES.castle.stats.income! + BNODES.farm.stats.income!);
     expect(mine.ruined).toBe(false); // repaired at dawn
   });

@@ -16,6 +16,8 @@ import { updateUnits } from './ai';
 import { updateCombat, updateHero } from './combat';
 
 export type Phase = 'day' | 'night' | 'dawn' | 'victory' | 'defeat';
+/** hold = guard the default posts, charge = run at the nearest enemies. */
+export type TroopMode = 'hold' | 'charge';
 
 export interface RunStats {
   kills: number;
@@ -84,7 +86,8 @@ export interface GameEvents {
   income: { total: number; parts: { b: Building; n: number }[]; clean: boolean; bonus: number };
   spawn: { u: Unit };
   bossSpawn: { u: Unit };
-  rally: { follow: boolean };
+  rally: { mode: TroopMode };
+  troopSpawn: { u: Unit };
   nightStart: { night: number };
   repaired: { b: Building };
 }
@@ -127,7 +130,7 @@ export class Game {
   plan: WavePlan;
   private spawnQueue: { t: number; unit: EnemyId; path: number }[] = [];
   nightTime = 0;
-  rallyFollow = false;
+  troopMode: TroopMode = 'hold';
   secondChanceUsed = false;
   stats: RunStats = emptyStats();
   lastIncome: { total: number; clean: boolean } | null = null;
@@ -285,7 +288,7 @@ export class Game {
   }
 
   /** Make sure a troop building has its full squad (used on build and at dawn). */
-  syncTroops(b: Building, replaceType: boolean): void {
+  syncTroops(b: Building, replaceType: boolean, limit = 99): void {
     const tr = b.node?.stats.troops;
     if (!tr) return;
     const def = UNITS[tr.unit];
@@ -297,8 +300,10 @@ export class Game {
     // Refresh stats of survivors (upgrades may change hp).
     for (const u of b.troops) this.initAlly(u, def, b, u.slotIdx, false);
     const used = new Set(b.troops.map((u) => u.slotIdx));
-    for (let i = 0; b.troops.length < want && i < 12; i++) {
+    let added = 0;
+    for (let i = 0; b.troops.length < want && i < 12 && added < limit; i++) {
       if (used.has(i)) continue;
+      added++;
       const u = this.allocUnit();
       this.initAlly(u, def, b, i, true);
       b.troops.push(u);
@@ -442,6 +447,7 @@ export class Game {
     this.lastIncome = { total, clean };
     this.events.emit('income', { total, parts, clean, bonus });
     this.repairAll();
+    this.troopMode = 'hold';
     this.setPhase('dawn');
   }
 
@@ -611,6 +617,7 @@ export class Game {
     }
 
     for (const b of this.buildings) { b.builtT += dt; b.hitT += dt; b.attackT += dt; }
+    this.respawnTroops(dt);
     updateHero(this, dt);
     updateUnits(this, dt);
     updateCombat(this, dt);
@@ -628,25 +635,25 @@ export class Game {
   }
 
   toggleRally(): void {
-    this.rallyFollow = !this.rallyFollow;
-    if (!this.rallyFollow) {
-      // Plant the squads where the hero stands.
-      let k = 0;
-      for (const b of this.buildings) {
-        if (!b.troops.length) continue;
-        const a = k * 2.1;
-        const r = k === 0 ? 0 : 1.6 + k * 0.35;
-        b.rallyX = this.hero.x + Math.cos(a) * r;
-        b.rallyZ = this.hero.z + Math.sin(a) * r;
-        for (const u of b.troops) {
-          const off = formation(u.slotIdx);
-          u.holdX = b.rallyX + off.x;
-          u.holdZ = b.rallyZ + off.z;
-        }
-        k++;
-      }
+    this.troopMode = this.troopMode === 'hold' ? 'charge' : 'hold';
+    for (const u of this.units) if (u.team === 0) u.target = null;
+    this.events.emit('rally', { mode: this.troopMode });
+  }
+
+  /** Fallen soldiers are replaced one by one at their (standing) building. */
+  private respawnTroops(dt: number): void {
+    for (const b of this.buildings) {
+      const tr = b.node?.stats.troops;
+      if (!tr || !b.alive) continue;
+      b.troops = b.troops.filter((u) => u.alive);
+      if (b.troops.length >= tr.count + this.mods.extraTroops) { b.respawnT = 0; continue; }
+      b.respawnT += dt;
+      if (b.respawnT < CONFIG.troopRespawn) continue;
+      b.respawnT = 0;
+      const before = b.troops.length;
+      this.syncTroops(b, false, 1);
+      if (b.troops.length > before) this.events.emit('troopSpawn', { u: b.troops[b.troops.length - 1] });
     }
-    this.events.emit('rally', { follow: this.rallyFollow });
   }
 
   private cleanup(): void {

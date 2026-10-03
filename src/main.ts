@@ -51,7 +51,7 @@ async function boot(): Promise<void> {
     const lang = /[?&]lang=(ru|en)/.exec(q);
     if (lang) setLang(lang[1] as 'ru' | 'en');
     const { showPromo } = await import('./world/promo');
-    showPromo(promo[1], t('title'), t('subtitle'));
+    showPromo(promo[1], t('title'));
   }
 }
 

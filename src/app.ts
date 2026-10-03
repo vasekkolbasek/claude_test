@@ -5,6 +5,7 @@ import { CONFIG } from './data/config';
 import { BNODES } from './data/buildings';
 import type { MapId } from './data/maps';
 import { mutatorMultiplier } from './data/perks';
+import { UNITS, type UnitId } from './data/units';
 import { normalizeLang, setLang, t, tk } from './i18n';
 import type { Platform } from './platform/Platform';
 import { SaveManager } from './save/save';
@@ -164,7 +165,7 @@ export class App implements UiHost {
 
   // ------------------------------------------------------------ menu
   private menuGame(): Game {
-    const g = new Game({ map: 'valley', weapon: this.save.data.weapon, perks: [], mutators: [], endless: false, seed: 7 });
+    const g = new Game({ map: 'coast', weapon: this.save.data.weapon, perks: [], mutators: [], endless: false, seed: 7 });
     const nodes: Record<string, string> = {
       castle: 'castle_citadel_bastions', tower1: 'tower_archer_keen', tower2: 'tower_ballista', tower3: 'tower_archer', magic1: 'magic_frost',
       farm1: 'farm_mill_harvest', farm2: 'farm_mill', farm3: 'farm', barracks1: 'barracks_spear', forge1: 'forge_armory', wall1: 'wall_stone', fish1: 'fish_pier', range1: 'range_bows', mine1: 'mine_deep',
@@ -226,6 +227,7 @@ export class App implements UiHost {
       respawnAd: () => void this.respawnAd(),
       choose: (i) => this.choose(i),
       holdButton: (on) => { this.input.holdButton = on; this.audio.unlock(); },
+      speed: () => this.toggleSpeed(),
     });
     this.hud = hud;
     hud.setTouch(this.platform.isMobile() || this.input.touchMode || navigator.maxTouchPoints > 0 && matchMedia('(pointer: coarse)').matches);
@@ -239,6 +241,7 @@ export class App implements UiHost {
     hud.banner(t('hud.day'), tk(`map.${cfg.map}`));
     this.saveSnapshot();
     this.syncGameplay();
+    this.introduceEnemies();
   }
 
   private bindRun(g: Game, hud: Hud): void {
@@ -262,6 +265,7 @@ export class App implements UiHost {
       ev.on('phase', ({ phase, night }) => {
         hud.hideChoice();
         if (phase === 'night') {
+          hud.hideIntro();
           this.audio.setMood('night');
           play('horn', 0.9);
           const boss = g.plan.boss;
@@ -274,7 +278,10 @@ export class App implements UiHost {
           this.liveAchievements();
         } else if (phase === 'day') {
           hud.coinsAdUsed = false;
+          hud.fast = false;
+          g.timeScale = this.timeScale;
           this.saveSnapshot();
+          this.introduceEnemies();
         } else if (phase === 'victory') {
           play('victory', 1);
           this.finishRun(true);
@@ -310,9 +317,30 @@ export class App implements UiHost {
       ev.on('heroDeath', () => { play('defeat', 0.5, 1.6); vib(80); }),
       ev.on('heroRespawn', () => play('respawn', 0.7)),
       ev.on('bossSpawn', () => { play('roar', 1); vib(120); }),
-      ev.on('rally', ({ follow }) => { play('click', 0.7); hud.toast(follow ? t('hud.rallyOn') : t('hud.rallyOff')); }),
+      ev.on('rally', ({ mode }) => { play('click', 0.7); hud.toast(mode === 'charge' ? t('hud.troopsCharge') : t('hud.troopsHold')); }),
+      ev.on('troopSpawn', ({ u }) => play('respawn', vol(u.x, u.z, 0.25), 1.6)),
       ev.on('holdCancel', () => undefined),
     );
+  }
+
+  /** Shows a card for every enemy type the player meets for the first time. */
+  private introduceEnemies(): void {
+    const g = this.game, hud = this.hud;
+    if (!g || !hud || this.mode !== 'run') return;
+    const seen = new Set(this.save.data.seen);
+    const fresh: UnitId[] = [];
+    for (const m of g.plan.preview.values()) for (const id of m.keys()) if (!seen.has(id) && !fresh.includes(id)) fresh.push(id);
+    if (!fresh.length) return;
+    this.save.change((d) => { d.seen = [...d.seen, ...fresh]; });
+    hud.showIntro(fresh.slice(0, 3).map((id) => ({ icon: this.icons.unit(id), name: tk(`unit.${id}`), desc: tk(`unit.${id}.d`), boss: !!UNITS[id].boss })));
+  }
+
+  private toggleSpeed(): void {
+    const g = this.game, hud = this.hud;
+    if (!g || !hud || g.phase !== 'night') return;
+    this.click();
+    hud.fast = !hud.fast;
+    g.timeScale = this.timeScale * (hud.fast ? 2 : 1);
   }
 
   private liveAchievements(): void {

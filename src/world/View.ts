@@ -111,6 +111,9 @@ export class View {
         if (kind === 'starfall') fx.ring(x, y, z, r * 0.6, 0xbff0a8, 0.6);
         fx.addShake(0.25);
       }),
+      ev.on('troopSpawn', ({ u }) => {
+        fx.burst(u.x, this.h(u.x, u.z) + 0.8, u.z, 8, { color: 0xbfe0ff, speed: 1.5, up: 2, life: 0.6, size: 0.12, grav: 2, glow: true });
+      }),
       ev.on('heroDeath', () => {
         const h = g.hero;
         fx.burst(h.x, this.h(h.x, h.z) + 1.2, h.z, 24, { color: 0xffe9a8, speed: 3, up: 3, life: 1, size: 0.2, grav: 2, glow: true });

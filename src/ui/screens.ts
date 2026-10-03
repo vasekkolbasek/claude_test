@@ -1,4 +1,6 @@
 import { ACHIEVEMENTS } from '../data/achievements';
+import { BKINDS, BNODES } from '../data/buildings';
+import { ENEMY_IDS } from '../data/units';
 import { MAP_IDS, MAPS, type MapId } from '../data/maps';
 import { MUTATORS, MUTATOR_UNLOCK_LEVEL, PERKS, gloryForLevel, levelForGlory, mutatorMultiplier, perkSlots, type MutatorId, type PerkId } from '../data/perks';
 import { WEAPONS, WEAPON_IDS, type WeaponId } from '../data/weapons';
@@ -93,17 +95,17 @@ export class Screens {
       this.btn([icon('skull'), t('menu.mutators')], 'violet', () => this.showMutators(() => this.showMenu())),
       this.btn([icon('star'), t('menu.achievements')], 'violet', () => this.showAchievements()),
       this.btn([icon('trophy'), t('menu.leaders')], 'green', () => this.showLeaders()),
-      this.btn([icon('gear'), t('menu.settings')], 'ghost', () => this.showSettings(() => this.showMenu())),
+      this.btn([icon('book'), t('menu.codex')], 'ghost', () => this.showCodex(() => this.showMenu())),
     );
+    const gear = h('button', { class: 'btn ghost round menu-gear', 'aria-label': t('menu.settings'), onclick: () => { this.host.click(); this.showSettings(() => this.showMenu()); } }, icon('gear'));
     const title = t('title');
     const words = title.split(' ');
     const logo = h('div', { class: 'logo' },
       h('span', { class: 'l1' }, words[0]),
       h('span', { class: 'l2' }, words.slice(1).join(' ')),
-      h('span', { class: 'tag' }, t('subtitle')),
     );
     const ruler = h('div', { class: 'ruler' }, icon('crown'), h('span', null, t('ruler.level', { n: lvl })), h('div', { class: 'xp' }, h('div', { style: { width: `${frac * 100}%` } })));
-    this.set(h('div', { class: 'menu' }, h('div', { class: 'side' }, logo, ruler, ...items, grid)));
+    this.set(h('div', { class: 'menu' }, h('div', { class: 'side' }, logo, ruler, ...items, grid), gear));
   }
 
   private quickPlay(): void {
@@ -282,6 +284,26 @@ export class Screens {
     });
   }
 
+  // ------------------------------------------------------------ guide
+  showCodex(back: () => void, tab: 'b' | 'e' = 'b'): void {
+    const seg = h('div', { class: 'tabs' }, h('div', { class: 'seg' },
+      h('button', { class: tab === 'b' ? 'on' : '', onclick: () => { this.host.click(); this.showCodex(back, 'b'); } }, t('codex.buildings')),
+      h('button', { class: tab === 'e' ? 'on' : '', onclick: () => { this.host.click(); this.showCodex(back, 'e'); } }, t('codex.enemies')),
+    ));
+    const items = tab === 'b'
+      ? BKINDS.map((k) => {
+        const n = BNODES[k];
+        const [a, b] = n.next.map((id) => tk(`bld.${id}`));
+        return h('div', { class: 'item codex' }, h('img', { src: this.host.icons.building(n), alt: '' }),
+          h('div', { class: 'grow' }, h('div', { class: 't' }, tk(`bld.${k}`)), h('div', { class: 'd' }, tk(`bld.${k}.d`)),
+            h('div', { class: 'd' }, t('codex.branches', { a, b }) + (n.cost ? ` · ${t('codex.cost', { n: n.cost })}` : ''))));
+      })
+      : ENEMY_IDS.map((id) => h('div', { class: 'item codex' }, h('img', { src: this.host.icons.unit(id), alt: '' }),
+        h('div', { class: 'grow' }, h('div', { class: 't' }, tk(`unit.${id}`)), h('div', { class: 'd' }, tk(`unit.${id}.d`)))));
+    this.set(h('div', { class: 'screen dim' }, h('div', { class: 'panel', style: { maxWidth: '640px' } },
+      this.head(t('codex.title'), back), seg, h('div', { class: 'scroll' }, h('div', { class: 'list' }, items)))));
+  }
+
   // ------------------------------------------------------------ settings
   showSettings(back: () => void): void {
     const s = this.save.settings;
@@ -314,6 +336,7 @@ export class Screens {
       h('h2', null, t('pause.title')),
       this.btn([icon('play'), t('pause.resume')], 'gold wide', onResume),
       this.btn([icon('gear'), t('menu.settings')], 'ghost wide', onSettings),
+      this.btn([icon('book'), t('menu.codex')], 'ghost wide', () => this.showCodex(() => this.showPause(onResume, onSettings, onExit, touch))),
       this.btn([icon('castle'), t('pause.exit')], 'wide', () => this.confirm(t('pause.exitConfirm'), onExit, () => this.showPause(onResume, onSettings, onExit, touch))),
       h('div', { class: 'sub', style: { marginTop: '4px', fontSize: '13px' } }, h('b', null, t('pause.controls')), h('br'), touch ? t('pause.controlsTouch') : t('pause.controlsPc')),
     )));

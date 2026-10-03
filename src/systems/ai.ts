@@ -1,7 +1,7 @@
 import { lerpAngle, segmentsIntersect } from '../core/math';
 import { ECONOMIC } from '../data/buildings';
 import { Building, Unit, type Ent } from '../entities/entities';
-import { formation, type Game } from './Game';
+import type { Game } from './Game';
 import { attack, dealDamage, isAlive } from './combat';
 
 const tmp = { x: 0, z: 0, tx: 0, tz: 0 };
@@ -140,25 +140,34 @@ function enemyAI(g: Game, u: Unit, dt: number): void {
   }
 }
 
+function nearestEnemy(g: Game, x: number, z: number): Unit | null {
+  let best: Unit | null = null;
+  let bd = Infinity;
+  for (const e of g.units) {
+    if (!e.alive || e.team !== 1) continue;
+    const d = (e.x - x) ** 2 + (e.z - z) ** 2;
+    if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+
 function allyAI(g: Game, u: Unit, dt: number): void {
   const def = u.def;
-  let hx = u.holdX, hz = u.holdZ;
-  const follow = g.rallyFollow && g.hero.alive;
-  if (follow) {
-    const off = formation(u.slotIdx + (u.owner ? (u.owner.id % 5) * 3 : 0));
-    const back = 2.2;
-    hx = g.hero.x - Math.sin(g.hero.facing) * back + off.x * 1.3;
-    hz = g.hero.z - Math.cos(g.hero.facing) * back + off.z * 1.3;
-  }
+  const hx = u.holdX, hz = u.holdZ;
+  const charge = g.troopMode === 'charge';
   const aggro = def.aggro ?? 6;
   let t = u.target;
   if (t && !isAlive(t)) t = u.target = null;
   if (u.think <= 0) {
     u.think = 0.2 + Math.random() * 0.15;
-    const leash = follow ? 7 : aggro + 2.5;
-    if (t && (Math.hypot(t.x - hx, t.z - hz) > leash + 2 || gap(u, t) > aggro + 2)) t = null;
-    if (!t) {
-      t = g.enemyGrid.nearest(u.x, u.z, aggro, (e) => Math.hypot(e.x - hx, e.z - hz) < leash);
+    if (charge) {
+      // Charge: run at the closest enemy anywhere on the map.
+      if (!t || gap(u, t) > aggro) t = nearestEnemy(g, u.x, u.z);
+    } else {
+      // Hold: guard the post, only engage enemies that come close to it.
+      const leash = aggro + 2.5;
+      if (t && (Math.hypot(t.x - hx, t.z - hz) > leash + 2 || gap(u, t) > aggro + 2)) t = null;
+      if (!t) t = g.enemyGrid.nearest(u.x, u.z, aggro, (e) => Math.hypot(e.x - hx, e.z - hz) < leash);
     }
     u.target = t;
   }
@@ -169,17 +178,12 @@ function allyAI(g: Game, u: Unit, dt: number): void {
       if (u.atkCd <= 0) attack(g, u, t);
       return;
     }
-    moveToward(g, u, t.x, t.z, u.speed * (u.slowT > 0 ? 1 - u.slowAmt : 1), dt);
+    moveToward(g, u, t.x, t.z, u.speed * (u.slowT > 0 ? 1 - u.slowAmt : 1) * (charge ? 1.3 : 1), dt);
     return;
   }
   const d = Math.hypot(hx - u.x, hz - u.z);
-  if (d > 0.35) {
-    const boost = follow ? (d > 4 ? 2.4 : 1.6) : d > 6 ? 1.6 : 1;
-    moveToward(g, u, hx, hz, u.speed * boost, dt);
-  } else {
-    u.moving = false;
-    if (follow) u.facing = lerpAngle(u.facing, g.hero.facing, Math.min(1, dt * 4));
-  }
+  if (d > 0.35) moveToward(g, u, hx, hz, u.speed * (d > 6 ? 1.6 : 1), dt);
+  else u.moving = false;
 }
 
 /** Moves a unit; returns false if blocked by a wall (and targets that wall). */

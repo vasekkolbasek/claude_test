@@ -108,6 +108,19 @@ html, body {
 .slot-label .tag .ic { width: 20px; height: 20px; }
 .slot-label .tag.poor { color: #b04a42; }
 .slot-label.up .tag::before { content: '▲'; font-size: 11px; color: var(--green-d); margin: 0 2px 0 4px; }
+.slot-label .desc { max-width: 230px; text-align: center; font-size: 12.5px; line-height: 1.2; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
+.intro { position: absolute; left: calc(12px + var(--sal)); top: calc(104px + var(--sat)); width: min(330px, calc(100vw - 24px)); display: flex; flex-direction: column; gap: 6px; animation: introIn .4s ease; transition: opacity .5s; cursor: pointer; }
+.intro.out { opacity: 0; }
+.intro .row { display: flex; gap: 10px; align-items: center; background: rgba(255,248,236,.95); border-radius: 14px; padding: 6px 12px 6px 6px; box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+.intro img { width: 52px; height: 52px; flex: none; }
+.intro .k { font-size: 11px; text-transform: uppercase; color: var(--red-d); letter-spacing: .5px; }
+.intro .n { font-weight: 900; font-size: 16px; color: var(--ink); }
+.intro .d { font-size: 13px; color: var(--ink2); line-height: 1.25; }
+@keyframes introIn { from { opacity: 0; transform: translateX(-14px); } }
+.menu-gear { position: absolute; top: calc(14px + var(--sat)); right: calc(14px + var(--sar)); }
+.btn.speed { font-size: 17px; }
+.btn.speed.on { background: rgba(120, 92, 210, .9) !important; }
+.item.codex img { width: 56px; height: 56px; flex: none; }
 .slot-label .name { font-size: 13px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); white-space: nowrap; }
 .slot-label.far .tag { font-size: 13px; padding: 1px 8px 1px 3px; opacity: .85; }
 .slot-label.far .tag .ic { width: 16px; height: 16px; }

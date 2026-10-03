@@ -102,7 +102,7 @@ export function renderDiorama(size: number, opts: { enemies: boolean; yaw: numbe
 }
 
 /** Builds the promo page (icon or cover) on top of everything. */
-export function showPromo(kind: string, title: string, subtitle: string): void {
+export function showPromo(kind: string, title: string): void {
   const icon = kind === 'icon';
   const W = window.innerWidth, H = window.innerHeight;
   const art = renderDiorama(icon ? 1024 : 1024, icon
@@ -128,8 +128,7 @@ export function showPromo(kind: string, title: string, subtitle: string): void {
     const t = document.createElement('div');
     t.style.cssText = `position:absolute;left:${W * 0.05}px;top:50%;transform:translateY(-55%);width:${W * 0.5}px;font-family:Kurale,Georgia,serif;color:#fff;`;
     t.innerHTML = `<div style="font-size:${H * 0.17}px;line-height:.95;color:#fff;text-shadow:0 ${H * 0.012}px 0 #4a3a7a, 0 ${H * 0.03}px ${H * 0.05}px rgba(30,10,60,.55)">${title.split(' ')[0]}</div>
-      <div style="font-size:${H * 0.19}px;line-height:.95;color:#ffe08a;text-shadow:0 ${H * 0.012}px 0 #7a4a2a, 0 ${H * 0.03}px ${H * 0.05}px rgba(30,10,60,.55)">${title.split(' ').slice(1).join(' ')}</div>
-      <div style="font-family:Nunito,system-ui,sans-serif;font-weight:900;font-size:${H * 0.055}px;margin-top:${H * 0.03}px;color:#fff;text-shadow:0 2px 6px rgba(40,20,70,.6)">${subtitle}</div>`;
+      <div style="font-size:${H * 0.19}px;line-height:.95;color:#ffe08a;text-shadow:0 ${H * 0.012}px 0 #7a4a2a, 0 ${H * 0.03}px ${H * 0.05}px rgba(30,10,60,.55)">${title.split(' ').slice(1).join(' ')}</div>`;
     root.appendChild(t);
   }
   document.body.appendChild(root);

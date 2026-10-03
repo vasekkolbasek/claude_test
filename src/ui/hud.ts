@@ -18,6 +18,7 @@ export interface HudCallbacks {
   respawnAd(): void;
   choose(i: number): void;
   holdButton(on: boolean): void;
+  speed(): void;
 }
 
 const _v = new THREE.Vector3();
@@ -53,7 +54,7 @@ export function nodeStatLines(n: BNode, prev: BNode | null): { s: string; up: bo
 export function nodeName(n: BNode): string { return tk(nodeNameKey(n.id)); }
 export function nodeDesc(n: BNode): string { return tk(nodeNameKey(n.id) + '.d'); }
 
-interface Label { el: HTMLDivElement; tag: HTMLSpanElement; num: HTMLSpanElement; name: HTMLDivElement; ring: HTMLDivElement; arc: SVGCircleElement; kh: HTMLSpanElement; state: string }
+interface Label { el: HTMLDivElement; tag: HTMLSpanElement; num: HTMLSpanElement; name: HTMLDivElement; desc: HTMLDivElement; ring: HTMLDivElement; arc: SVGCircleElement; kh: HTMLSpanElement; state: string }
 
 export class Hud {
   readonly root: HTMLDivElement;
@@ -86,6 +87,11 @@ export class Hud {
   private lastNightTxt = '';
   private wavePlanNight = -1;
   coinsAdUsed = false;
+  fast = false;
+  private speedBtn: HTMLButtonElement;
+  private rallyIcon: HTMLSpanElement;
+  private troopMode = 'hold';
+  private introEl: HTMLDivElement | null = null;
   respawnAdUsed = false;
   touch = false;
   private bigHold = false;
@@ -101,7 +107,8 @@ export class Hud {
     this.nightEl = h('div', { class: 'pill night' }, this.nightIcon, this.nightTxt);
     const tl = h('div', { class: 'hud-tl' }, this.coinsEl, this.nightEl);
     const pauseBtn = h('button', { class: 'btn round', 'aria-label': 'pause', onclick: () => cb.pause() }, icon('pause'));
-    const tr = h('div', { class: 'hud-tr' }, pauseBtn);
+    this.speedBtn = h('button', { class: 'btn round speed hidden', 'aria-label': 'speed', onclick: () => cb.speed() }, '×2');
+    const tr = h('div', { class: 'hud-tr' }, this.speedBtn, pauseBtn);
     this.startBtn = h('button', { class: 'btn night-btn', onclick: () => cb.startNight() }, icon('moon'), t('hud.startNight'), h('span', { class: 'kbd' }, 'Enter'));
     this.adBtn = h('button', { class: 'btn gold small', onclick: () => cb.coinsAd() }, h('span', { class: 'ad' }, icon('video')), icon('coin'), t('hud.coinsAd', { n: CONFIG.rewardCoins }));
     const bc = h('div', { class: 'hud-bc' }, this.adBtn, this.startBtn);
@@ -116,7 +123,8 @@ export class Hud {
     this.abilityCd = h('div', { class: 'cd' });
     const abIcon = g.hero.weapon.id === 'bow' ? 'bow' : g.hero.weapon.id === 'spear' ? 'spear' : g.hero.weapon.id === 'staff' ? 'staff' : 'sword';
     this.abilityBtn = h('button', { class: 'act', 'aria-label': 'ability', onpointerdown: (e: Event) => { e.preventDefault(); cb.ability(); } }, icon(abIcon), this.abilityCd, h('span', { class: 'key' }, 'Q'));
-    this.rallyBtn = h('button', { class: 'act small', 'aria-label': 'rally', onpointerdown: (e: Event) => { e.preventDefault(); cb.rally(); } }, icon('people'), h('span', { class: 'key' }, 'R'));
+    this.rallyIcon = icon('flag');
+    this.rallyBtn = h('button', { class: 'act small', 'aria-label': 'troops', onpointerdown: (e: Event) => { e.preventDefault(); cb.rally(); } }, this.rallyIcon, h('span', { class: 'key' }, 'R'));
     const br = h('div', { class: 'hud-br' }, this.rallyBtn, h('div'), this.abilityBtn, this.buildBtn);
 
     this.toasts = h('div', { class: 'toasts' });
@@ -172,6 +180,22 @@ export class Hud {
     }
   }
 
+  /** "New enemy" cards shown at the start of a day. */
+  showIntro(items: { icon: string; name: string; desc: string; boss: boolean }[]): void {
+    this.introEl?.remove();
+    const el = h('div', { class: 'intro', onclick: () => el.remove() },
+      items.map((it) => h('div', { class: 'row' },
+        it.icon ? h('img', { src: it.icon, alt: '' }) : null,
+        h('div', null, h('div', { class: 'k' }, it.boss ? t('hud.newBoss') : t('hud.newEnemy')), h('div', { class: 'n' }, it.name), h('div', { class: 'd' }, it.desc)),
+      )),
+    );
+    this.introEl = el;
+    this.root.appendChild(el);
+    setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 600); }, 9000);
+  }
+
+  hideIntro(): void { this.introEl?.remove(); this.introEl = null; }
+
   // ------------------------------------------------------------ choice
   showChoice(b: Building, options: BNode[]): void {
     this.hideChoice();
@@ -217,7 +241,9 @@ export class Hud {
     }
     // Night label
     const night = g.phase === 'night';
-    let nt = g.cfg.endless ? t('hud.nightEndless', { n: g.night }) : t('hud.night', { n: g.night, m: g.map.nights });
+    let nt = night || g.phase === 'defeat'
+      ? (g.cfg.endless ? t('hud.nightEndless', { n: g.night }) : t('hud.night', { n: g.night, m: g.map.nights }))
+      : (g.cfg.endless ? t('hud.dayEndless', { n: g.night }) : t('hud.dayN', { n: g.night, m: g.map.nights }));
     if (night && g.enemiesAlive > 0) nt += ` · ${g.enemiesAlive}`;
     if (nt !== this.lastNightTxt) {
       this.lastNightTxt = nt;
@@ -244,7 +270,13 @@ export class Hud {
     this.abilityBtn.classList.toggle('ready', cdFrac === 0 && night && h0.alive);
     const hasTroops = g.units.some((u) => u.team === 0 && u.alive);
     this.rallyBtn.classList.toggle('hidden', !hasTroops);
-    this.rallyBtn.classList.toggle('on', g.rallyFollow);
+    this.rallyBtn.classList.toggle('on', g.troopMode === 'charge');
+    if (this.troopMode !== g.troopMode) {
+      this.troopMode = g.troopMode;
+      this.rallyIcon.innerHTML = icon(g.troopMode === 'charge' ? 'sword' : 'flag').innerHTML;
+    }
+    this.speedBtn.classList.toggle('hidden', !night);
+    this.speedBtn.classList.toggle('on', this.fast);
 
     // Respawn
     const dead = !h0.alive;
@@ -283,9 +315,10 @@ export class Hud {
     svg.append(bg, arc);
     const kh = h('span', { class: 'kh' });
     const ring = h('div', { class: 'ring' }, svg, kh);
-    const el = h('div', { class: 'slot-label' }, name, tag, ring);
+    const desc = h('div', { class: 'desc' });
+    const el = h('div', { class: 'slot-label' }, name, desc, tag, ring);
     this.labelLayer.appendChild(el);
-    return { el, tag, num, name, ring, arc, kh, state: '' };
+    return { el, tag, num, name, desc, ring, arc, kh, state: '' };
   }
 
   private updateLabels(active: Building | null): void {
@@ -294,7 +327,7 @@ export class Hud {
     for (const b of g.buildings) {
       const act = day ? g.actionFor(b) : null;
       const isActive = b === active && !!act;
-      const near = Math.hypot(b.x - g.hero.x, b.z - g.hero.z) < 20;
+      const near = Math.hypot(b.x - g.hero.x, b.z - g.hero.z) < 16;
       const upgradable = !!act && !!b.node && act.cost <= g.coins && Math.hypot(b.x - g.hero.x, b.z - g.hero.z) < 14;
       const show = !!act && (isActive || (!b.node && near) || upgradable);
       let lab = this.labels.get(b);
@@ -313,6 +346,7 @@ export class Hud {
         lab.el.classList.toggle('far', !isActive);
         lab.ring.style.display = isActive && !this.touch ? '' : 'none';
         lab.name.style.display = isActive ? '' : 'none';
+        lab.desc.style.display = isActive ? '' : 'none';
         lab.state = state;
       }
       lab.el.style.transform = `translate(${_p.x}px, ${_p.y}px) translate(-50%, -100%)`;
@@ -325,6 +359,8 @@ export class Hud {
       if (isActive) {
         const nm = b.node ? `${nodeName(b.node)} → ${t('hud.upgrade')}` : nodeName(BNODES[b.kind]);
         if (lab.name.textContent !== nm) lab.name.textContent = nm;
+        const ds = b.node ? t('hud.upgradeHint') : nodeDesc(BNODES[b.kind]);
+        if (lab.desc.textContent !== ds) lab.desc.textContent = ds;
         const prog = g.hold && g.hold.b === b ? g.hold.t / g.hold.need : 0;
         const L = 2 * Math.PI * 27;
         lab.arc.setAttribute('stroke-dashoffset', String(L * (1 - prog)));
