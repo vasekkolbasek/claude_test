@@ -95,13 +95,19 @@ test('loads cleanly, plays a run with random input and reaches the results scree
   expect((await appState(page)).pauses).not.toContain('platform');
 
   // death → revive for a (mock) rewarded video → death again → results
-  const kill = () =>
-    page.evaluate(() => {
+  // (a level-up choice may be open at any moment: the player can only die while playing)
+  const kill = async () => {
+    for (let i = 0; i < 10 && (await page.locator('.card').count()) > 0; i++) {
+      await page.locator('.card:not(.locked)').first().click({ timeout: 2000 }).catch(() => undefined);
+      await page.waitForTimeout(400);
+    }
+    await page.evaluate(() => {
       const a = (window as unknown as { __ns: { godMode: boolean; world: { player: { inv: number }; hurtPlayer(d: number, x: number, y: number): void } } }).__ns;
       a.godMode = false;
       a.world.player.inv = 0;
       a.world.hurtPlayer(99999, 0, 0);
     });
+  };
   await kill();
   await page.locator('[data-test=revive-ad]').click({ timeout: 15_000 });
   await expect.poll(async () => (await appState(page)).state, { timeout: 15_000 }).toBe('playing');

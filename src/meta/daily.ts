@@ -14,7 +14,7 @@ export interface QuestDef {
 
 export const QUESTS: QuestDef[] = [
   { id: 'kills', key: 'quest.kills', target: (s) => (s.stats.runs < 5 ? 300 : s.sectorsCleared.length > 0 ? 1200 : 600), value: (w) => w.run.kills, reward: 80 },
-  { id: 'survive', key: 'quest.survive', target: (s) => (s.stats.runs < 5 ? 4 : s.sectorsCleared.length > 0 ? 9 : 6), value: (w) => w.t / 60, reward: 90 },
+  { id: 'survive', key: 'quest.survive', target: (s) => (s.stats.runs < 5 ? 3 : s.sectorsCleared.length > 0 ? 6 : 4), value: (w) => w.t / 60, reward: 90 },
   { id: 'level', key: 'quest.level', target: (s) => (s.stats.runs < 5 ? 12 : s.sectorsCleared.length > 0 ? 30 : 20), value: (w) => w.player.level, reward: 80 },
   { id: 'gems', key: 'quest.gems', target: (s) => (s.stats.runs < 5 ? 250 : 600), value: (w) => w.run.gems, reward: 70 },
   { id: 'miniboss', key: 'quest.miniboss', target: () => 1, value: (w) => w.run.miniBosses, reward: 120 },

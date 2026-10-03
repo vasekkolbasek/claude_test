@@ -74,7 +74,7 @@
 - **TR:** Neon Swarm
 
 ### Описание для SEO (50–160 символов)
-- **RU:** Рогалик-выживач в неоне: тысячи вирусов, 8 видов оружия и мощные эволюции. Продержитесь 10 минут и уничтожьте Ядро Хаоса!
+- **RU:** Рогалик-выживач в неоне: тысячи вирусов, 8 видов оружия и мощные эволюции. Продержитесь 6 минут и уничтожьте Ядро Хаоса!
 - **EN:** Neon roguelite survivor: dodge thousands of viruses, combine 8 weapons into powerful evolutions and destroy the Chaos Core!
 - **TR:** Neon roguelite hayatta kalma oyunu: binlerce virüsten kaç, 8 silahı güçlü evrimlere dönüştür ve Kaos Çekirdeği’ni yok et!
 
@@ -93,7 +93,7 @@
 • 4 сектора со своими правилами: Оперативная память, Процессор, Видеокарта и Корзина.
 • 5 программ-персонажей, Мастерская с постоянными улучшениями, 38 достижений и Кодекс.
 • Ежедневные награды и задания, режим «Бесконечность» и таблица лидеров.
-Короткие забеги по 8–12 минут — всегда хочется сыграть ещё один!
+Короткие забеги по 5–8 минут — всегда хочется сыграть ещё один!
 
 **EN:**
 You are the Spark, an antivirus fragment inside a damaged computer. A swarm of viruses closes in from every side: bytes, worms, trojans, glitches, logic bombs and botnets. Your weapons fire on their own — your job is to dodge, collect XP crystals and pick upgrades.
@@ -103,7 +103,7 @@ You are the Spark, an antivirus fragment inside a damaged computer. A swarm of v
 • 4 sectors with their own rules: RAM, CPU, GPU and the Recycle Bin.
 • 5 playable programs, a Workshop with permanent upgrades, 38 achievements and a Codex.
 • Daily rewards and quests, Endless mode and a leaderboard.
-Short 8–12 minute runs that always make you want one more!
+Short 5–8 minute runs that always make you want one more!
 
 **TR:**
 Sen Kıvılcım’sın: hasarlı bir bilgisayarın içindeki antivirüs parçası. Her yönden bir virüs sürüsü yaklaşıyor: baytlar, solucanlar, truvalar, glitch’ler, mantık bombaları ve botnetler. Silahların kendiliğinden ateş eder — senin işin kaçmak, deneyim kristallerini toplamak ve geliştirmeleri seçmek.
@@ -113,18 +113,18 @@ Sen Kıvılcım’sın: hasarlı bir bilgisayarın içindeki antivirüs parças�
 • Kendi kuralları olan 4 sektör: RAM, İşlemci, Ekran Kartı ve Geri Dönüşüm Kutusu.
 • 5 oynanabilir program, kalıcı geliştirmeler sunan Atölye, 38 başarım ve Kodeks.
 • Günlük ödüller ve görevler, Sonsuzluk modu ve liderlik tablosu.
-8–12 dakikalık kısa koşular — hep bir tane daha oynamak isteyeceksin!
+5–8 dakikalık kısa koşular — hep bir tane daha oynamak isteyeceksin!
 
 ### Как играть (100–1000 символов)
 
 **RU:**
-Двигайтесь, проводя пальцем в любом месте экрана (на компьютере — WASD или стрелки, мышью можно тянуть так же, как пальцем). Атака автоматическая: оружие само стреляет по врагам. Собирайте кристаллы опыта — на каждом новом уровне выберите одно из улучшений: новое оружие, его прокачку или модуль. Оружие 5-го уровня вместе с подходящим модулем превращается в эволюцию — рецепты есть в Кодексе. Каждые 3 минуты появляется мини-босс, на 10-й минуте — Ядро Хаоса. Победите его, чтобы открыть следующий сектор и режим «Бесконечность». За забег начисляются биты — тратьте их в Мастерской на постоянные улучшения и открывайте новых персонажей. Пауза — кнопка в углу экрана или Esc.
+Двигайтесь, проводя пальцем в любом месте экрана (на компьютере — WASD или стрелки, мышью можно тянуть так же, как пальцем). Атака автоматическая: оружие само стреляет по врагам. Собирайте кристаллы опыта — на каждом новом уровне выберите одно из улучшений: новое оружие, его прокачку или модуль. Оружие 5-го уровня вместе с подходящим модулем превращается в эволюцию — рецепты есть в Кодексе. Примерно каждые 2 минуты появляется мини-босс, на 6-й минуте — Ядро Хаоса. Победите его, чтобы открыть следующий сектор и режим «Бесконечность». Новое оружие, модули и персонажи открываются по мере прохождения. За забег начисляются биты — тратьте их в Мастерской на постоянные улучшения и открывайте новых персонажей. Пауза — кнопка в углу экрана или Esc.
 
 **EN:**
-Move by dragging anywhere on the screen (on a computer use WASD or the arrow keys; you can also drag with the mouse). Attacks are automatic: your weapons fire at enemies on their own. Collect XP crystals — every level lets you pick one upgrade: a new weapon, a weapon level or a module. A level 5 weapon plus the matching module evolves into something far stronger — recipes are in the Codex. A mini-boss arrives every 3 minutes and the Chaos Core at minute 10. Defeat it to unlock the next sector and Endless mode. Each run earns bits — spend them in the Workshop on permanent upgrades and new characters. Pause with the button in the corner or Esc.
+Move by dragging anywhere on the screen (on a computer use WASD or the arrow keys; you can also drag with the mouse). Attacks are automatic: your weapons fire at enemies on their own. Collect XP crystals — every level lets you pick one upgrade: a new weapon, a weapon level or a module. A level 5 weapon plus the matching module evolves into something far stronger — recipes are in the Codex. A mini-boss arrives about every 2 minutes and the Chaos Core at minute 6. Defeat it to unlock the next sector and Endless mode. New weapons, modules and characters unlock as you progress. Each run earns bits — spend them in the Workshop on permanent upgrades and new characters. Pause with the button in the corner or Esc.
 
 **TR:**
-Ekranın herhangi bir yerinde parmağını sürükleyerek hareket et (bilgisayarda WASD veya ok tuşları; fareyle de sürükleyebilirsin). Saldırı otomatiktir: silahların düşmanlara kendiliğinden ateş eder. Deneyim kristallerini topla — her yeni seviyede bir geliştirme seç: yeni silah, silah seviyesi veya modül. 5. seviyedeki bir silah uygun modülle birleşince evrimleşir — tarifler Kodeks’te. Her 3 dakikada bir mini boss, 10. dakikada ise Kaos Çekirdeği gelir. Onu yenerek sonraki sektörü ve Sonsuzluk modunu aç. Her koşuda bit kazanırsın — onları Atölye’de kalıcı geliştirmelere ve yeni karakterlere harca. Duraklatmak için köşedeki düğme veya Esc.
+Ekranın herhangi bir yerinde parmağını sürükleyerek hareket et (bilgisayarda WASD veya ok tuşları; fareyle de sürükleyebilirsin). Saldırı otomatiktir: silahların düşmanlara kendiliğinden ateş eder. Deneyim kristallerini topla — her yeni seviyede bir geliştirme seç: yeni silah, silah seviyesi veya modül. 5. seviyedeki bir silah uygun modülle birleşince evrimleşir — tarifler Kodeks’te. Yaklaşık her 2 dakikada bir mini boss, 6. dakikada ise Kaos Çekirdeği gelir. Onu yenerek sonraki sektörü ve Sonsuzluk modunu aç. Yeni silahlar, modüller ve karakterler ilerledikçe açılır. Her koşuda bit kazanırsın — onları Atölye’de kalıcı geliştirmelere ve yeni karakterlere harca. Duraklatmak için köşedeki düğme veya Esc.
 
 ---
 
@@ -157,7 +157,7 @@ Ekranın herhangi bir yerinde parmağını sürükleyerek hareket et (bilgisayar
 GameplayAPI.start/stop, LoadingAPI.ready вызывается после показа главного меню.
 Лидерборд: endlessTime (тип time) — режим «Бесконечность» открывается после первой победы над боссом.
 Чтобы быстро увидеть всё содержимое на модерации: первый забег стартует сразу по кнопке «Играть»,
-мини-боссы появляются на 3/6/9 минуте, финальный босс — на 10-й.
+мини-боссы появляются на ~1:50 / 3:35 / 5:25, финальный босс — на 6-й минуте.
 ```
 
 ---

@@ -290,8 +290,8 @@ function hydra(w: World, e: Enemy, nx: number, ny: number, spd: number, dt: numb
 
 function chaosCore(w: World, e: Enemy, nx: number, ny: number, d: number, spd: number, dt: number): void {
   const frac = e.hp / e.maxHp;
-  // enrage after ~100 s: straight to the final phase, faster and angrier
-  const enraged = e.age > 90;
+  // enrage after a while: straight to the final phase, faster and angrier
+  const enraged = e.age > BALANCE.bossEnrage;
   const phase = enraged ? 2 : frac > 0.66 ? 0 : frac > 0.33 ? 1 : 2;
   if (phase !== e.state) {
     e.state = phase;

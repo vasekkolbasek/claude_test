@@ -124,6 +124,13 @@ export function simulateRun(save: SaveData, sector: SectorId, skill: number, see
   }
   const won = w.state === 'won';
   if (TRACE) console.log(trace.join('\n'));
+  for (const wp of w.weapons) {
+    const key = wp.evo ? `${wp.id}*` : wp.id;
+    const cur = dmgTotals.get(key) ?? { dmg: 0, runs: 0 };
+    cur.dmg += w.run.damageBy[wp.id] ?? 0;
+    cur.runs++;
+    dmgTotals.set(key, cur);
+  }
   const summary = applyRunResult(save, w, won);
   return {
     sector,
@@ -140,6 +147,9 @@ export function simulateRun(save: SaveData, sector: SectorId, skill: number, see
     bossFights: fights.join(' ') + (w.boss ? ` core:${Math.round((w.boss.hp / w.boss.maxHp) * 100)}%@${Math.round(w.boss.age)}s` : ''),
   };
 }
+
+/** total damage and number of runs per weapon (evolved weapons counted separately) */
+const dmgTotals = new Map<string, { dmg: number; runs: number }>();
 
 function fmt(t: number): string {
   const m = Math.floor(t / 60);
@@ -181,6 +191,10 @@ function main(): void {
   console.log(`first run survival: avg ${fmt(avg(firstRun))}  [${firstRun.map(fmt).join(', ')}]`);
   console.log(`RAW first=${JSON.stringify(firstRun.map((x) => Math.round(x)))} win=${JSON.stringify(winRun)}`);
   console.log(`run of first RAM victory: [${winRun.map((x) => (x < 0 ? '—' : x)).join(', ')}]`);
+  console.log('avg damage per run that ended with the weapon (* = evolved):');
+  for (const [k, v] of [...dmgTotals.entries()].sort((a, b) => b[1].dmg / b[1].runs - a[1].dmg / a[1].runs)) {
+    console.log(`  ${k.padEnd(11)} ${Math.round(v.dmg / v.runs).toString().padStart(8)}  (${v.runs} runs)`);
+  }
   console.log(`(${((Date.now() - t0) / 1000).toFixed(1)} s)`);
 }
 

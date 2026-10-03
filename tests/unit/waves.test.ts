@@ -49,10 +49,10 @@ describe('wave director', () => {
     expect(all.filter((e) => e.type === 'boss').map((e) => e.at)).toEqual([BALANCE.bossTime]);
   });
 
-  it('endless brings the Chaos Core back every 10 minutes', () => {
+  it('endless brings the Chaos Core back every boss interval', () => {
     const out: WaveEvent[] = [];
     let bosses = 0;
-    for (let t = 0; t < 1830; t += 1) bosses += eventsBetween(t, t + 1, 'endless', out).filter((e) => e.type === 'boss').length;
+    for (let t = 0; t < BALANCE.bossTime * 3 + 30; t += 1) bosses += eventsBetween(t, t + 1, 'endless', out).filter((e) => e.type === 'boss').length;
     expect(bosses).toBe(3);
   });
 });

@@ -566,7 +566,7 @@ export class World {
     e.r = def.r * (e.elite ? BALANCE.eliteScale : 1);
     const ot = this.overtime();
     const overtime = ot >= 0;
-    const speedGrowth = (1 + BALANCE.speedGrowth * Math.min(this.t / 60, 16)) * (overtime && !def.boss ? 1.6 : 1);
+    const speedGrowth = (1 + BALANCE.speedGrowth * Math.min(this.t / 60, 10)) * (overtime && !def.boss ? 1.6 : 1);
     e.speed = def.speed * this.sector.speedMult * speedGrowth * (def.boss ? 1 : this.rng.range(0.9, 1.1)) * (e.elite ? 0.9 : 1);
     e.dmg = def.dmg * this.wave.dmgMult * (e.elite ? 1.5 : 1) * (overtime && !def.boss ? 1 + BALANCE.overtimeDmgPerMin * ot : 1);
     e.xp = def.xp * (e.elite ? BALANCE.eliteXpMult : 1);

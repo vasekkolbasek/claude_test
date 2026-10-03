@@ -25,9 +25,9 @@ const run = (fn: (w: World, won: boolean) => boolean) => (c: AchCtx) => (c.w ? f
 
 export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'first_run', reward: 20, icon: 'play', check: (c) => c.save.stats.runs >= 1 },
-  { id: 'survive_3', reward: 30, icon: 'time', check: run((w) => w.t >= 180) },
-  { id: 'survive_5', reward: 50, icon: 'time', check: run((w) => w.t >= 300) },
-  { id: 'survive_8', reward: 80, icon: 'time', check: run((w) => w.t >= 480) },
+  { id: 'survive_3', reward: 30, icon: 'time', check: run((w) => w.t >= 120) },
+  { id: 'survive_5', reward: 50, icon: 'time', check: run((w) => w.t >= 210) },
+  { id: 'survive_8', reward: 80, icon: 'time', check: run((w) => w.t >= 300) },
   { id: 'win_ram', reward: 150, icon: 'star', check: (c) => c.save.sectorsCleared.includes('ram') },
   { id: 'win_cpu', reward: 200, icon: 'star', check: (c) => c.save.sectorsCleared.includes('cpu') },
   { id: 'win_gpu', reward: 250, icon: 'star', check: (c) => c.save.sectorsCleared.includes('gpu') },
@@ -54,7 +54,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'boss_1', reward: 100, icon: 'leaders', check: (c) => c.save.stats.bossKills >= 1 },
   { id: 'elites_50', reward: 80, icon: 'crit', check: (c) => c.save.stats.elites >= 50, progress: (c) => [c.save.stats.elites, 50] },
   { id: 'nohit_60', reward: 60, icon: 'armor', check: run((w) => w.run.maxNoHit >= 60) },
-  { id: 'nohit_180', reward: 150, icon: 'armor', check: run((w) => w.run.maxNoHit >= 180) },
+  { id: 'nohit_180', reward: 150, icon: 'armor', check: run((w) => w.run.maxNoHit >= 120) },
   { id: 'revive_1', reward: 30, icon: 'heal', check: (c) => c.save.stats.revives >= 1 },
   { id: 'chars_3', reward: 100, icon: 'characters', check: (c) => c.save.chars.length >= 3, progress: (c) => [c.save.chars.length, 3] },
   {
@@ -69,7 +69,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'bits_5000', reward: 150, icon: 'bits', check: (c) => c.save.stats.bitsEarned >= 5000, progress: (c) => [c.save.stats.bitsEarned, 5000] },
   { id: 'runs_10', reward: 80, icon: 'play', check: (c) => c.save.stats.runs >= 10, progress: (c) => [c.save.stats.runs, 10] },
   { id: 'runs_50', reward: 250, icon: 'play', check: (c) => c.save.stats.runs >= 50, progress: (c) => [c.save.stats.runs, 50] },
-  { id: 'endless_15', reward: 200, icon: 'time', check: (c) => c.save.bestEndless >= 900 },
+  { id: 'endless_15', reward: 200, icon: 'time', check: (c) => c.save.bestEndless >= 600 },
   { id: 'daily_3', reward: 100, icon: 'daily', check: (c) => c.save.stats.dailyQuests >= 3, progress: (c) => [c.save.stats.dailyQuests, 3] },
   { id: 'gems_5000', reward: 80, icon: 'growth', check: (c) => c.save.stats.gems >= 5000, progress: (c) => [c.save.stats.gems, 5000] },
   { id: 'full_build', reward: 100, icon: 'amount', check: run((w) => w.weapons.length >= 6) },
