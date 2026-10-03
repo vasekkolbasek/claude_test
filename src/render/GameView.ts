@@ -138,6 +138,7 @@ export class GameView {
     return { hw: this.w / 2 / this.zoom, hh: this.h / 2 / this.zoom };
   }
 
+  /** Screen shake is reserved for boss moments (spawn, phase change, kill) and the player's death. */
   addTrauma(v: number): void {
     this.trauma = Math.min(1, this.trauma + v);
   }
@@ -178,7 +179,7 @@ export class GameView {
             fx.burst(e.x, e.y, 0xffffff, 50, 500, 1.6, 1.0);
             for (let k = 0; k < 4; k++) fx.ring(e.x, e.y, k % 2 ? 0xffffff : e.a, 260 + k * 120, 0.6 + k * 0.25);
             fx.flare(e.x, e.y, e.a, 200, 1.2, 200);
-            this.addTrauma(1);
+            this.addTrauma(0.55);
             this.flashScreen(0xffffff, 0.8);
             fb.hitStop = Math.max(fb.hitStop, 0.25);
             fb.vibrate = Math.max(fb.vibrate, 300);
@@ -187,7 +188,7 @@ export class GameView {
             fx.ring(e.x, e.y, e.a, 220, 0.6);
             fx.ring(e.x, e.y, 0xffffff, 140, 0.4, true);
             fx.flare(e.x, e.y, e.a, 120, 0.7, 80);
-            this.addTrauma(0.7);
+            this.addTrauma(0.35);
             this.flashScreen(e.a, 0.35);
             fb.hitStop = Math.max(fb.hitStop, 0.06);
             fb.vibrate = Math.max(fb.vibrate, 120);
@@ -195,7 +196,6 @@ export class GameView {
             fx.burst(e.x, e.y, e.a, 34, 380, 1.4, 0.8);
             fx.ring(e.x, e.y, e.a, 90, 0.4);
             fx.flare(e.x, e.y, e.a, 50, 0.35);
-            this.addTrauma(0.3);
             fb.hitStop = Math.max(fb.hitStop, 0.045);
             fb.vibrate = Math.max(fb.vibrate, 40);
           } else {
@@ -205,7 +205,6 @@ export class GameView {
           break;
         }
         case EV.PLAYER_HIT:
-          this.addTrauma(0.38);
           this.flashScreen(0xff2a55, 0.28);
           this.playerHitT = 0.25;
           fx.burst(p.x, p.y, 0xff2a55, 10, 260, 0.9, 0.4);
@@ -224,7 +223,6 @@ export class GameView {
           fx.ring(e.x, e.y, e.b, e.a, 0.32);
           fx.flare(e.x, e.y, e.b, e.a * (e.a < 60 ? 0.5 : 0.8), e.a < 60 ? 0.16 : 0.25);
           fx.burst(e.x, e.y, e.b, 10 + e.a * 0.08, 140 + e.a * 2.5, 0.9, 0.45);
-          this.addTrauma(0.08 + e.a * 0.0008);
           break;
         case EV.BOLT:
           fx.bolt(e.ref as number[], e.a === 1 ? 0xd6f4ff : 0x8fd8ff, e.a === 1 ? 7 : 5);
@@ -234,7 +232,7 @@ export class GameView {
           fx.text(p.x, p.y - 30, `+${Math.round(e.a)}`, 0x6dff8a);
           break;
         case EV.BOSS:
-          this.addTrauma(0.6);
+          this.addTrauma(0.35);
           this.flashScreen(e.a === 1 ? 0xff2a55 : 0xff9a3d, 0.35);
           fb.vibrate = Math.max(fb.vibrate, 200);
           break;
@@ -259,7 +257,6 @@ export class GameView {
           fx.ring(p.x, p.y, 0xffffff, 180, 0.5, true);
           fx.burst(p.x, p.y, e.a, 60, 520, 1.4, 0.9);
           this.flashScreen(0xffffff, 0.55);
-          this.addTrauma(0.4);
           fb.vibrate = Math.max(fb.vibrate, 150);
           break;
         case EV.MAGNET:
@@ -278,7 +275,7 @@ export class GameView {
         case EV.BOSS_PHASE:
           fx.ring(e.x, e.y, e.b, 300, 0.6);
           fx.burst(e.x, e.y, e.b, 40, 450, 1.4, 0.8);
-          this.addTrauma(0.6);
+          this.addTrauma(0.3);
           this.flashScreen(e.b, 0.3);
           fb.vibrate = Math.max(fb.vibrate, 150);
           break;
@@ -329,10 +326,10 @@ export class GameView {
     let sx = 0;
     let sy = 0;
     if (this.trauma > 0) {
-      const s = this.shakeEnabled ? this.trauma * this.trauma * 16 : 0;
+      const s = this.shakeEnabled ? this.trauma * this.trauma * 9 : 0;
       sx = (Math.random() * 2 - 1) * s;
       sy = (Math.random() * 2 - 1) * s;
-      this.trauma = Math.max(0, this.trauma - dt * 1.7);
+      this.trauma = Math.max(0, this.trauma - dt * 2.2);
     }
     const z = this.zoom;
     this.root.scale.set(z);

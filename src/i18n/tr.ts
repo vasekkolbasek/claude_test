@@ -434,4 +434,11 @@ export const tr: Dict = {
   'ch.free': "Başarımla açıldı",
   'prerun.endlessHint': "Olabildiğince uzun hayatta kal. En iyi süren liderlik tablosuna girer.",
   'hud.tapToContinue': "Devam etmek için dokun",
+  'unl.mb': "ilk mini patronu yok et",
+  'unl.sector': "{name} sektörünü temizle",
+  'unl.opens': "Açılır: {cond}",
+  'unl.next': "Sonraki kilit açma: {cond}",
+  'res.newWeapon': "Yeni silah: {name}",
+  'res.newPassive': "Yeni modül: {name}",
+  'res.newChar': "Karakter açıldı: {name}",
 };

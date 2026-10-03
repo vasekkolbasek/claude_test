@@ -304,8 +304,8 @@ export class App {
       sector,
       character: save.char,
       bonuses: runBonuses(save),
-      weaponPool: weaponPool(),
-      passivePool: passivePool(),
+      weaponPool: weaponPool(save),
+      passivePool: passivePool(save),
     });
     const vh = this.view.viewHalf();
     this.world.view.hw = vh.hw;
@@ -400,7 +400,13 @@ export class App {
     const t0 = performance.now();
     let t1 = t0;
     if ((this.mode === 'run' || this.mode === 'results') && w) {
-      if (this.mode === 'run') this.stepRun(w, dt);
+      if (this.mode === 'run') {
+        // keep the spawn ring in sync with resizes / rotations
+        const vh = this.view.viewHalf();
+        w.view.hw = vh.hw;
+        w.view.hh = vh.hh;
+        this.stepRun(w, dt);
+      }
       t1 = performance.now();
       const frozen = this.mode === 'run' && this.pauses.size > 0 && this.deathT <= 0 && this.winT <= 0;
       this.view.render(w, frozen ? 0 : dt);
@@ -640,7 +646,7 @@ export class App {
     this.deathT = 1.1;
     this.view.fx.burst(w.player.x, w.player.y, 0x29f6ff, 70, 520, 1.5, 1.1);
     this.view.fx.ring(w.player.x, w.player.y, 0xff3df2, 220, 0.7);
-    this.view.addTrauma(0.9);
+    this.view.addTrauma(0.4);
     this.view.flashScreen(0xff2a55, 0.5);
     this.sfx('killBig', 1, 0.7);
     this.vibrate(300);

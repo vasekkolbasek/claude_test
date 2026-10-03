@@ -54,6 +54,9 @@ export function showResults(app: App, s: RunSummary): void {
     if (s.sectorUnlocked) item('star', t('res.sectorUnlocked', { name: t(`s.${s.sectorUnlocked}`) }));
     if (s.endlessUnlocked) item('star', t('res.endlessUnlocked'));
     if (s.questReward > 0) item('daily', t('res.quest', { n: s.questReward }));
+    for (const id of s.unlocks.weapons) item(id, t('res.newWeapon', { name: t(`w.${id}`) }));
+    for (const id of s.unlocks.passives) item(id, t('res.newPassive', { name: t(`p.${id}`) }));
+    for (const id of s.unlocks.chars) if (id !== 'spark') item('characters', t('res.newChar', { name: t(`c.${id}`) }));
     for (const a of s.achievements) item('achievements', t('ach.unlocked', { name: t(`a.${a}`) }));
   };
   renderNews();

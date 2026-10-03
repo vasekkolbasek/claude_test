@@ -66,8 +66,9 @@ describe('daily', () => {
 });
 
 describe('achievements and run results', () => {
-  it('unlocks the Volt character through kills_1000', () => {
+  it('unlocks the Volt character through kills_1000 once its stage is reached', () => {
     const s = defaultSave();
+    s.sectorsCleared.push('ram');
     s.stats.kills = 1000;
     const got = checkAchievements(s, null, false);
     expect(got).toContain('kills_1000');

@@ -164,7 +164,7 @@ function pulse(world: World, w: WeaponInst, e: Eff, dt: number): void {
   w.t -= dt;
   if (w.t > 0) return;
   const p = world.player;
-  const target = world.nearestEnemy(p.x, p.y, 540);
+  const target = world.aimTarget(p.x, p.y, 540);
   if (!target) {
     w.t = 0.08;
     return;
@@ -268,7 +268,7 @@ function laser(world: World, w: WeaponInst, e: Eff, dt: number): void {
   } else {
     w.t -= dt;
     if (w.t <= 0 && w.beams.length === 0) {
-      const target = world.nearestEnemy(p.x, p.y, 520);
+      const target = world.aimTarget(p.x, p.y, 520);
       if (!target) {
         w.t = 0.15;
       } else {
@@ -364,7 +364,7 @@ function missiles(world: World, w: WeaponInst, e: Eff, dt: number): void {
   if (w.t > 0) return;
   const p = world.player;
   const st = e.st;
-  const first = world.nearestEnemy(p.x, p.y, 650);
+  const first = world.aimTarget(p.x, p.y, 650);
   if (!first) {
     w.t = 0.15;
     return;
@@ -446,7 +446,7 @@ function drones(world: World, w: WeaponInst, e: Eff, dt: number): void {
     vd.evo = w.evo;
     vd.t = w.droneT[i];
     if (w.droneT[i] <= 0) {
-      const target = world.nearestEnemy(dx, dy, 470);
+      const target = world.aimTarget(dx, dy, 470);
       if (target) {
         const a = Math.atan2(target.y - dy, target.x - dx);
         vd.ang = a;

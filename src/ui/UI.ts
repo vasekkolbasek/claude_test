@@ -7,6 +7,7 @@ export class UI {
   private screen: HTMLElement | null = null;
   private readonly modals: HTMLElement[] = [];
   private readonly toasts: HTMLElement;
+  private readonly removals = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
   readonly layer: HTMLElement;
   /** click sound hook */
   onClick: (() => void) | null = null;
@@ -31,16 +32,20 @@ export class UI {
     document.addEventListener('gesturestart', (e) => e.preventDefault());
   }
 
-  /** Replaces the current screen with a transition. */
+  /** Replaces the current screen with a transition. Screens may be reused (the HUD is). */
   show(el: HTMLElement): void {
     const old = this.screen;
-    if (old) {
-      old.classList.remove('enter');
-      old.classList.add('leave');
-      setTimeout(() => old.remove(), 230);
+    if (old && old !== el) this.retire(old);
+    // a reused element may still carry its previous exit animation and removal timer
+    const timer = this.removals.get(el);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      this.removals.delete(el);
     }
+    el.classList.remove('leave', 'enter');
+    void el.offsetWidth; // restart the enter animation
     el.classList.add('screen', 'enter');
-    this.layer.appendChild(el);
+    if (el.parentElement !== this.layer) this.layer.appendChild(el);
     this.screen = el;
   }
 
@@ -50,11 +55,21 @@ export class UI {
 
   clearScreen(): void {
     if (this.screen) {
-      const old = this.screen;
-      old.classList.add('leave');
-      setTimeout(() => old.remove(), 230);
+      this.retire(this.screen);
       this.screen = null;
     }
+  }
+
+  private retire(el: HTMLElement): void {
+    el.classList.remove('enter');
+    el.classList.add('leave');
+    this.removals.set(
+      el,
+      setTimeout(() => {
+        this.removals.delete(el);
+        el.remove();
+      }, 230),
+    );
   }
 
   openModal(el: HTMLElement): HTMLElement {

@@ -10,13 +10,12 @@
  * Reports survival time, level tempo, bits and the run on which the first victory happened.
  */
 import { WORKSHOP } from '../src/data/workshop';
-import { PASSIVE_IDS } from '../src/data/passives';
-import { WEAPON_IDS } from '../src/data/weapons';
 import { Bot } from '../src/game/Bot';
 import { World } from '../src/game/World';
 import { checkAchievements } from '../src/meta/achievements';
 import { applyRunResult, runBonuses } from '../src/meta/progress';
 import { defaultSave, type SaveData } from '../src/meta/save';
+import { passivePoolFor, weaponPoolFor } from '../src/meta/unlocks';
 import { buyNode, nodeAvailable, nodeCost } from '../src/meta/workshop';
 import type { SectorId } from '../src/data/types';
 
@@ -33,6 +32,10 @@ const DT = 1 / 30;
 const OFFSET = arg('offset', 0);
 const VERBOSE = process.argv.includes('--verbose');
 const TRACE = process.argv.includes('--trace');
+/** desktop-like landscape view instead of a phone in portrait */
+const LAND = process.argv.includes('--land');
+/** "runner" player: just holds one direction the whole run (exploit check) */
+const RUNNER = process.argv.includes('--runner');
 
 export interface RunReport {
   sector: SectorId;
@@ -70,9 +73,9 @@ function spend(save: SaveData): string[] {
 }
 
 export function simulateRun(save: SaveData, sector: SectorId, skill: number, seed: number): RunReport {
-  const w = new World({ mode: 'normal', sector, character: save.char, seed, bonuses: runBonuses(save), weaponPool: WEAPON_IDS, passivePool: PASSIVE_IDS });
-  w.view.hw = 260;
-  w.view.hh = 520;
+  const w = new World({ mode: 'normal', sector, character: save.char, seed, bonuses: runBonuses(save), weaponPool: weaponPoolFor(save), passivePool: passivePoolFor(save) });
+  w.view.hw = LAND ? 560 : 260;
+  w.view.hh = LAND ? 315 : 520;
   const bot = new Bot({ skill, seed: seed * 7 + 1 });
   let maxEnemies = 0;
   const levelTimes: number[] = [];
@@ -99,7 +102,10 @@ export function simulateRun(save: SaveData, sector: SectorId, skill: number, see
       break;
     }
     if (w.state === 'won') break;
-    bot.steer(w, DT);
+    if (RUNNER) {
+      w.input.x = 1;
+      w.input.y = 0;
+    } else bot.steer(w, DT);
     const before = new Set(w.bosses);
     w.update(DT);
     for (const b of w.bosses) if (!before.has(b)) bossSpawn.set(b.uid, [b.def.id, w.t]);
@@ -131,7 +137,7 @@ export function simulateRun(save: SaveData, sector: SectorId, skill: number, see
     weapons: w.weapons.map((x) => `${x.id}${x.evo ? '*' : x.level}`).join(' '),
     hpLeft: Math.round(w.player.hp),
     timeout: w.state === 'playing',
-    bossFights: fights.join(' '),
+    bossFights: fights.join(' ') + (w.boss ? ` core:${Math.round((w.boss.hp / w.boss.maxHp) * 100)}%@${Math.round(w.boss.age)}s` : ''),
   };
 }
 

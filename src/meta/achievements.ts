@@ -2,6 +2,7 @@ import { ACHIEVEMENTS } from '../data/achievements';
 import { CHARACTERS, CHARACTER_IDS } from '../data/characters';
 import type { World } from '../game/World';
 import type { SaveData } from './save';
+import { charAvailable } from './unlocks';
 import { totalWorkshopLevels } from './workshop';
 
 /**
@@ -28,7 +29,7 @@ export function checkAchievements(save: SaveData, w: World | null, won: boolean)
     }
     for (const id of CHARACTER_IDS) {
       const rule = CHARACTERS[id].unlock;
-      if (rule.type === 'achievement' && save.ach[rule.id] && !save.chars.includes(id)) save.chars.push(id);
+      if (rule.type === 'achievement' && save.ach[rule.id] && !save.chars.includes(id) && charAvailable(save, id)) save.chars.push(id);
     }
   }
   return out;

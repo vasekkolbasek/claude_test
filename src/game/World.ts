@@ -91,6 +91,7 @@ export interface PlayerState {
 
 const tmpEnemies: Enemy[] = [];
 const bulletNear: Enemy[] = [];
+const respawnPt = { x: 0, y: 0 };
 const sepNear: Enemy[] = [];
 
 export class World {
@@ -161,6 +162,10 @@ export class World {
 
   private uidSeq = 1;
   private spawnAcc = 0;
+  private aimFlip = false;
+  /** slow average of the player's velocity: which way the player keeps running */
+  driftX = 0;
+  driftY = 0;
   private prevT = 0;
   private readonly evScratch: WaveEvent[] = [];
   private readonly spawnQueue: { id: EnemyId; x: number; y: number; elite: boolean }[] = [];
@@ -354,6 +359,27 @@ export class World {
     return best;
   }
 
+  /**
+   * Auto-aim target: a boss in range gets every other shot (otherwise the endless swarm around
+   * the player soaks up all damage and boss fights drag on), else the nearest enemy.
+   */
+  aimTarget(x: number, y: number, maxDist: number): Enemy | null {
+    if (this.bosses.length > 0 && (this.aimFlip = !this.aimFlip)) {
+      let best: Enemy | null = null;
+      let bd = maxDist * maxDist;
+      for (const b of this.bosses) {
+        if (!b.alive || b.spawnT < 0.5) continue;
+        const d = (b.x - x) ** 2 + (b.y - y) ** 2 - b.r * b.r;
+        if (d < bd) {
+          bd = d;
+          best = b;
+        }
+      }
+      if (best) return best;
+    }
+    return this.nearestEnemy(x, y, maxDist);
+  }
+
   /** Enemies whose bodies overlap the circle. Returned array is reused. */
   enemiesInRadius(x: number, y: number, r: number): Enemy[] {
     this.grid.query(x, y, r, tmpEnemies);
@@ -538,10 +564,11 @@ export class World {
     e.shield = e.maxShield;
     e.sinceHit = 99;
     e.r = def.r * (e.elite ? BALANCE.eliteScale : 1);
-    const overtime = this.mode === 'normal' && this.t > BALANCE.bossTime + BALANCE.overtimeAfter;
+    const ot = this.overtime();
+    const overtime = ot >= 0;
     const speedGrowth = (1 + BALANCE.speedGrowth * Math.min(this.t / 60, 16)) * (overtime && !def.boss ? 1.6 : 1);
     e.speed = def.speed * this.sector.speedMult * speedGrowth * (def.boss ? 1 : this.rng.range(0.9, 1.1)) * (e.elite ? 0.9 : 1);
-    e.dmg = def.dmg * this.wave.dmgMult * (e.elite ? 1.5 : 1);
+    e.dmg = def.dmg * this.wave.dmgMult * (e.elite ? 1.5 : 1) * (overtime && !def.boss ? 1 + BALANCE.overtimeDmgPerMin * ot : 1);
     e.xp = def.xp * (e.elite ? BALANCE.eliteXpMult : 1);
     e.flash = 0;
     e.spawnT = 0;
@@ -568,14 +595,29 @@ export class World {
     return e;
   }
 
-  /** Random point just outside the visible area. */
-  spawnPoint(out: { x: number; y: number }, margin = 50): void {
+  /**
+   * Picks a spawn point just outside the screen. The more persistently the player runs in one
+   * direction, the more spawns land ahead of them, so running away is never a safe strategy.
+   * `ahead` forces a point in front of the player whenever they are moving.
+   */
+  spawnPoint(out: { x: number; y: number }, margin = 50, ahead = false): void {
     const hw = this.view.hw + margin;
     const hh = this.view.hh + margin;
+    const p = this.player;
+    const drift = Math.hypot(this.driftX, this.driftY);
+    const f = Math.min(1, drift / (BALANCE.player.baseSpeed * 0.7));
+    // squared: ordinary dodging barely counts, holding one direction counts fully
+    if ((ahead && f > 0.5) || this.rng.next() < f * f * BALANCE.aheadSpawnBias) {
+      const a = Math.atan2(this.driftY, this.driftX) + this.rng.range(-0.85, 0.85);
+      const c = Math.cos(a);
+      const sn = Math.sin(a);
+      const k = Math.min(hw / Math.max(1e-6, Math.abs(c)), hh / Math.max(1e-6, Math.abs(sn)));
+      out.x = p.x + c * k;
+      out.y = p.y + sn * k;
+      return;
+    }
     const per = hw * 2 + hh * 2;
     let r = this.rng.next() * per;
-    const p = this.player;
-    // bias spawns towards the movement direction a little
     if (r < hw * 2) {
       out.x = p.x - hw + r;
       out.y = p.y + (this.rng.next() < 0.5 ? -hh : hh);
@@ -668,6 +710,9 @@ export class World {
     p.vy += (iy * sp - p.vy) * k;
     p.x += p.vx * dt;
     p.y += p.vy * dt;
+    const kd = damp(1 / 2.5, dt);
+    this.driftX += (p.vx - this.driftX) * kd;
+    this.driftY += (p.vy - this.driftY) * kd;
     p.moving = il > 0.05;
     if (p.moving) p.face = Math.atan2(iy, ix);
     if (p.inv > 0) p.inv -= dt;
@@ -683,10 +728,15 @@ export class World {
     const w = this.wave;
     let regular = 0;
     for (const e of this.enemies) if (!e.def.boss) regular++;
-    const bossFactor = this.bosses.length > 0 ? BALANCE.bossSpawnFactor : 1;
+    // the swarm holds back while a boss makes its entrance (not for the whole fight, or
+    // kiting a boss would become the safest way to play)
+    let bossFactor = 1;
+    for (const b of this.bosses) if (b.age < BALANCE.bossCalmTime) bossFactor = BALANCE.bossSpawnFactor;
     // overtime: the Chaos Core has been up too long in normal mode — the swarm stops holding back
-    const overtime = this.mode === 'normal' && this.t > BALANCE.bossTime + BALANCE.overtimeAfter;
-    const min = overtime ? w.min * 2.5 : w.min * bossFactor;
+    // and keeps escalating every minute until the run ends one way or the other
+    const ot = this.overtime();
+    const overtime = ot >= 0;
+    const min = overtime ? w.min * (2.5 + 1.5 * ot) : w.min * bossFactor;
     if (regular < min) this.spawnAcc += (min - regular) * dt * 2.5;
     if (overtime || regular < min * BALANCE.overflowCap) this.spawnAcc += w.rate * (overtime ? 3 : bossFactor) * dt;
     const pt = { x: 0, y: 0 };
@@ -709,13 +759,19 @@ export class World {
     this.prevT = this.t;
   }
 
+  /** Minutes of overtime in normal mode (negative before it starts). */
+  overtime(): number {
+    if (this.mode !== 'normal') return -1;
+    return (this.t - BALANCE.bossTime - BALANCE.overtimeAfter) / 60;
+  }
+
   private runEvent(ev: WaveEvent): void {
     const p = this.player;
     const pt = { x: 0, y: 0 };
     switch (ev.type) {
       case 'miniboss':
       case 'boss': {
-        this.spawnPoint(pt, 80);
+        this.spawnPoint(pt, 80, true);
         this.spawnEnemy(ev.enemy, pt.x, pt.y);
         break;
       }
@@ -795,17 +851,18 @@ export class World {
         const rd = e.def.p?.regenDelay ?? 3;
         if (e.sinceHit > rd) e.shield = Math.min(e.maxShield, e.shield + e.maxShield * (e.def.p?.regenRate ?? 0.2) * dt);
       }
-      // despawn stragglers far behind and respawn them ahead
-      if (!e.def.boss) {
-        const dx = e.x - p.x;
-        const dy = e.y - p.y;
-        const far = Math.max(this.view.hw, this.view.hh) * 2.4 + 300;
-        if (dx * dx + dy * dy > far * far) {
-          const pt = { x: 0, y: 0 };
-          this.spawnPoint(pt);
-          e.x = pt.x;
-          e.y = pt.y;
-        }
+      // stragglers left far behind are moved back in front of the player; bosses are leashed
+      // the same way (further out), so outrunning a boss only brings it back ahead of you
+      const dx = e.x - p.x;
+      const dy = e.y - p.y;
+      const far = Math.max(this.view.hw, this.view.hh) * (e.def.boss ? 1.9 : 1.6) + (e.def.boss ? 260 : 160);
+      if (dx * dx + dy * dy > far * far) {
+        const pt = respawnPt;
+        this.spawnPoint(pt, e.def.boss ? e.r + 40 : 50, true);
+        if (e.def.boss) this.events.push(EV.TELEPORT, e.x, e.y, pt.x, pt.y, e.def.color);
+        e.x = pt.x;
+        e.y = pt.y;
+        e.kx = e.ky = 0;
       }
       grid.insert(e);
     }

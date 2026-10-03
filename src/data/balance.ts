@@ -14,13 +14,21 @@ export const BALANCE = {
   bossTime: 600,
   miniBossTimes: [180, 360, 540],
   maxEnemies: 650,
+  /** share of regular spawns placed ahead of a player who keeps running one way (0..1) */
+  aheadSpawnBias: 0.6,
   maxGems: 380,
   /** while a boss is alive the director spawns this fraction of the usual */
   bossSpawnFactor: 0.45,
+  /** ...but only for the first seconds of the fight */
+  bossCalmTime: 45,
+  /** overtime: regular enemies spawned after N minutes of overtime deal (1 + N * this) damage */
+  overtimeDmgPerMin: 1.2,
+  /** mini-bosses that keep their distance stop doing so after this many seconds */
+  miniBossEnrage: 60,
   /** per minute enemy HP growth: hpMult = 1 + a*m + b*m^2 */
-  hpGrowth: { a: 0.18, b: 0.045 },
+  hpGrowth: { a: 0.18, b: 0.065 },
   /** enemy HP also scales with the player's level (rubber band against snowballing) */
-  hpPerLevel: 0.025,
+  hpPerLevel: 0.035,
   /** rate-based spawns stop above this multiple of the wave minimum */
   overflowCap: 1.6,
   /** endless mode: extra growth after bossTime */
@@ -77,7 +85,7 @@ export const BASE_STATS: PlayerStats = {
 /** XP needed to go from `level` to `level + 1`. */
 export function xpForLevel(level: number): number {
   const l = level - 1;
-  return Math.round(5 + 8 * l + 0.55 * l * l);
+  return Math.round(4 + 6.5 * l + 0.6 * l * l);
 }
 
 export function rarityWeights(luck: number): number[] {

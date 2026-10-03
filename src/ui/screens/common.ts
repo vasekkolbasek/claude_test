@@ -1,6 +1,7 @@
 import type { App } from '../../app/App';
 import { hex } from '../../render/textures';
 import { t } from '../../i18n';
+import { UNLOCK_STAGES, type UnlockStage } from '../../meta/unlocks';
 import { fmtNum, h } from '../dom';
 import { icon } from '../icons';
 
@@ -66,4 +67,17 @@ export function charCanvas(color: number, size = 84): HTMLCanvasElement {
 
 export function videoLabel(text: string): (Node | string)[] {
   return [icon('video', 'video'), text];
+}
+
+/** Human-readable requirement of an unlock stage ("clear the RAM sector"). */
+export function unlockCond(stage: UnlockStage): string {
+  if (stage.req === 'start') return '';
+  if (stage.req === 'mb') return t('unl.mb');
+  return t('unl.sector', { name: t(`s.${stage.req}`) });
+}
+
+/** "Unlocks: …" line for the next stage, or '' when everything is open. */
+export function nextUnlockText(stageCount: number): string {
+  const next = UNLOCK_STAGES[stageCount];
+  return next ? t('unl.next', { cond: unlockCond(next) }) : '';
 }

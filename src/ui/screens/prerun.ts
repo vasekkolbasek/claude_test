@@ -6,10 +6,11 @@ import type { GameModeId, SectorId } from '../../data/types';
 import { WEAPONS } from '../../data/weapons';
 import { t } from '../../i18n';
 import { sectorUnlocked } from '../../meta/progress';
+import { unlockStage } from '../../meta/unlocks';
 import { h, hexColor } from '../dom';
 import { icon } from '../icons';
 import { showCharacters } from './characters';
-import { charCanvas, topbar } from './common';
+import { charCanvas, nextUnlockText, topbar } from './common';
 import { showMenu } from './menu';
 
 let lastSector: SectorId = 'ram';
@@ -103,7 +104,7 @@ export function showPrerun(app: App): void {
     'div',
     { cls: 'dim' },
     topbar(app, t('prerun.title'), () => showMenu(app)),
-    h('div', { cls: 'scroll' }, h('div', { cls: 'col' }, seg, hint, list, strip)),
+    h('div', { cls: 'scroll' }, h('div', { cls: 'col' }, seg, hint, list, strip, nextUnlockText(unlockStage(save)) ? h('div', { cls: 'note', text: nextUnlockText(unlockStage(save)) }) : null)),
     h('div', { cls: 'footer-bar' }, start),
   );
   app.ui.show(el);

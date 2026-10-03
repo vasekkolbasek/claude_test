@@ -3,9 +3,10 @@ import { CHARACTERS, CHARACTER_IDS } from '../../data/characters';
 import { WEAPONS } from '../../data/weapons';
 import { t } from '../../i18n';
 import { checkAchievements } from '../../meta/achievements';
+import { charAvailable, charStage } from '../../meta/unlocks';
 import { fmtNum, h, hexColor } from '../dom';
 import { icon } from '../icons';
-import { charCanvas, topbar } from './common';
+import { charCanvas, topbar, unlockCond } from './common';
 
 export function showCharacters(app: App, back: () => void): void {
   const save = app.save.data;
@@ -28,6 +29,8 @@ export function showCharacters(app: App, back: () => void): void {
             render();
           },
         }, t('ch.select'));
+      } else if (!charAvailable(save, id)) {
+        action = h('div', { cls: 'note', style: { 'text-align': 'right', padding: '0', 'max-width': '9rem' } }, icon('lock'), ' ', t('unl.opens', { cond: unlockCond(charStage(id)) }));
       } else {
         const u = c.unlock;
         const cost = u.type === 'free' ? 0 : u.cost;

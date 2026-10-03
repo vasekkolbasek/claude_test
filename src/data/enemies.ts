@@ -5,12 +5,12 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
   worm: { id: 'worm', ai: 'chase', hp: 4, speed: 104, dmg: 5, r: 8, xp: 1, color: 0xb6ff3d, shape: 'triangle', mass: 0 },
   trojan: { id: 'trojan', ai: 'chase', hp: 42, speed: 44, dmg: 13, r: 19, xp: 4, color: 0xff8a1f, shape: 'square', mass: 0.6 },
   dasher: {
-    id: 'dasher', ai: 'dash', hp: 16, speed: 58, dmg: 11, r: 12, xp: 2, color: 0xff2a55, shape: 'arrow', mass: 0.2,
-    p: { range: 230, windup: 0.6, dashSpeed: 420, dashTime: 0.42, rest: 1.4 },
+    id: 'dasher', ai: 'dash', hp: 16, speed: 58, dmg: 9, r: 12, xp: 2, color: 0xff2a55, shape: 'arrow', mass: 0.2,
+    p: { range: 230, windup: 0.7, dashSpeed: 420, dashTime: 0.42, rest: 1.4 },
   },
   spammer: {
     id: 'spammer', ai: 'shoot', hp: 20, speed: 60, dmg: 8, r: 13, xp: 3, color: 0xa35bff, shape: 'hexagon', mass: 0.2,
-    p: { keep: 230, fireCd: 2.6, bulletSpeed: 170, bulletDmg: 9 },
+    p: { keep: 230, fireCd: 3.2, bulletSpeed: 160, bulletDmg: 7 },
   },
   splitter: {
     id: 'splitter', ai: 'chase', hp: 26, speed: 56, dmg: 10, r: 15, xp: 2, color: 0x3dffb0, shape: 'pentagon', mass: 0.3,
@@ -55,7 +55,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     boss: 'mini', p: { shotEvery: 1.9, bulletSpeed: 210, bulletDmg: 13 },
   },
   boss_core: {
-    id: 'boss_core', ai: 'boss_core', hp: 19000, speed: 40, dmg: 30, r: 64, xp: 0, color: 0xff2a55, shape: 'boss_core', mass: 1,
+    id: 'boss_core', ai: 'boss_core', hp: 8500, speed: 40, dmg: 30, r: 64, xp: 0, color: 0xff2a55, shape: 'boss_core', mass: 1,
     boss: 'final', p: { bulletSpeed: 165, bulletDmg: 18 },
   },
 };

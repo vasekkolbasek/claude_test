@@ -6,8 +6,9 @@ import { drawShapeIcon } from '../../render/textures';
 import { t } from '../../i18n';
 import { fmtNum, h, hexColor } from '../dom';
 import { icon } from '../icons';
+import { passiveAvailable, passiveStage, weaponAvailable, weaponStage } from '../../meta/unlocks';
 import { passiveValueText } from '../levelup';
-import { topbar } from './common';
+import { topbar, unlockCond } from './common';
 import { showMenu } from './menu';
 
 type Tab = 'enemies' | 'weapons' | 'evolutions' | 'passives';
@@ -19,8 +20,13 @@ export function showCodex(app: App): void {
   const list = h('div', { cls: 'grid2' });
   const progress = h('div', { cls: 'note' });
 
-  const unknown = (ico: HTMLElement | SVGElement) =>
-    h('div', { cls: 'li locked' }, h('div', { cls: 'lic', style: { '--ic': '#556' } }, ico), h('div', { cls: 'lb' }, h('div', { cls: 'lt', text: t('codex.unknown') }), h('div', { cls: 'ld', text: t('codex.unknownText') })));
+  const unknown = (ico: HTMLElement | SVGElement, cond = '') =>
+    h(
+      'div',
+      { cls: 'li locked' },
+      h('div', { cls: 'lic', style: { '--ic': '#556' } }, ico),
+      h('div', { cls: 'lb' }, h('div', { cls: 'lt', text: t('codex.unknown') }), h('div', { cls: 'ld', text: cond ? t('unl.opens', { cond }) : t('codex.unknownText') })),
+    );
 
   const render = () => {
     tabs.textContent = '';
@@ -71,7 +77,7 @@ export function showCodex(app: App): void {
         total++;
         const def = WEAPONS[id];
         if (!save.codex.w.includes(id)) {
-          list.appendChild(unknown(icon(id)));
+          list.appendChild(unknown(icon(id), weaponAvailable(save, id) ? '' : unlockCond(weaponStage(id))));
           continue;
         }
         found++;
@@ -120,7 +126,7 @@ export function showCodex(app: App): void {
         total++;
         const def = PASSIVES[id];
         if (!save.codex.p.includes(id)) {
-          list.appendChild(unknown(icon(id)));
+          list.appendChild(unknown(icon(id), passiveAvailable(save, id) ? '' : unlockCond(passiveStage(id))));
           continue;
         }
         found++;

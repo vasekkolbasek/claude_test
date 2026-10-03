@@ -456,4 +456,11 @@ export const ru: Dict = {
   'ch.free': "Открыт достижением",
   'prerun.endlessHint': "Выживайте как можно дольше. Лучшее время попадает в таблицу лидеров.",
   'hud.tapToContinue': "Коснитесь, чтобы продолжить",
+  'unl.mb': "уничтожьте первого мини-босса",
+  'unl.sector': "пройдите сектор «{name}»",
+  'unl.opens': "Откроется: {cond}",
+  'unl.next': "Следующее открытие — {cond}",
+  'res.newWeapon': "Новое оружие: {name}",
+  'res.newPassive': "Новый модуль: {name}",
+  'res.newChar': "Доступен персонаж: {name}",
 };

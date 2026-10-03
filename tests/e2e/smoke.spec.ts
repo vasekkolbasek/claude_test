@@ -122,17 +122,32 @@ test('loads cleanly, plays a run with random input and reaches the results scree
   await page.locator('[data-test=continue]').click();
   await expect(page.locator('[data-test=play]').last()).toBeVisible({ timeout: 10_000 });
 
+  // a second run reuses the HUD element: it must be visible again (regression)
+  // the daily reward popup may open shortly after returning to the menu
+  const claim = page.locator('[data-test=claim]');
+  await claim.waitFor({ state: 'visible', timeout: 4000 }).catch(() => undefined);
+  if (await claim.isVisible()) await claim.click();
+  await expect(page.locator('.modal')).toHaveCount(0, { timeout: 5000 });
+  await page.locator('[data-test=play]').last().click();
+  await page.locator('[data-test=start]').click();
+  const hud = page.locator('.hud');
+  await expect(hud).toBeVisible();
+  await expect(hud).not.toHaveClass(/leave/);
+  await expect.poll(() => hud.evaluate((el) => Number(getComputedStyle(el).opacity)), { timeout: 5000 }).toBeGreaterThan(0.9);
+
   expect(errors).toEqual([]);
 });
 
 test('bot survives 60 seconds of game time without exceptions', async ({ page }) => {
+  // software rendering in headless CI can run well below real time at 1920×1080
+  test.setTimeout(360_000);
   const errors = collectErrors(page);
   await page.goto('index.html?test=1&mock=1');
   await page.locator('[data-test=play]').click();
   await page.locator('[data-test=start]').click();
   await page.evaluate(() => (window as unknown as { __ns: TestApp }).__ns.enableBot(0.8));
   await expect
-    .poll(async () => (await appState(page)).t, { timeout: 170_000, intervals: [2000] })
+    .poll(async () => (await appState(page)).t, { timeout: 330_000, intervals: [2000] })
     .toBeGreaterThan(60);
   const st = await appState(page);
   expect(st.mode).toBe('run');

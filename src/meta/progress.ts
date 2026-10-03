@@ -1,13 +1,12 @@
 import { BALANCE } from '../data/balance';
-import { PASSIVE_IDS } from '../data/passives';
 import { SECTOR_IDS } from '../data/sectors';
-import { WEAPON_IDS } from '../data/weapons';
 import type { PassiveId, SectorId, WeaponId } from '../data/types';
 import type { StatBonus } from '../game/stats';
 import type { World } from '../game/World';
 import { checkAchievements } from './achievements';
 import { questProgress } from './daily';
 import type { SaveData } from './save';
+import { passivePoolFor, unlockStage, unlocksBetween, weaponPoolFor, type UnlockNews } from './unlocks';
 import { workshopBonuses } from './workshop';
 
 export interface RunSummary {
@@ -24,6 +23,8 @@ export interface RunSummary {
   sectorUnlocked: SectorId | null;
   endlessUnlocked: boolean;
   achievements: string[];
+  /** content opened by this run (progressive unlocks) */
+  unlocks: UnlockNews;
   questReward: number;
   /** extra bits granted by the x2 ad */
   doubled: boolean;
@@ -33,12 +34,12 @@ export function runBonuses(save: SaveData): StatBonus[] {
   return [workshopBonuses(save)];
 }
 
-export function weaponPool(): WeaponId[] {
-  return WEAPON_IDS.slice();
+export function weaponPool(save: SaveData): WeaponId[] {
+  return weaponPoolFor(save);
 }
 
-export function passivePool(): PassiveId[] {
-  return PASSIVE_IDS.slice();
+export function passivePool(save: SaveData): PassiveId[] {
+  return passivePoolFor(save);
 }
 
 export function sectorUnlocked(save: SaveData, id: SectorId): boolean {
@@ -49,6 +50,7 @@ export function sectorUnlocked(save: SaveData, id: SectorId): boolean {
 /** Applies a finished run to the save. Pure with respect to the world (reads only). */
 export function applyRunResult(save: SaveData, w: World, won: boolean): RunSummary {
   const st = save.stats;
+  const stageBefore = unlockStage(save);
   const mode = w.mode;
   const sector = w.cfg.sector;
   const bits = w.computeBits(won);
@@ -108,6 +110,7 @@ export function applyRunResult(save: SaveData, w: World, won: boolean): RunSumma
     st.dailyQuests++;
   }
   const achievements = checkAchievements(save, w, won);
+  const unlocks = unlocksBetween(stageBefore, unlockStage(save));
   save.tutorialDone = true;
 
   return {
@@ -124,6 +127,7 @@ export function applyRunResult(save: SaveData, w: World, won: boolean): RunSumma
     sectorUnlocked: sectorUnlockedNow,
     endlessUnlocked,
     achievements,
+    unlocks,
     questReward,
     doubled: false,
   };

@@ -476,6 +476,15 @@ body {
   text-align: center;
   display: none;
 }
+.hud .boss-ptr { position: absolute; display: none; width: 2.6rem; height: 2.6rem; filter: drop-shadow(0 0 6px var(--red)); }
+.hud .boss-ptr.on { display: block; }
+.hud .boss-ptr i {
+  position: absolute; inset: 0;
+  background: var(--red);
+  clip-path: polygon(100% 50%, 20% 10%, 38% 50%, 20% 90%);
+  animation: bossPtr 0.8s ease-in-out infinite alternate;
+}
+@keyframes bossPtr { from { opacity: 0.55; } to { opacity: 1; } }
 .hud .bossbar.on { display: block; animation: screenIn 0.4s both; }
 .hud .bossbar .nm { font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.85rem; color: #ffd0da; text-shadow: 0 0 8px var(--red); }
 .hud .bossbar .bb { height: 0.7rem; margin-top: 0.2rem; border-radius: 999px; background: rgba(30, 4, 14, 0.8); border: 1.5px solid rgba(255, 42, 85, 0.7); overflow: hidden; }

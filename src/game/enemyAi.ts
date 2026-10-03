@@ -1,3 +1,4 @@
+import { BALANCE } from '../data/balance';
 import type { Enemy } from './entities';
 import { EV } from './events';
 import type { World } from './World';
@@ -235,7 +236,9 @@ function megaTrojan(w: World, e: Enemy, nx: number, ny: number, spd: number, dt:
 }
 
 function cryptolocker(w: World, e: Enemy, nx: number, ny: number, d: number, spd: number, dt: number): void {
-  keepDistance(e, nx, ny, d, spd, p(e, 'keep', 210), dt);
+  // after a while it stops kiting and closes in, so a fight can't drag on forever
+  if (e.age > BALANCE.miniBossEnrage) move(e, nx, ny, d > e.r + 30 ? spd * 1.6 : 0, dt);
+  else keepDistance(e, nx, ny, d, spd, p(e, 'keep', 210), dt);
   e.ang += dt * 0.7;
   e.t += dt;
   e.t2 += dt;
@@ -300,12 +303,16 @@ function chaosCore(w: World, e: Enemy, nx: number, ny: number, d: number, spd: n
   }
   const sp = p(e, 'bulletSpeed', 160);
   const dmg = p(e, 'bulletDmg', 14);
-  const speedMul = enraged ? 4 : phase === 2 ? 1.5 : 1;
+  const speedMul = enraged ? 3 : phase === 2 ? 1.5 : 1;
   // drift to a comfortable distance
   if (e.ty > 0) {
     // dashing
     e.ty -= dt;
     move(e, Math.cos(e.tx), Math.sin(e.tx), 380, dt);
+  } else if (enraged) {
+    // enraged: keeps up with the player (no more leaving it behind) and presses in close
+    const hunt = Math.max(spd * speedMul, BALANCE.player.baseSpeed * w.stats.speed * 0.95);
+    move(e, nx, ny, d > 120 ? hunt : 0, dt);
   } else if (d > 170) move(e, nx, ny, spd * speedMul, dt);
   else move(e, -nx, -ny, spd * 0.5, dt);
   e.ang += dt * (0.6 + phase * 0.5);

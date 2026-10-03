@@ -19,6 +19,8 @@ export class Hud {
   private readonly bossFill: HTMLElement;
   private readonly danger: HTMLElement;
   private readonly banners: HTMLElement;
+  private readonly bossPtr: HTMLElement;
+  private bossPtrOn = false;
   private hintEl: HTMLElement | null = null;
   private lastXp = -1;
   private lastLvl = -1;
@@ -42,6 +44,7 @@ export class Hud {
     this.bossFill = h('i');
     this.boss = h('div', { cls: 'bossbar' }, this.bossName, h('div', { cls: 'bb' }, this.bossFill));
     this.banners = h('div');
+    this.bossPtr = h('div', { cls: 'boss-ptr' }, h('i'));
     this.danger = h('div', { cls: 'danger-vignette' });
     this.el = h(
       'div',
@@ -51,6 +54,7 @@ export class Hud {
       this.items,
       this.boss,
       this.banners,
+      this.bossPtr,
     );
     document.body.appendChild(this.danger);
   }
@@ -107,6 +111,30 @@ export class Hud {
       }
     }
     this.setDanger(p.hp / w.stats.maxHp < 0.3 && w.state === 'playing');
+    this.updateBossPointer(w, b);
+  }
+
+  /** Edge arrow towards an off-screen boss. */
+  private updateBossPointer(w: World, b: World['boss']): void {
+    let on = false;
+    if (b) {
+      const dx = b.x - w.player.x;
+      const dy = b.y - w.player.y;
+      const { hw, hh } = w.view;
+      if (Math.abs(dx) > hw + b.r * 0.5 || Math.abs(dy) > hh + b.r * 0.5) {
+        on = true;
+        const k = Math.min((hw * 0.9) / Math.max(1e-6, Math.abs(dx)), (hh * 0.84) / Math.max(1e-6, Math.abs(dy)));
+        const x = 50 + ((dx * k) / hw) * 50;
+        const y = 50 + ((dy * k) / hh) * 50;
+        this.bossPtr.style.left = `${x.toFixed(2)}%`;
+        this.bossPtr.style.top = `${y.toFixed(2)}%`;
+        this.bossPtr.style.transform = `translate(-50%, -50%) rotate(${Math.atan2(dy, dx).toFixed(3)}rad)`;
+      }
+    }
+    if (on !== this.bossPtrOn) {
+      this.bossPtrOn = on;
+      this.bossPtr.classList.toggle('on', on);
+    }
   }
 
   private setDanger(on: boolean): void {

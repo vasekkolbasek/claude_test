@@ -434,4 +434,11 @@ export const en: Dict = {
   'ch.free': "Unlocked by achievement",
   'prerun.endlessHint': "Survive as long as you can. Your best time goes to the leaderboard.",
   'hud.tapToContinue': "Tap to continue",
+  'unl.mb': "destroy your first mini-boss",
+  'unl.sector': "clear the {name} sector",
+  'unl.opens': "Unlocks: {cond}",
+  'unl.next': "Next unlock: {cond}",
+  'res.newWeapon': "New weapon: {name}",
+  'res.newPassive': "New module: {name}",
+  'res.newChar': "Character available: {name}",
 };
