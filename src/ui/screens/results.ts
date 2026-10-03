@@ -54,9 +54,12 @@ export function showResults(app: App, s: RunSummary): void {
     if (s.sectorUnlocked) item('star', t('res.sectorUnlocked', { name: t(`s.${s.sectorUnlocked}`) }));
     if (s.endlessUnlocked) item('star', t('res.endlessUnlocked'));
     if (s.questReward > 0) item('daily', t('res.quest', { n: s.questReward }));
-    for (const id of s.unlocks.weapons) item(id, t('res.newWeapon', { name: t(`w.${id}`) }));
-    for (const id of s.unlocks.passives) item(id, t('res.newPassive', { name: t(`p.${id}`) }));
-    for (const id of s.unlocks.chars) if (id !== 'spark') item('characters', t('res.newChar', { name: t(`c.${id}`) }));
+    // one line per kind, however many items a single run opened
+    const u = s.unlocks;
+    if (u.weapons.length) item(u.weapons[0], t('res.newWeapon', { name: u.weapons.map((id) => t(`w.${id}`)).join(', ') }));
+    if (u.passives.length) item(u.passives[0], t('res.newPassive', { name: u.passives.map((id) => t(`p.${id}`)).join(', ') }));
+    const chars = u.chars.filter((id) => id !== 'spark');
+    if (chars.length) item('characters', t('res.newChar', { name: chars.map((id) => t(`c.${id}`)).join(', ') }));
     for (const a of s.achievements) item('achievements', t('ach.unlocked', { name: t(`a.${a}`) }));
   };
   renderNews();

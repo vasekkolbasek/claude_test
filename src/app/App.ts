@@ -24,6 +24,7 @@ import { showMenu } from '../ui/screens/menu';
 import { showResults } from '../ui/screens/results';
 import { Tutorial } from './tutorial';
 import { QualityController } from './quality';
+import { applyStage, type StageRect } from './stage';
 
 type Mode = 'boot' | 'menu' | 'run' | 'results';
 export type PauseReason = 'user' | 'hidden' | 'ad' | 'platform' | 'revive' | 'levelup' | 'death';
@@ -87,9 +88,11 @@ export class App {
 
     this.pixi = new Application();
     const s = this.save.data.settings;
+    this.stage = applyStage(this.clampStage());
+    const appEl = document.getElementById('app') as HTMLElement;
     await this.pixi.init({
       preference: ['webgl', 'canvas'],
-      resizeTo: window,
+      resizeTo: appEl,
       antialias: false,
       autoDensity: true,
       resolution: Math.min(window.devicePixelRatio || 1, 2),
@@ -98,7 +101,6 @@ export class App {
       failIfMajorPerformanceCaveat: false,
       autoStart: true,
     });
-    const appEl = document.getElementById('app') as HTMLElement;
     appEl.appendChild(this.pixi.canvas);
     appEl.appendChild(Object.assign(document.createElement('div'), { className: 'vignette' }));
     appEl.appendChild(Object.assign(document.createElement('div'), { className: 'scanlines' }));
@@ -131,9 +133,19 @@ export class App {
     this.goMenu(false);
   }
 
+  private stage: StageRect = { x: 0, y: 0, w: 1, h: 1 };
+
+  /** Desktop keeps the field within 2:1; phones and tablets always go full screen. */
+  private clampStage(): boolean {
+    const d = this.platform.device();
+    return d === 'desktop' || d === 'tv';
+  }
+
   private onResize(): void {
-    // ParticleContainer-free sizes are driven by resizeTo; we only refresh the camera
-    this.view.resize(window.innerWidth, window.innerHeight);
+    this.stage = applyStage(this.clampStage());
+    // the canvas follows #app through resizeTo; refresh it now so the camera sees the new size
+    this.pixi.resize();
+    this.view.resize(this.stage.w, this.stage.h);
   }
 
   private wireLifecycle(): void {
@@ -172,7 +184,7 @@ export class App {
     const res = q === 2 ? dpr : q === 1 ? Math.min(dpr, 1.5) : 1;
     if (Math.abs(this.pixi.renderer.resolution - res) > 0.01) {
       this.pixi.renderer.resolution = res;
-      this.pixi.renderer.resize(window.innerWidth, window.innerHeight, res);
+      this.pixi.renderer.resize(this.stage.w, this.stage.h, res);
     }
   }
 
@@ -706,6 +718,8 @@ export class App {
     this.pauses.delete('death');
     this.tutorial?.dispose();
     this.tutorial = null;
+    // nothing from the run's HUD (boss bar, low-HP vignette, banners) may outlive it
+    this.hud.reset();
     this.summary = applyRunResult(this.save.data, w, won);
     this.save.save(true);
     if (w.mode === 'endless' && this.platform.isAuthorized()) {

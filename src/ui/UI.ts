@@ -74,8 +74,11 @@ export class UI {
 
   openModal(el: HTMLElement): HTMLElement {
     el.classList.add('modal');
+    // a dialog opened on top of another one hides it (no text showing through)
+    this.modals[this.modals.length - 1]?.classList.add('covered');
     this.root.appendChild(el);
     this.modals.push(el);
+    this.root.classList.add('has-modal');
     return el;
   }
 
@@ -84,12 +87,19 @@ export class UI {
     if (!m) return;
     const i = this.modals.indexOf(m);
     if (i >= 0) this.modals.splice(i, 1);
+    this.modals[this.modals.length - 1]?.classList.remove('covered');
+    this.root.classList.toggle('has-modal', this.modals.length > 0);
     m.classList.add('leave');
     setTimeout(() => m.remove(), 190);
   }
 
   closeAllModals(): void {
     while (this.modals.length) this.closeModal();
+  }
+
+  /** Whether `el` is the topmost open modal (keyboard shortcuts must not act under a dialog). */
+  isTopModal(el: HTMLElement): boolean {
+    return this.modals[this.modals.length - 1] === el;
   }
 
   hasModal(): boolean {

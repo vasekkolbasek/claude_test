@@ -112,6 +112,9 @@ test('loads cleanly, plays a run with random input and reaches the results scree
   await page.locator('[data-test=revive-ad]').click({ timeout: 15_000 });
   await expect.poll(async () => (await appState(page)).state, { timeout: 15_000 }).toBe('playing');
   expect((await platformLog(page))).toContain('ad:rewarded');
+  // die again in the middle of a boss fight (the boss bar must not leak into the next run)
+  await page.evaluate(() => (window as unknown as { __ns: { sandbox(c: unknown): void } }).__ns.sandbox({ spawn: [['mb_trojan', 1, 260]] }));
+  await expect(page.locator('.bossbar.on')).toHaveCount(1, { timeout: 5000 });
   await page.waitForTimeout(800);
   await kill();
   // the ad revive is spent and there are no free revives: straight to the results
@@ -138,6 +141,8 @@ test('loads cleanly, plays a run with random input and reaches the results scree
   await page.locator('[data-test=start]').click();
   const hud = page.locator('.hud');
   await expect(hud).toBeVisible();
+  // nothing from the previous run's HUD survives (boss bar, boss pointer, low-HP vignette)
+  await expect(page.locator('.bossbar.on, .boss-ptr.on, .danger-vignette.on')).toHaveCount(0);
   await expect(hud).not.toHaveClass(/leave/);
   await expect.poll(() => hud.evaluate((el) => Number(getComputedStyle(el).opacity)), { timeout: 5000 }).toBeGreaterThan(0.9);
 

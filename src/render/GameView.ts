@@ -154,6 +154,7 @@ export class GameView {
     this.camY = world.player.y;
     this.trauma = 0;
     this.flashA = 0;
+    this.playerHitT = 0;
     this.setSector(world.cfg.sector);
   }
 

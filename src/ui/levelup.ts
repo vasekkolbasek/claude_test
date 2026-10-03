@@ -103,6 +103,9 @@ export function buildLevelUp(o: LevelUpOptions): HTMLElement {
   let busy = false;
 
   const keyHandler = (e: KeyboardEvent) => {
+    // ignore hotkeys while another dialog (pause, settings) is open on top of the cards
+    const open = document.querySelectorAll('.modal:not(.leave)');
+    if (open[open.length - 1] !== root) return;
     const n = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4'].indexOf(e.code);
     if (n >= 0) {
       const btn = cardsBox.children[n % 4] as HTMLElement | undefined;

@@ -64,6 +64,12 @@ export class Hud {
     this.lastItems = '';
     this.lastBoss = '';
     this.lastBossFrac = -1;
+    // the boss bar / pointer only change on a boss switch, so a run that ended mid-fight would
+    // otherwise leave them on screen for the next run
+    this.boss.classList.remove('on');
+    this.bossFill.style.transform = 'scaleX(1)';
+    this.bossPtrOn = false;
+    this.bossPtr.classList.remove('on');
     this.banners.textContent = '';
     this.hideHint();
     this.setDanger(false);

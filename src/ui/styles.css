@@ -40,6 +40,20 @@ body {
   -webkit-touch-callout: none;
 }
 
+/* the stage (see src/app/stage.ts): full window, or a ≤ 2:1 centred box on desktop */
+#app,
+#ui,
+.vignette,
+.scanlines,
+.danger-vignette {
+  left: var(--sx, 0px) !important;
+  top: var(--sy, 0px) !important;
+  width: var(--sw, 100%);
+  height: var(--sh, 100%);
+  right: auto !important;
+  bottom: auto !important;
+}
+
 #app {
   position: fixed;
   inset: 0;
@@ -773,7 +787,8 @@ body {
 .news { display: flex; flex-direction: column; gap: 0.35rem; width: min(100%, 28rem); margin-top: 0.6rem; }
 .news .ni { padding: 0.5rem 0.8rem; border-radius: 0.7rem; background: rgba(255, 181, 46, 0.12); border: 1.5px solid rgba(255, 181, 46, 0.5); font-weight: 700; font-size: 0.9rem; display: flex; gap: 0.5rem; align-items: center; animation: screenIn 0.4s both; }
 .news .ni .ico { color: var(--r3); flex: none; }
-.res-actions { display: flex; flex-direction: column; gap: 0.6rem; width: min(100%, 22rem); margin: 1rem auto 0.4rem; }
+.res-actions { display: flex; flex-direction: column; gap: 0.6rem; width: min(100%, 22rem); margin: 1rem auto 0.4rem; position: sticky; bottom: 0; z-index: 2; padding-top: 0.5rem; }
+.res-actions .btn { box-shadow: 0 0.6rem 1.6rem rgba(5, 3, 15, 0.9); }
 
 /* ---------------------------------------------------------------- lists (workshop, codex, achievements) */
 
@@ -919,3 +934,24 @@ body {
 .debug-overlay { position: fixed; left: 4px; bottom: 4px; z-index: 999; font: 600 11px/1.3 monospace; color: #9f9; background: rgba(0, 0, 0, 0.6); padding: 2px 6px; pointer-events: none; }
 
 .tap-overlay { position: fixed; inset: 0; z-index: 40; border: 0; background: rgba(3, 1, 12, 0.55); color: #fff; font: 800 1.4rem var(--font); letter-spacing: 0.06em; text-transform: uppercase; text-shadow: 0 0 12px var(--cyan); cursor: pointer; animation: fadeIn 0.2s both; }
+
+/* dialogs: the bottom buttons stay reachable without scrolling on short screens */
+.dialog > .btns:last-child {
+  position: sticky;
+  bottom: -1.3rem;
+  margin: 0.3rem -1.2rem -1.3rem;
+  padding: 0.6rem 1.2rem 1.3rem;
+  background: linear-gradient(180deg, rgba(10, 6, 30, 0) 0, rgba(10, 6, 30, 0.96) 0.6rem);
+  z-index: 1;
+}
+@media (max-height: 480px) {
+  .dialog { padding: 0.9rem 1rem; gap: 0.5rem; }
+  .dialog h3 { font-size: 1.2rem; }
+  .dialog > .btns:last-child { bottom: -0.9rem; margin: 0.2rem -1rem -0.9rem; padding: 0.5rem 1rem 0.9rem; }
+  .set-row { padding: 0.45rem 0.7rem; }
+}
+/* the run HUD fades under any open dialog (level-up, pause…) so nothing overlaps the dialog text */
+#ui.has-modal .hud .bar2,
+#ui.has-modal .hud .items,
+#ui.has-modal .hud .bossbar { opacity: 0.12; transition: opacity 0.15s; }
+.modal.covered > * { visibility: hidden; }

@@ -31,7 +31,8 @@ export function openPause(app: App, onResume: () => void): void {
     onResume();
   };
   const onKey = (e: KeyboardEvent) => {
-    if (e.code === 'Escape' || e.code === 'KeyP') resume();
+    // a dialog opened from the pause menu (settings, quit confirmation) owns the keyboard
+    if ((e.code === 'Escape' || e.code === 'KeyP') && app.ui.isTopModal(m)) resume();
   };
   setTimeout(() => window.addEventListener('keydown', onKey), 50);
   const m = app.ui.openModal(
