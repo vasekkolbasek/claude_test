@@ -77,9 +77,8 @@ export function showResults(app: App, s: RunSummary): void {
     app.save.save();
     auth = h(
       'div',
-      { cls: 'panel res-auth', style: { padding: '0.8rem', width: 'min(100%, 28rem)', 'margin-top': '0.6rem', display: 'flex', 'flex-direction': 'column', gap: '0.45rem', 'text-align': 'center' } },
-      h('b', { text: t('auth.offerTitle') }),
-      h('div', { cls: 'note', text: t('auth.offerText') }),
+      { cls: 'panel res-auth' },
+      h('div', { cls: 'ra-text' }, h('b', { text: t('auth.offerTitle') }), h('span', { text: t('auth.offerShort') })),
       h('button', {
         cls: 'btn small',
         onClick: async () => {
@@ -105,7 +104,7 @@ export function showResults(app: App, s: RunSummary): void {
   const el = h(
     'div',
     { cls: 'results dim' },
-    h('div', { cls: `title ${s.won ? 'win' : 'lose'}`, text: s.won ? t('res.victory') : t('res.defeat') }),
+    h('div', { cls: `title fit-text ${s.won ? 'win' : 'lose'}`, text: s.won ? t('res.victory') : t('res.defeat') }),
     s.won ? h('div', { cls: 'dim-text res-sub', text: t('res.victoryText'), style: { 'text-align': 'center', 'margin-top': '0.3rem' } }) : null,
     h('div', { cls: 'stats' }, stat(formatTime(s.time), t('res.time')), stat(fmtNum(s.kills), t('res.kills')), stat(String(s.level), t('res.level'))),
     dmg,
@@ -115,5 +114,6 @@ export function showResults(app: App, s: RunSummary): void {
     h('div', { cls: 'res-actions' }, cont),
   );
   el.setAttribute('data-screen', 'results');
+  el.setAttribute('data-fit', '');
   app.ui.show(el);
 }

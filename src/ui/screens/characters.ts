@@ -95,7 +95,7 @@ export function showCharacters(app: App, back: () => void): void {
   const render = () => {
     const items = CHARACTER_IDS.map(card);
     if (pager) pager.setItems(items, pager.current);
-    else pager = new Pager(items, { minItemW: 260 });
+    else pager = new Pager(items, { minItemW: 300, maxCols: 3 });
   };
   render();
   app.ui.show(h('div', { cls: 'dim' }, bar, (pager as unknown as Pager).el));

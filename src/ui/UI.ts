@@ -1,4 +1,5 @@
 import { h } from './dom';
+import { scheduleRefit } from './fit';
 import { icon } from './icons';
 
 /** Screen / modal / toast manager over the #ui overlay. */
@@ -47,6 +48,8 @@ export class UI {
     el.classList.add('screen', 'enter');
     if (el.parentElement !== this.layer) this.layer.appendChild(el);
     this.screen = el;
+    el.querySelectorAll<HTMLElement>('.topbar h2').forEach((x) => x.classList.add('fit-text'));
+    scheduleRefit();
   }
 
   current(): HTMLElement | null {
@@ -76,8 +79,12 @@ export class UI {
     el.classList.add('modal');
     // a dialog opened on top of another one hides it (no text showing through)
     this.modals[this.modals.length - 1]?.classList.add('covered');
+    // dialogs tighten themselves instead of ever scrolling (see fit.ts)
+    el.querySelectorAll<HTMLElement>('.dialog').forEach((d) => d.setAttribute('data-fit', ''));
+    el.querySelectorAll<HTMLElement>('.dialog h3').forEach((x) => x.classList.add('fit-text'));
     this.root.appendChild(el);
     this.modals.push(el);
+    scheduleRefit();
     this.root.classList.add('has-modal');
     return el;
   }

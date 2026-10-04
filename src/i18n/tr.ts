@@ -458,4 +458,5 @@ export const tr: Dict = {
   'e.ransom': "Fidye Yazılımı",
   'e.ransom.desc': "Yavaş ve zırhlı, kalkanını yeniler. Solucanlara bölünür.",
   'codex.fromSector': "{name} sektöründen itibaren görülür",
+  'auth.offerShort': "Bulut kaydı ve liderlik tablosunda yer",
 };

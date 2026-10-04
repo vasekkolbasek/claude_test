@@ -458,4 +458,5 @@ export const en: Dict = {
   'e.ransom': "Ransomware",
   'e.ransom.desc': "Slow, armoured and regenerates its shield. Splits into worms.",
   'codex.fromSector': "Appears from the {name} sector",
+  'auth.offerShort': "Cloud saves and a place on the leaderboard",
 };

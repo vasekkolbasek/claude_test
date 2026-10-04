@@ -98,7 +98,8 @@ export class Pager {
     this.lastW = W;
     this.lastH = H;
     const gap = this.o.gap ?? 8;
-    const cols = Math.max(1, Math.min(this.o.maxCols ?? 99, Math.floor((W + gap) / (this.o.minItemW + gap))));
+    // never more columns than items: a short list gets wider cards instead of empty slots
+    const cols = Math.max(1, Math.min(this.o.maxCols ?? 99, this.items.length || 1, Math.floor((W + gap) / (this.o.minItemW + gap))));
     const colW = (W - gap * (cols - 1)) / cols;
     // measure the tallest item at the final column width
     const probe = h('div', { cls: 'pg-probe', style: { width: `${colW}px` } });

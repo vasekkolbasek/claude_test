@@ -1048,3 +1048,57 @@ body {
   .results { max-width: 64rem; margin: 0 auto; width: 100%; }
   .results .res-actions { position: static; }
 }
+
+/* ---------------------------------------------------------------- fit-to-screen (fit.ts) */
+/* no overflow:hidden here: it would clip the neon glow; fit.ts shrinks the font instead */
+.fit-text { white-space: nowrap; max-width: 100%; }
+.results .title { max-width: 100%; }
+.res-auth { display: flex; align-items: center; gap: 0.7rem; width: min(100%, 30rem); padding: 0.55rem 0.7rem; margin-top: 0.4rem; text-align: left; }
+.res-auth .ra-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.8rem; line-height: 1.2; }
+.res-auth .ra-text span { color: var(--dim); }
+.res-auth .btn { flex: none; }
+.results .res-actions { position: static; }
+.results > .pager.news { min-height: 5.2rem; }
+.news .pg-arrow { width: 2.2rem; height: 2.2rem; }
+
+.results.tight .title { margin-top: 0; }
+.results.tight .stats { margin-top: 0.4rem; }
+.results.tight .stat { padding: 0.35rem 0.3rem; }
+.results.tight .dmg-list { margin-top: 0.4rem; gap: 0.2rem; }
+.results.tight .reward { padding: 0.5rem; gap: 0.25rem; margin-top: 0.5rem; }
+.results.tight .reward .amount { font-size: 1.7rem; }
+.results.tight .res-actions { margin-top: 0.5rem; }
+.results.tight > .pager.news { min-height: 4.4rem; }
+.results.tighter .res-sub, .results.tighter .dl-h { display: none; }
+.results.tighter .dmg-row:nth-child(n + 4) { display: none; }
+.results.tighter .stat span { font-size: 0.62rem; }
+.results.tighter .res-auth .ra-text span { display: none; }
+
+.dialog.tight { padding: 0.9rem 0.9rem; gap: 0.5rem; }
+.dialog.tight h3 { font-size: 1.25rem; }
+.dialog.tight .set-row { padding: 0.45rem 0.7rem; }
+.dialog.tight .btns { gap: 0.4rem; }
+.dialog.tight .btn { padding-top: 0.55em; padding-bottom: 0.55em; }
+.dialog.tight > .btns:last-child { bottom: -0.9rem; margin: 0.2rem -0.9rem -0.9rem; padding: 0.5rem 0.9rem 0.9rem; }
+.dialog.tighter { gap: 0.35rem; padding: 0.7rem 0.8rem; }
+.dialog.tighter .set-body .note, .dialog.tighter .section-h { display: none; }
+.dialog.tighter .set-row { padding: 0.3rem 0.6rem; }
+.dialog.tighter > .btns:last-child { bottom: -0.7rem; margin: 0.1rem -0.8rem -0.7rem; padding: 0.4rem 0.8rem 0.7rem; }
+
+/* bigger section tabs (workshop, codex): equal-width, easy to hit */
+.tabs { flex-wrap: nowrap; gap: 0.45rem; }
+.tabs .tab { flex: 1 1 0; min-width: 0; min-height: 2.9rem; font-size: 1rem; padding: 0.55em 0.6em; border-radius: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* never let a grid column or a segmented control grow past the screen (large system fonts) */
+.menu-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.menu-grid.n1 { grid-template-columns: minmax(0, 1fr); }
+.menu-grid.n2, .menu-grid.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tile { min-width: 0; }
+.tile span { overflow-wrap: anywhere; hyphens: auto; }
+.seg { min-width: 0; }
+.seg button { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 0.3em; padding-right: 0.3em; }
+.sector { min-width: 0; }
+.sector .grow { min-width: 0; }
+.sector .sname, .sector .smod { overflow-wrap: anywhere; }
+
+.seg button + button { border-left: 1px solid rgba(130, 100, 255, 0.3); }
+.set-body .seg button { font-size: 0.82rem; }
