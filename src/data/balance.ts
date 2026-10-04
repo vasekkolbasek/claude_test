@@ -6,7 +6,7 @@ export const BALANCE = {
     radius: 14,
     baseSpeed: 150,
     baseMagnet: 72,
-    invulnAfterHit: 0.45,
+    invulnAfterHit: 0.55,
     reviveInvuln: 3,
   },
   slots: { weapons: 6, passives: 6 },
@@ -26,14 +26,14 @@ export const BALANCE = {
   /** mini-bosses that keep their distance stop doing so after this many seconds */
   miniBossEnrage: 45,
   /** per minute enemy HP growth: hpMult = 1 + a*m + b*m^2 */
-  hpGrowth: { a: 0.18, b: 0.08 },
+  hpGrowth: { a: 0.16, b: 0.09 },
   /** enemy HP also scales with the player's level (rubber band against snowballing) */
-  hpPerLevel: 0.035,
+  hpPerLevel: 0.05,
   /** rate-based spawns stop above this multiple of the wave minimum */
   overflowCap: 1.6,
   /** endless mode: extra growth after bossTime */
   endlessHpGrowth: 0.22,
-  dmgGrowth: 0.15,
+  dmgGrowth: 0.13,
   /** enemy speed grows by this fraction per minute */
   speedGrowth: 0.04,
   /** normal mode: seconds after the final boss appears before overtime pressure kicks in */

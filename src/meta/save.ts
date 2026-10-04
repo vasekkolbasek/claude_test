@@ -1,7 +1,8 @@
 import type { CharacterId, SectorId } from '../data/types';
 import type { Platform } from '../platform/Platform';
+import { seenForExisting } from './features';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 const LOCAL_KEY = 'neon-swarm:save';
 
 export type QualitySetting = 'auto' | 0 | 1 | 2;
@@ -63,6 +64,10 @@ export interface SaveData {
   chestAt: number;
   tutorialDone: boolean;
   authOffered: number;
+  /** menu features the player has already opened (progressive menu) */
+  seen: string[];
+  /** rewarded videos watched towards ad-unlocked characters */
+  adUnlock: Record<string, number>;
 }
 
 export function defaultStats(): LifetimeStats {
@@ -108,6 +113,8 @@ export function defaultSave(): SaveData {
     chestAt: 0,
     tutorialDone: false,
     authOffered: 0,
+    seen: [],
+    adUnlock: {},
   };
 }
 
@@ -137,6 +144,7 @@ function numRecord(v: unknown): Record<string, number> {
  * Upgrades any older (or partially corrupted) save to the current schema.
  * v0: pre-release prototype — `coins` instead of `bits`, flat `unlocked` list.
  * v1: had `settings.muted` instead of separate volumes and no daily/codex.p.
+ * v2: no progressive menu (`seen`) and no ad-unlock counters.
  */
 export function migrate(input: unknown): SaveData {
   const d = defaultSave();
@@ -198,6 +206,9 @@ export function migrate(input: unknown): SaveData {
   s.chestAt = num(raw.chestAt, 0);
   s.tutorialDone = bool(raw.tutorialDone, false);
   s.authOffered = num(raw.authOffered, 0);
+  // older saves knew no gated menu: whatever is already open is not «new»
+  s.seen = Array.isArray(raw.seen) ? strArr<string>(raw.seen, []) : seenForExisting(s);
+  s.adUnlock = numRecord(raw.adUnlock);
   s.v = SAVE_VERSION;
   return s;
 }

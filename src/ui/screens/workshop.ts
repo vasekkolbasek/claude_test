@@ -6,6 +6,7 @@ import { checkAchievements } from '../../meta/achievements';
 import { buyNode, nodeAvailable, nodeCost, nodeLevel } from '../../meta/workshop';
 import { fmtNum, h, hexColor } from '../dom';
 import { icon } from '../icons';
+import { Pager } from '../pager';
 import { bitsPill, topbar } from './common';
 import { showMenu } from './menu';
 
@@ -17,20 +18,33 @@ function perText(id: string): string {
   return t(`ws.${id}.desc`, { v });
 }
 
+// the single «core» node opens the attack branch, so no tab is nearly empty
+const BRANCHES = ['offense', 'defense', 'utility'] as const;
+type Branch = (typeof BRANCHES)[number];
+const inBranch = (nb: string, tab: Branch) => nb === tab || (tab === 'offense' && nb === 'core');
+let branch: Branch = 'offense';
+
+/** Workshop: one tab per branch, the nodes of a branch fit on one screen (pages if needed). */
 export function showWorkshop(app: App): void {
   const save = app.save.data;
   const pill = bitsPill(save.bits);
-  const body = h('div', { cls: 'col' });
+  const tabs = h('div', { cls: 'tabs' });
+  let pager: Pager | null = null;
   const render = () => {
-    body.textContent = '';
     pill.querySelector('span')!.textContent = fmtNum(save.bits);
-    body.appendChild(h('div', { cls: 'note', text: t('ws.hint') }));
-    for (const branch of ['core', 'offense', 'defense', 'utility'] as const) {
-      const nodes = WORKSHOP.filter((n) => n.branch === branch || (branch === 'core' && n.id === 'core_dmg'));
-      const items = WORKSHOP.filter((n) => n.branch === branch);
-      if (!items.length && !nodes.length) continue;
-      body.appendChild(h('div', { cls: 'section-h', text: t(`ws.b.${branch}`) }));
-      const grid = h('div', { cls: 'grid2' });
+    tabs.textContent = '';
+    for (const b of BRANCHES) {
+      const canBuy = WORKSHOP.some((n) => inBranch(n.branch, b) && nodeAvailable(save, n.id) && (nodeCost(save, n.id) ?? Infinity) <= save.bits);
+      const tb = h('button', { cls: `tab ${b === branch ? 'on' : ''}`, text: t(`ws.b.${b}`) }, canBuy ? h('i', { cls: 'tab-dot' }) : null);
+      tb.addEventListener('click', () => {
+        branch = b;
+        render();
+      });
+      tabs.appendChild(tb);
+    }
+    const cards: HTMLElement[] = [];
+    {
+      const items = WORKSHOP.filter((n) => inBranch(n.branch, branch));
       for (const n of items) {
         const lv = nodeLevel(save, n.id);
         const avail = nodeAvailable(save, n.id);
@@ -54,7 +68,7 @@ export function showWorkshop(app: App): void {
           });
           action = b;
         }
-        grid.appendChild(
+        cards.push(
           h(
             'div',
             { cls: `li ${avail ? '' : 'locked'} ${cost === null ? 'done' : ''}` },
@@ -70,9 +84,12 @@ export function showWorkshop(app: App): void {
           ),
         );
       }
-      body.appendChild(grid);
     }
+    if (pager) pager.setItems(cards, pager.current);
+    else pager = new Pager(cards, { minItemW: 250 });
   };
   render();
-  app.ui.show(h('div', { cls: 'dim' }, topbar(app, t('ws.title'), () => showMenu(app), pill), h('div', { cls: 'scroll' }, body)));
+  app.ui.show(
+    h('div', { cls: 'dim' }, topbar(app, t('ws.title'), () => showMenu(app), pill), h('div', { cls: 'note', text: t('ws.hint') }), tabs, (pager as unknown as Pager).el),
+  );
 }

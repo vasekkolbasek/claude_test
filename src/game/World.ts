@@ -2,7 +2,7 @@ import { SpatialHash } from '../core/grid';
 import { Rng, damp } from '../core/math';
 import { BALANCE, xpForLevel } from '../data/balance';
 import { CHARACTERS } from '../data/characters';
-import { ENEMIES } from '../data/enemies';
+import { ENEMIES, enemyFor } from '../data/enemies';
 import { PASSIVES } from '../data/passives';
 import { SECTORS } from '../data/sectors';
 import { EVOLUTIONS, WEAPONS } from '../data/weapons';
@@ -765,9 +765,11 @@ export class World {
     return (this.t - BALANCE.bossTime - BALANCE.overtimeAfter) / 60;
   }
 
-  private runEvent(ev: WaveEvent): void {
+  private runEvent(raw: WaveEvent): void {
     const p = this.player;
     const pt = { x: 0, y: 0 };
+    // scripted waves use a stand-in when the sector does not have that virus yet
+    const ev = raw.type === 'boss' || raw.type === 'miniboss' ? raw : { ...raw, enemy: enemyFor(raw.enemy, this.sector.id) };
     switch (ev.type) {
       case 'miniboss':
       case 'boss': {

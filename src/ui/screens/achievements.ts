@@ -4,6 +4,7 @@ import { t } from '../../i18n';
 import { totalWorkshopLevels } from '../../meta/workshop';
 import { fmtNum, h } from '../dom';
 import { icon } from '../icons';
+import { Pager } from '../pager';
 import { topbar } from './common';
 import { showMenu } from './menu';
 
@@ -11,13 +12,13 @@ export function showAchievements(app: App): void {
   const save = app.save.data;
   const ctx = { save, w: null, won: false, workshopLevels: totalWorkshopLevels(save) };
   const got = ACHIEVEMENTS.filter((a) => save.ach[a.id]).length;
-  const list = h('div', { cls: 'grid2' });
+  const items: HTMLElement[] = [];
   // unlocked first, then by progress
   const sorted = ACHIEVEMENTS.slice().sort((a, b) => Number(!!save.ach[b.id]) - Number(!!save.ach[a.id]));
   for (const a of sorted) {
     const done = !!save.ach[a.id];
     const pr = !done && a.progress ? a.progress(ctx) : null;
-    list.appendChild(
+    items.push(
       h(
         'div',
         { cls: `li ${done ? 'done' : ''}` },
@@ -42,7 +43,7 @@ export function showAchievements(app: App): void {
       { cls: 'dim' },
       topbar(app, t('ach.title'), () => showMenu(app)),
       h('div', { cls: 'note', text: t('ach.progress', { a: got, b: ACHIEVEMENTS.length }) }),
-      h('div', { cls: 'scroll' }, list),
+      new Pager(items, { minItemW: 240 }).el,
     ),
   );
 }

@@ -53,10 +53,14 @@ describe('content requirements', () => {
     }
   });
 
-  it('character unlock achievements exist', () => {
+  it('characters: one free, one for rewarded ads, the rest for bits', () => {
+    const types = CHARACTER_IDS.map((id) => CHARACTERS[id].unlock.type);
+    expect(types.filter((x) => x === 'free')).toHaveLength(1);
+    expect(types.filter((x) => x === 'ads')).toHaveLength(1);
     for (const id of CHARACTER_IDS) {
       const u = CHARACTERS[id].unlock;
-      if (u.type === 'achievement') expect(ACHIEVEMENTS.some((a) => a.id === u.id)).toBe(true);
+      if (u.type === 'bits') expect(u.cost).toBeGreaterThan(0);
+      if (u.type === 'ads') expect(u.count).toBeGreaterThan(0);
     }
   });
 });

@@ -1,4 +1,5 @@
 import { BALANCE } from '../data/balance';
+import { enemyFor } from '../data/enemies';
 import {
   ENDLESS_CYCLE_LENGTH,
   ENDLESS_DENSITY_PER_MIN,
@@ -70,10 +71,13 @@ export function waveStateAt(t: number, mode: GameMode, sector: SectorDef): WaveS
   }
   min *= sector.spawnMult;
   rate *= sector.spawnMult;
-  const roster = seg.roster.map(([id, w]) => {
-    const swapped = sector.swap?.[id] ?? id;
-    return [swapped, w * (sector.weights?.[swapped] ?? 1)] as const;
-  });
+  // a virus the sector does not have yet is replaced by a stand-in of similar weight
+  const merged = new Map<EnemyId, number>();
+  for (const [id, w] of seg.roster) {
+    const real = enemyFor(sector.swap?.[id] ?? id, sector.id);
+    merged.set(real, (merged.get(real) ?? 0) + w * (sector.weights?.[real] ?? 1));
+  }
+  const roster = [...merged.entries()] as (readonly [EnemyId, number])[];
   return {
     min: Math.min(min, BALANCE.maxEnemies),
     rate,

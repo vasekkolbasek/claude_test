@@ -171,6 +171,70 @@ export function updateEnemy(w: World, e: Enemy, dt: number): void {
       break;
     }
 
+    case 'weave': {
+      // zig-zags towards the player: hard to line up a shot on
+      const side = Math.sin(e.age * p(e, 'freq', 5.5) + e.uid) * p(e, 'amp', 1.1);
+      const vx = nx - ny * side;
+      const vy = ny + nx * side;
+      const l = Math.hypot(vx, vy) || 1;
+      move(e, vx / l, vy / l, spd, dt);
+      e.ang = Math.atan2(vy, vx);
+      break;
+    }
+
+    case 'sniper': {
+      // keeps far away, aims (blinking) and fires one fast shot
+      e.ang += dt * 0.8;
+      if (e.state === 0) {
+        keepDistance(e, nx, ny, d, spd, p(e, 'keep', 360), dt);
+        e.t -= dt;
+        if (e.t <= 0 && e.spawnT >= 1 && d < 720) {
+          e.state = 1;
+          e.t2 = p(e, 'aim', 0.9);
+        }
+      } else {
+        e.t2 -= dt;
+        e.flash = Math.sin(e.t2 * 28) > 0 ? 0.05 : 0;
+        if (e.t2 <= 0) {
+          w.fireEnemyBullet(e.x, e.y, Math.atan2(dy, dx), p(e, 'bulletSpeed', 430), p(e, 'bulletDmg', 13), e.def.color, 6);
+          w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+          e.state = 0;
+          e.t = p(e, 'fireCd', 3.4);
+        }
+      }
+      break;
+    }
+
+    case 'phantom': {
+      // blinks next to the player and answers with a fan of bullets
+      e.t2 += dt;
+      const every = p(e, 'every', 3.4);
+      const tele = p(e, 'telegraph', 0.5);
+      if (e.state === 0) {
+        move(e, nx, ny, spd * 0.7, dt);
+        if (e.t2 > every - tele && d < 900) {
+          e.state = 1;
+          const a = w.rng.angle();
+          const r = Math.max(140, Math.min(p(e, 'jump', 170), d));
+          e.tx = pl.x + Math.cos(a) * r;
+          e.ty = pl.y + Math.sin(a) * r;
+        }
+      } else if (e.t2 > every) {
+        w.events.push(EV.TELEPORT, e.x, e.y, e.tx, e.ty, e.def.color);
+        e.x = e.tx;
+        e.y = e.ty;
+        e.state = 0;
+        e.t2 = w.rng.range(0, 0.6);
+        e.spawnT = 0.55;
+        const n = p(e, 'shots', 5);
+        const base = Math.atan2(pl.y - e.y, pl.x - e.x);
+        for (let i = 0; i < n; i++) w.fireEnemyBullet(e.x, e.y, base + (i - (n - 1) / 2) * 0.22, p(e, 'bulletSpeed', 165), p(e, 'bulletDmg', 8), e.def.color, 7);
+        w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+      }
+      e.ang += dt * 2;
+      break;
+    }
+
     case 'mb_trojan':
       megaTrojan(w, e, nx, ny, spd, dt);
       break;

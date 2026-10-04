@@ -7,5 +7,5 @@ export const CONFIG = {
   /** No interstitials until the player has finished this many runs. */
   interstitialMinRuns: 2,
   /** Free menu chest cooldown. */
-  chestCooldownMs: 10 * 60 * 1000,
+  chestCooldownMs: 5 * 60 * 1000,
 } as const;

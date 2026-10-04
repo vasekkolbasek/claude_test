@@ -45,10 +45,10 @@ describe('progressive unlocks', () => {
     expect(unlockStage(s)).toBe(1);
     expect(weaponPoolFor(s)).toEqual(['pulse', 'orbit', 'laser']);
     expect(passivePoolFor(s)).toHaveLength(6);
-    expect(charAvailable(s, 'sentinel')).toBe(false);
+    expect(charAvailable(s, 'sentinel')).toBe(true); // for rewarded ads from the start
+    expect(charAvailable(s, 'volt')).toBe(false);
     s.stats.miniBosses = 1;
     expect(unlockStage(s)).toBe(2);
-    expect(charAvailable(s, 'sentinel')).toBe(true);
     s.sectorsCleared.push('ram', 'cpu', 'gpu');
     expect(unlockStage(s)).toBe(UNLOCK_STAGES.length);
     expect(weaponPoolFor(s).sort()).toEqual([...WEAPON_IDS].sort());
@@ -64,13 +64,13 @@ describe('progressive unlocks', () => {
     expect(passiveStage('amount').req).toBe('gpu');
   });
 
-  it('does not grant achievement characters before their stage', () => {
+  it('sector characters become purchasable when their sector is cleared', () => {
     const s = defaultSave();
-    s.stats.kills = 5000; // volt's achievement
-    checkAchievements(s, null, false);
-    expect(s.chars).not.toContain('volt');
+    expect(charAvailable(s, 'volt')).toBe(false);
     s.sectorsCleared.push('ram');
+    expect(charAvailable(s, 'volt')).toBe(true);
+    expect(charAvailable(s, 'sapper')).toBe(false);
     checkAchievements(s, null, false);
-    expect(s.chars).toContain('volt');
+    expect(s.chars).toEqual(['spark']); // never granted for free
   });
 });

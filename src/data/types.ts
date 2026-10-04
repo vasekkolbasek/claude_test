@@ -123,6 +123,10 @@ export type EnemyId =
   | 'bomber'
   | 'spawner'
   | 'rootkit'
+  | 'weaver'
+  | 'sniper'
+  | 'phantom'
+  | 'ransom'
   | 'mb_trojan'
   | 'mb_crypto'
   | 'mb_hydra'
@@ -137,6 +141,9 @@ export type EnemyAi =
   | 'bomber'
   | 'spawner'
   | 'stalker'
+  | 'weave'
+  | 'sniper'
+  | 'phantom'
   | 'mb_trojan'
   | 'mb_crypto'
   | 'mb_hydra'
@@ -157,6 +164,10 @@ export type ShapeId =
   | 'spikeball'
   | 'bighex'
   | 'stealth'
+  | 'zigzag'
+  | 'crosshair'
+  | 'eye'
+  | 'lock'
   | 'mb_trojan'
   | 'mb_crypto'
   | 'mb_hydra'
@@ -229,7 +240,8 @@ export type CharacterId = 'spark' | 'sentinel' | 'volt' | 'sapper' | 'hunter';
 export type UnlockRule =
   | { type: 'free' }
   | { type: 'bits'; cost: number }
-  | { type: 'achievement'; id: string; cost: number };
+  /** unlocked by watching `count` rewarded videos (progress is saved) */
+  | { type: 'ads'; count: number };
 
 export interface CharacterDef {
   id: CharacterId;

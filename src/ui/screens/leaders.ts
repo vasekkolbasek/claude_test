@@ -4,6 +4,7 @@ import { formatTime } from '../../core/math';
 import { t } from '../../i18n';
 import { h } from '../dom';
 import { icon } from '../icons';
+import { Pager } from '../pager';
 import { topbar } from './common';
 import { showMenu } from './menu';
 
@@ -34,21 +35,22 @@ export function showLeaders(app: App): void {
       ),
     );
   }
-  const list = h('div', { cls: 'list' });
-  body.append(status, list);
-  app.ui.show(h('div', { cls: 'dim' }, topbar(app, t('lb.title'), () => showMenu(app)), h('div', { cls: 'scroll' }, body)));
+  body.append(status);
+  const pager = new Pager([], { minItemW: 280, maxCols: 2, gap: 6 });
+  app.ui.show(h('div', { cls: 'dim' }, topbar(app, t('lb.title'), () => showMenu(app)), body, pager.el));
 
   app.platform
     .getLeaderboard(CONFIG.leaderboard)
     .then((res) => {
       status.remove();
       if (!res.entries.length) {
-        list.appendChild(h('div', { cls: 'note', text: t('lb.empty') }));
+        body.appendChild(h('div', { cls: 'note', text: t('lb.empty') }));
         return;
       }
+      const rows: HTMLElement[] = [];
       for (const e of res.entries) {
         const name = e.isPlayer ? t('lb.you') : e.name || t('lb.anon');
-        list.appendChild(
+        rows.push(
           h(
             'div',
             { cls: `lb-row ${e.rank <= 3 ? `top${e.rank}` : ''} ${e.isPlayer ? 'me' : ''}` },
@@ -59,6 +61,7 @@ export function showLeaders(app: App): void {
           ),
         );
       }
+      pager.setItems(rows);
     })
     .catch(() => {
       status.textContent = t('lb.error');

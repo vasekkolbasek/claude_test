@@ -133,8 +133,6 @@ export function applyRunResult(save: SaveData, w: World, won: boolean): RunSumma
   };
 }
 
-export const FREE_CHEST_COOLDOWN = 10 * 60 * 1000;
-
 export function chestReward(save: SaveData): number {
   // grows a little with progression so it stays relevant
   return Math.round(40 + Math.min(160, save.stats.runs * 4 + save.sectorsCleared.length * 25));

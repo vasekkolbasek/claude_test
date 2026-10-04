@@ -6,12 +6,14 @@ import { t } from '../../i18n';
 import type { RunSummary } from '../../meta/progress';
 import { fmtNum, h, hexColor } from '../dom';
 import { icon } from '../icons';
+import { Pager } from '../pager';
 
 export function showResults(app: App, s: RunSummary): void {
   const stat = (v: string, label: string) => h('div', { cls: 'stat' }, h('b', { text: v }), h('span', { text: label }));
 
   // damage per weapon
-  const entries = (Object.entries(s.damageBy) as [WeaponId, number][]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  // the top weapons only: the screen must fit without scrolling
+  const entries = (Object.entries(s.damageBy) as [WeaponId, number][]).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 4);
   const max = entries[0]?.[1] ?? 1;
   const dmg = h('div', { cls: 'dmg-list' });
   if (entries.length) {
@@ -46,10 +48,11 @@ export function showResults(app: App, s: RunSummary): void {
   });
   if (s.bits <= 0) doubleBtn.style.display = 'none';
 
-  const news = h('div', { cls: 'news' });
+  const news = new Pager([], { minItemW: 230, gap: 6 });
+  news.el.classList.add('news');
   const renderNews = () => {
-    news.textContent = '';
-    const item = (ico: string, text: string) => news.appendChild(h('div', { cls: 'ni' }, icon(ico), h('span', { text })));
+    const list: HTMLElement[] = [];
+    const item = (ico: string, text: string) => list.push(h('div', { cls: 'ni' }, icon(ico), h('span', { text })));
     if (s.newRecord) item('time', t('res.newRecord'));
     if (s.sectorUnlocked) item('star', t('res.sectorUnlocked', { name: t(`s.${s.sectorUnlocked}`) }));
     if (s.endlessUnlocked) item('star', t('res.endlessUnlocked'));
@@ -61,6 +64,8 @@ export function showResults(app: App, s: RunSummary): void {
     const chars = u.chars.filter((id) => id !== 'spark');
     if (chars.length) item('characters', t('res.newChar', { name: chars.map((id) => t(`c.${id}`)).join(', ') }));
     for (const a of s.achievements) item('achievements', t('ach.unlocked', { name: t(`a.${a}`) }));
+    news.setItems(list, news.current);
+    news.el.classList.toggle('empty', list.length === 0);
   };
   renderNews();
 
@@ -72,7 +77,7 @@ export function showResults(app: App, s: RunSummary): void {
     app.save.save();
     auth = h(
       'div',
-      { cls: 'panel', style: { padding: '0.8rem', width: 'min(100%, 28rem)', 'margin-top': '0.6rem', display: 'flex', 'flex-direction': 'column', gap: '0.45rem', 'text-align': 'center' } },
+      { cls: 'panel res-auth', style: { padding: '0.8rem', width: 'min(100%, 28rem)', 'margin-top': '0.6rem', display: 'flex', 'flex-direction': 'column', gap: '0.45rem', 'text-align': 'center' } },
       h('b', { text: t('auth.offerTitle') }),
       h('div', { cls: 'note', text: t('auth.offerText') }),
       h('button', {
@@ -101,11 +106,11 @@ export function showResults(app: App, s: RunSummary): void {
     'div',
     { cls: 'results dim' },
     h('div', { cls: `title ${s.won ? 'win' : 'lose'}`, text: s.won ? t('res.victory') : t('res.defeat') }),
-    s.won ? h('div', { cls: 'dim-text', text: t('res.victoryText'), style: { 'text-align': 'center', 'margin-top': '0.3rem' } }) : null,
+    s.won ? h('div', { cls: 'dim-text res-sub', text: t('res.victoryText'), style: { 'text-align': 'center', 'margin-top': '0.3rem' } }) : null,
     h('div', { cls: 'stats' }, stat(formatTime(s.time), t('res.time')), stat(fmtNum(s.kills), t('res.kills')), stat(String(s.level), t('res.level'))),
     dmg,
     h('div', { cls: 'reward panel' }, h('div', { cls: 'dim-text', text: t('res.bits') }), h('div', { cls: 'amount' }, icon('bits'), amount), doubleBtn),
-    news,
+    news.el,
     auth,
     h('div', { cls: 'res-actions' }, cont),
   );

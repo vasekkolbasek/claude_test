@@ -57,7 +57,7 @@ export function openSettings(app: App, inRun: boolean, onReset?: () => void): vo
 
   const body = h(
     'div',
-    { cls: 'col', style: { 'text-align': 'left' } },
+    { cls: 'col set-body', style: { 'text-align': 'left' } },
     row('music', t('set.music'), slider(s.music, (v) => {
       s.music = v;
       app.audio.setVolumes(s.music, s.sfx);
@@ -119,7 +119,7 @@ export function openSettings(app: App, inRun: boolean, onReset?: () => void): vo
       null,
       h(
         'div',
-        { cls: 'dialog panel' },
+        { cls: 'dialog panel set-dialog' },
         h('h3', { text: t('set.title') }),
         body,
         h('div', { cls: 'btns' }, h('button', { cls: 'btn', text: t('common.close'), onClick: () => app.ui.closeModal(m) })),

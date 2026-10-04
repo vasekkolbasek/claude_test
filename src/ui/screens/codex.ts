@@ -1,11 +1,12 @@
 import type { App } from '../../app/App';
-import { CODEX_ENEMIES, ENEMIES } from '../../data/enemies';
+import { CODEX_ENEMIES, ENEMIES, ENEMY_SECTOR } from '../../data/enemies';
 import { PASSIVES, PASSIVE_IDS } from '../../data/passives';
 import { EVOLUTIONS, EVOLUTION_IDS, WEAPONS, WEAPON_IDS } from '../../data/weapons';
 import { drawShapeIcon } from '../../render/textures';
 import { t } from '../../i18n';
 import { fmtNum, h, hexColor } from '../dom';
 import { icon } from '../icons';
+import { Pager } from '../pager';
 import { passiveAvailable, passiveStage, weaponAvailable, weaponStage } from '../../meta/unlocks';
 import { passiveValueText } from '../levelup';
 import { topbar, unlockCond } from './common';
@@ -17,15 +18,16 @@ let tab: Tab = 'enemies';
 export function showCodex(app: App): void {
   const save = app.save.data;
   const tabs = h('div', { cls: 'tabs' });
-  const list = h('div', { cls: 'grid2' });
+  let items: HTMLElement[] = [];
+  const pager = new Pager([], { minItemW: 240 });
   const progress = h('div', { cls: 'note' });
 
-  const unknown = (ico: HTMLElement | SVGElement, cond = '') =>
+  const unknown = (ico: HTMLElement | SVGElement, note = '') =>
     h(
       'div',
       { cls: 'li locked' },
       h('div', { cls: 'lic', style: { '--ic': '#556' } }, ico),
-      h('div', { cls: 'lb' }, h('div', { cls: 'lt', text: t('codex.unknown') }), h('div', { cls: 'ld', text: cond ? t('unl.opens', { cond }) : t('codex.unknownText') })),
+      h('div', { cls: 'lb' }, h('div', { cls: 'lt', text: t('codex.unknown') }), h('div', { cls: 'ld', text: note || t('codex.unknownText') })),
     );
 
   const render = () => {
@@ -38,7 +40,7 @@ export function showCodex(app: App): void {
       });
       tabs.appendChild(b);
     }
-    list.textContent = '';
+    items = [];
     let found = 0;
     let total = 0;
     if (tab === 'enemies') {
@@ -51,13 +53,14 @@ export function showCodex(app: App): void {
         cv.height = 96;
         if (!seen) {
           drawShapeIcon(cv, def.shape, 0x333355);
-          list.appendChild(unknown(cv));
+          const from = ENEMY_SECTOR[id];
+          items.push(unknown(cv, from && !save.sectorsCleared.includes(from) ? t('codex.fromSector', { name: t(`s.${from}`) }) : ''));
           continue;
         }
         found++;
         drawShapeIcon(cv, def.shape, def.color);
         const tag = def.boss === 'final' ? t('codex.boss') : def.boss === 'mini' ? t('codex.miniboss') : '';
-        list.appendChild(
+        items.push(
           h(
             'div',
             { cls: 'li' },
@@ -77,12 +80,12 @@ export function showCodex(app: App): void {
         total++;
         const def = WEAPONS[id];
         if (!save.codex.w.includes(id)) {
-          list.appendChild(unknown(icon(id), weaponAvailable(save, id) ? '' : unlockCond(weaponStage(id))));
+          items.push(unknown(icon(id), weaponAvailable(save, id) ? '' : t('unl.opens', { cond: unlockCond(weaponStage(id)) })));
           continue;
         }
         found++;
         const evo = EVOLUTIONS[def.evolution];
-        list.appendChild(
+        items.push(
           h(
             'div',
             { cls: 'li' },
@@ -104,7 +107,7 @@ export function showCodex(app: App): void {
         const known = save.codex.w.includes(id);
         const baseKnown = save.codex.w.includes(evo.from);
         if (known) found++;
-        list.appendChild(
+        items.push(
           h(
             'div',
             { cls: `li ${known ? 'done' : 'locked'}` },
@@ -126,11 +129,11 @@ export function showCodex(app: App): void {
         total++;
         const def = PASSIVES[id];
         if (!save.codex.p.includes(id)) {
-          list.appendChild(unknown(icon(id), passiveAvailable(save, id) ? '' : unlockCond(passiveStage(id))));
+          items.push(unknown(icon(id), passiveAvailable(save, id) ? '' : t('unl.opens', { cond: unlockCond(passiveStage(id)) })));
           continue;
         }
         found++;
-        list.appendChild(
+        items.push(
           h(
             'div',
             { cls: 'li' },
@@ -141,7 +144,8 @@ export function showCodex(app: App): void {
       }
     }
     progress.textContent = t('codex.progress', { a: found, b: total });
+    pager.setItems(items);
   };
   render();
-  app.ui.show(h('div', { cls: 'dim' }, topbar(app, t('codex.title'), () => showMenu(app)), tabs, progress, h('div', { cls: 'scroll' }, list)));
+  app.ui.show(h('div', { cls: 'dim' }, topbar(app, t('codex.title'), () => showMenu(app)), tabs, progress, pager.el));
 }

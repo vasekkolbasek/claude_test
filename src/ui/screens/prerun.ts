@@ -9,6 +9,8 @@ import { sectorUnlocked } from '../../meta/progress';
 import { unlockStage } from '../../meta/unlocks';
 import { h, hexColor } from '../dom';
 import { icon } from '../icons';
+import { Pager } from '../pager';
+import { featureOpen } from '../../meta/features';
 import { showCharacters } from './characters';
 import { charCanvas, nextUnlockText, topbar } from './common';
 import { showMenu } from './menu';
@@ -26,7 +28,7 @@ export function showPrerun(app: App): void {
     if (!sectorUnlocked(save, lastSector)) lastSector = 'ram';
   }
 
-  const list = h('div', { cls: 'list' });
+  const pager = new Pager([], { minItemW: 230, maxCols: 4 });
   const hint = h('div', { cls: 'note' });
   const segN = h('button', { text: t('prerun.normal') });
   const segE = h('button', null, save.endlessUnlocked ? null : icon('lock'), t('prerun.endless'));
@@ -38,7 +40,7 @@ export function showPrerun(app: App): void {
     segE.classList.toggle('on', lastMode === 'endless');
     hint.textContent = lastMode === 'endless' ? t('prerun.endlessHint') : save.endlessUnlocked ? '' : t('prerun.endlessLocked');
     if (lastMode === 'endless' && save.bestEndless > 0) hint.textContent += ` ${t('prerun.best', { t: formatTime(save.bestEndless) })}`;
-    list.textContent = '';
+    const cards: HTMLElement[] = [];
     SECTOR_IDS.forEach((id, i) => {
       const s = SECTORS[id];
       const unlocked = sectorUnlocked(save, id);
@@ -69,8 +71,9 @@ export function showPrerun(app: App): void {
         lastSector = id;
         render();
       });
-      list.appendChild(card);
+      cards.push(card);
     });
+    pager.setItems(cards, pager.current);
   };
   segN.addEventListener('click', () => {
     lastMode = 'normal';
@@ -95,7 +98,7 @@ export function showPrerun(app: App): void {
       h('div', { cls: 'cn', text: t(`c.${ch.id}`) }),
       h('div', { cls: 'row dim-text', style: { 'font-size': '0.8rem', color: hexColor(WEAPONS[ch.weapon].color) } }, icon(ch.weapon), t(`w.${ch.weapon}`)),
     ),
-    h('button', { cls: 'btn small', onClick: () => showCharacters(app, () => showPrerun(app)) }, t('prerun.change')),
+    featureOpen(save, 'characters') ? h('button', { cls: 'btn small', onClick: () => showCharacters(app, () => showPrerun(app)) }, t('prerun.change')) : null,
   );
 
   const start = h('button', { cls: 'btn primary', attrs: { 'data-test': 'start' }, onClick: () => app.startRun(lastSector, lastMode) }, icon('play'), t('prerun.start'));
@@ -104,7 +107,12 @@ export function showPrerun(app: App): void {
     'div',
     { cls: 'dim' },
     topbar(app, t('prerun.title'), () => showMenu(app)),
-    h('div', { cls: 'scroll' }, h('div', { cls: 'col' }, seg, hint, list, strip, nextUnlockText(unlockStage(save)) ? h('div', { cls: 'note', text: nextUnlockText(unlockStage(save)) }) : null)),
+    // Endless only appears once it exists for the player (no locked toggle for newcomers)
+    save.endlessUnlocked ? seg : null,
+    hint,
+    pager.el,
+    strip,
+    nextUnlockText(unlockStage(save)) ? h('div', { cls: 'note', text: nextUnlockText(unlockStage(save)) }) : null,
     h('div', { cls: 'footer-bar' }, start),
   );
   app.ui.show(el);

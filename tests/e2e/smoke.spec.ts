@@ -172,17 +172,31 @@ test('menu screens open without errors', async ({ page }) => {
   await page.goto('index.html?test=1&mock=1');
   await expect(page.locator('[data-test=play]')).toBeVisible({ timeout: 20_000 });
   const cur = '.screen:not(.leave)';
-  for (const i of [0, 1, 2, 3, 4]) {
+  // a brand-new player sees only «Играть»
+  await expect(page.locator(`${cur} .tile`)).toHaveCount(0);
+  // a seasoned player: every feature, each marked «new» until visited
+  await page.evaluate(() => {
+    const a = (window as unknown as { __ns: { save: { data: { stats: { runs: number }; endlessUnlocked: boolean } }; goMenu(ad: boolean): void } }).__ns;
+    a.save.data.stats.runs = 10;
+    a.save.data.endlessUnlocked = true;
+    a.goMenu(false);
+  });
+  const claimFirst = page.locator('[data-test=claim]');
+  await claimFirst.waitFor({ state: 'visible', timeout: 4000 }).catch(() => undefined);
+  if (await claimFirst.isVisible()) await claimFirst.click();
+  await expect(page.locator('.modal')).toHaveCount(0, { timeout: 5000 });
+  for (const f of ['workshop', 'characters', 'achievements', 'codex', 'leaders']) {
     await expect(page.locator('.screen.leave')).toHaveCount(0);
-    await page.locator(`${cur} .tile`).nth(i).click();
+    await page.locator(`${cur} [data-feature=${f}]`).click();
     await expect(page.locator(`${cur} .topbar h2`)).toBeVisible();
     await expect(page.locator('.screen.leave')).toHaveCount(0);
     await page.locator(`${cur} .topbar .btn`).first().click();
     await expect(page.locator(`${cur} [data-test=play]`)).toBeVisible();
+    await expect(page.locator(`${cur} [data-feature=${f}] .new-tag`)).toHaveCount(0);
   }
   await expect(page.locator('.screen.leave')).toHaveCount(0);
   // daily reward modal
-  await page.locator(`${cur} .tile`).nth(5).click();
+  await page.locator(`${cur} [data-feature=daily]`).click();
   await page.locator('[data-test=claim]').click();
   await expect(page.locator('[data-test=play]').last()).toBeVisible();
   // no scrollbars on the document

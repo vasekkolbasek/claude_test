@@ -5,6 +5,8 @@ import { formatTime } from '../../core/math';
 import { t } from '../../i18n';
 import { chestReward } from '../../meta/progress';
 import { currentQuest, dayIndex, ensureDaily, loginRewardState } from '../../meta/daily';
+import { charAvailable } from '../../meta/unlocks';
+import { featureNew, featureOpen, FEATURES, markSeen, type FeatureId } from '../../meta/features';
 import { nodeAvailable, nodeCost } from '../../meta/workshop';
 import { WORKSHOP } from '../../data/workshop';
 import { h } from '../dom';
@@ -28,7 +30,7 @@ function canUnlockChar(app: App): boolean {
   const s = app.save.data;
   return CHARACTER_IDS.some((id) => {
     const u = CHARACTERS[id].unlock;
-    return !s.chars.includes(id) && u.type !== 'free' && s.bits >= u.cost;
+    return !s.chars.includes(id) && u.type === 'bits' && charAvailable(s, id) && s.bits >= u.cost;
   });
 }
 
@@ -39,20 +41,38 @@ export function showMenu(app: App): void {
   const words = t('game.title').split(' ');
   const pill = bitsPill(save.bits);
 
-  const tile = (ico: string, label: string, onClick: () => void, badge = false) =>
-    h('button', { cls: 'tile', onClick }, icon(ico), h('span', { text: label }), badge ? h('i', { cls: 'badge-dot' }) : null);
-
   const login = loginRewardState(save, day);
-  const grid = h(
-    'div',
-    { cls: 'menu-grid' },
-    tile('workshop', t('menu.workshop'), () => showWorkshop(app), canBuyAnything(app)),
-    tile('characters', t('menu.characters'), () => showCharacters(app, () => showMenu(app)), canUnlockChar(app)),
-    tile('codex', t('menu.codex'), () => showCodex(app)),
-    tile('achievements', t('menu.achievements'), () => showAchievements(app)),
-    tile('leaders', t('menu.leaders'), () => showLeaders(app)),
-    tile('daily', t('daily.title'), () => openDaily(app, () => showMenu(app)), login.can),
-  );
+  /** gated tiles: hidden until the feature opens, «NEW» until first visited */
+  const tile = (id: FeatureId, ico: string, label: string, onClick: () => void, badge = false) => {
+    if (!featureOpen(save, id)) return null;
+    const isNew = featureNew(save, id);
+    return h(
+      'button',
+      {
+        cls: `tile ${isNew ? 'is-new' : ''}`,
+        attrs: { 'data-feature': id },
+        onClick: () => {
+          if (markSeen(save, id)) app.save.save();
+          onClick();
+        },
+      },
+      icon(ico),
+      h('span', { text: label }),
+      isNew ? h('b', { cls: 'new-tag', text: t('feat.new') }) : badge ? h('i', { cls: 'badge-dot' }) : null,
+    );
+  };
+  const tiles = [
+    tile('workshop', 'workshop', t('menu.workshop'), () => showWorkshop(app), canBuyAnything(app)),
+    tile('characters', 'characters', t('menu.characters'), () => showCharacters(app, () => showMenu(app)), canUnlockChar(app)),
+    tile('daily', 'daily', t('daily.title'), () => openDaily(app, () => showMenu(app)), login.can),
+    tile('achievements', 'achievements', t('menu.achievements'), () => showAchievements(app)),
+    tile('codex', 'codex', t('menu.codex'), () => showCodex(app)),
+    tile('leaders', 'leaders', t('menu.leaders'), () => showLeaders(app)),
+  ].filter((x): x is HTMLButtonElement => x !== null);
+  const grid = tiles.length ? h('div', { cls: `menu-grid n${tiles.length}` }, ...tiles) : null;
+  // one short line about the newest feature, so the player knows why a button appeared
+  const fresh = [...FEATURES].reverse().find((f) => featureNew(save, f.id));
+  const featHint = fresh ? h('div', { cls: 'feat-hint', text: t(`feat.${fresh.id}`) }) : null;
 
   // a brand-new player goes straight into the first sector
   const play = h(
@@ -63,9 +83,9 @@ export function showMenu(app: App): void {
   );
 
   // daily quest card
-  const q = currentQuest(save);
-  const questCard = h('div', { cls: `quest-card ${save.daily.questDone ? 'done' : ''}` });
-  if (q) {
+  const q = featureOpen(save, 'daily') ? currentQuest(save) : null;
+  const questCard = q ? h('div', { cls: `quest-card ${save.daily.questDone ? 'done' : ''}` }) : null;
+  if (q && questCard) {
     questCard.append(
       h('span', { cls: 'qt', text: `${t('daily.quest')} · ${save.daily.questDone ? t('daily.done') : t('daily.reward', { n: q.reward })}` }),
       h('span', { cls: 'qd', text: t(q.key, { n: q.target(save) }) }),
@@ -106,15 +126,22 @@ export function showMenu(app: App): void {
     renderChest();
   }, 1000);
 
+  const showChest = featureOpen(save, 'chest');
   const el = h(
     'div',
-    { cls: 'menu' },
-    h('div', { cls: 'head' }, pill, h('button', { cls: 'btn icon-only', attrs: { 'aria-label': t('menu.settings') }, onClick: () => openSettings(app, false, () => showMenu(app)) }, icon('settings'))),
+    { cls: `menu ${tiles.length ? '' : 'first'}` },
+    h('div', { cls: 'head' }, featureOpen(save, 'workshop') ? pill : h('span'), h('button', { cls: 'btn icon-only', attrs: { 'aria-label': t('menu.settings') }, onClick: () => openSettings(app, false, () => showMenu(app)) }, icon('settings'))),
     h('div', { cls: 'logo' }, h('span', { cls: 'l1', text: words[0] }), h('span', { cls: 'l2', text: words.slice(1).join(' ') || '' })),
-    h('div', { cls: 'center-block' }, play, grid),
-    h('div', { cls: 'menu-foot' }, questCard, chest),
+    h('div', { cls: 'center-block' }, play, featHint, grid),
+    questCard || showChest ? h('div', { cls: 'menu-foot' }, questCard, showChest ? chest : null) : null,
   );
   app.ui.show(el);
 
-  if (login.can && save.stats.runs > 0) setTimeout(() => el.isConnected && app.mode === 'menu' && !app.ui.hasModal() && openDaily(app, () => showMenu(app)), 450);
+  if (login.can && featureOpen(save, 'daily')) {
+    setTimeout(() => {
+      if (!el.isConnected || app.mode !== 'menu' || app.ui.hasModal()) return;
+      if (markSeen(save, 'daily')) app.save.save();
+      openDaily(app, () => showMenu(app));
+    }, 450);
+  }
 }

@@ -148,6 +148,37 @@ export const SHAPES: Record<ShapeId, PathFn> = {
     ngon(c, 6, r * 0.28, Math.PI / 6);
   },
   stealth: (c, r) => poly(c, [1.1, 0, 0, 0.55, -0.9, 0.9, -0.5, 0, -0.9, -0.9, 0, -0.55], r),
+  // weaver: a zig-zag dart
+  zigzag: (c, r) => poly(c, [1, 0, 0.2, 0.45, 0.05, 0.1, -0.7, 0.75, -0.45, 0, -0.7, -0.75, 0.05, -0.1, 0.2, -0.45], r),
+  // sniper: ring with crosshair ticks
+  crosshair: (c, r) => {
+    c.moveTo(r * 0.62, 0);
+    c.arc(0, 0, r * 0.62, 0, Math.PI * 2);
+    for (let i = 0; i < 4; i++) {
+      const a = (i * Math.PI) / 2;
+      c.moveTo(Math.cos(a) * r * 0.3, Math.sin(a) * r * 0.3);
+      c.lineTo(Math.cos(a) * r * 1.05, Math.sin(a) * r * 1.05);
+    }
+  },
+  // phantom: an eye
+  eye: (c, r) => {
+    c.moveTo(-r, 0);
+    c.quadraticCurveTo(0, -r * 1.1, r, 0);
+    c.quadraticCurveTo(0, r * 1.1, -r, 0);
+    c.closePath();
+    c.moveTo(r * 0.3, 0);
+    c.arc(0, 0, r * 0.3, 0, Math.PI * 2);
+  },
+  // ransom: a padlock
+  lock: (c, r) => {
+    poly(c, [-0.75, -0.1, 0.75, -0.1, 0.75, 0.9, -0.75, 0.9], r);
+    c.moveTo(-r * 0.45, -r * 0.1);
+    c.lineTo(-r * 0.45, -r * 0.45);
+    c.arc(0, -r * 0.45, r * 0.45, Math.PI, 0);
+    c.lineTo(r * 0.45, -r * 0.1);
+    c.moveTo(r * 0.12, r * 0.35);
+    c.arc(0, r * 0.35, r * 0.12, 0, Math.PI * 2);
+  },
   mb_trojan: (c, r) => {
     poly(c, [-0.85, -0.85, 0.85, -0.85, 0.85, 0.85, -0.85, 0.85], r);
     poly(c, [0, -0.62, 0.62, 0, 0, 0.62, -0.62, 0], r);
