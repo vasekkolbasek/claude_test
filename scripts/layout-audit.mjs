@@ -1,5 +1,7 @@
 // Layout audit: every screen/dialog on 14 phone/tablet/desktop sizes (incl. 125% system font)
 // in Yandex-like mode; reports scrollable boxes, elements off-screen, overlaps and clipped text.
+// Touch devices are portrait-only: on landscape phone sizes it only checks that the «rotate the
+// device» overlay covers the screen and that a run started there stays paused (gameplay stopped).
 //   npm run build && node scripts/serve.mjs dist 4192 / & node scripts/layout-audit.mjs <outDir> [WxH]
 import { chromium } from 'playwright';
 const out = process.argv[2];
@@ -41,7 +43,10 @@ for (const [w, h, fs] of devices) {
   const tag = `${w}x${h}${fs > 1 ? '@125%' : ''}`;
   const p = await b.newPage({ viewport: { width: w, height: h }, isMobile: mobile, hasTouch: mobile });
   p.on('pageerror', (e) => console.log('ERR', e.message));
-  await p.goto('http://localhost:4192/index.html?test=1&mock=1');
+  // software-rendered big canvases are very slow here (≈ 400 ms/frame at 1920×1080): keep the game
+  // ticker stopped on the menu screens (the DOM is what is audited) and start it for the run
+  const heavy = w * h > 0.9e6;
+  await p.goto(`http://localhost:4192/index.html?test=1&mock=1${heavy ? '&capture=1' : ''}`);
   await p.waitForTimeout(1200);
   await p.evaluate((fs) => {
     if (fs > 1) document.documentElement.style.fontSize = `${16 * fs}px`;
@@ -52,6 +57,23 @@ for (const [w, h, fs] of devices) {
     a.ui.closeAllModals(); a.goMenu(false);
   }, fs);
   await p.waitForTimeout(900);
+  if (mobile && w > h) {
+    const r = await p.evaluate(async () => {
+      const a = window.__ns;
+      const el = document.querySelector('.rotate-overlay');
+      const shown = !!el && el.getBoundingClientRect().width >= innerWidth - 1 && el.getBoundingClientRect().height >= innerHeight - 1;
+      a.startRun('ram', 'normal');
+      await new Promise((res) => setTimeout(res, 600));
+      const log = window.__platformLog ?? [];
+      return { shown, device: a.platform.device(), paused: a.pauses.has('rotate'), running: a.running, gameplay: log.filter((x) => x.startsWith('gameplay:')).at(-1) ?? 'none' };
+    });
+    const ok = r.shown && r.paused && !r.running && r.gameplay !== 'gameplay:start';
+    if (!ok) fails++;
+    console.log(`${tag} rotate: ${ok ? 'ok' : 'FAIL'} ${JSON.stringify(r)}`);
+    await p.screenshot({ path: `${out}/${tag}_rotate.png` });
+    await p.close();
+    continue;
+  }
   const step = async (name) => { await p.waitForTimeout(700); const bad = await audit(p); if (bad.length) fails++; console.log(`${tag} ${name}: ${bad.length ? bad.join(' | ') : 'ok'}`); await p.screenshot({ path: `${out}/${tag}_${name}.png` }); };
   const close = async () => { await p.evaluate(() => window.__ns.ui.closeAllModals()); await p.waitForTimeout(300); };
   const tryStep = async (name, fn) => { try { await fn(); } catch (e) { console.log(`${tag} ${name}: STEP-ERROR ${e.message.split('\n')[0]}`); } };
@@ -59,6 +81,7 @@ for (const [w, h, fs] of devices) {
   await step('menu');
   for (const f of ['workshop', 'characters', 'achievements', 'codex', 'leaders']) {
     await tryStep(f, async () => {
+      await close(); // the daily dialog may pop up on its own a moment after the menu appears
       await p.locator(`.screen:not(.leave) [data-feature=${f}]`).click({ timeout: 5000 });
       await step(f);
       if (f === 'workshop' || f === 'codex') { await p.locator('.screen:not(.leave) .tab').last().click(); await step(`${f}-tab`); }
@@ -67,12 +90,14 @@ for (const [w, h, fs] of devices) {
       await close();
     });
   }
-  await tryStep('daily', async () => { await p.locator('.screen:not(.leave) [data-feature=daily]').click({ timeout: 5000 }); await step('daily'); await close(); });
-  await tryStep('settings-menu', async () => { await p.locator('.screen:not(.leave) .head .btn').click({ timeout: 5000 }); await step('settings-menu'); await close(); });
+  await tryStep('daily', async () => { await close(); await p.locator('.screen:not(.leave) [data-feature=daily]').click({ timeout: 5000 }); await step('daily'); await close(); });
+  await tryStep('settings-menu', async () => { await close(); await p.locator('.screen:not(.leave) .head .btn').click({ timeout: 5000 }); await step('settings-menu'); await close(); });
   await tryStep('run', async () => {
+    await close();
     await p.locator('[data-test=play]').last().click();
     await step('prerun');
     await p.locator('[data-test=start]').click();
+    if (heavy) await p.evaluate(() => window.__ns.pixi.ticker.start());
     await p.waitForTimeout(400);
     await p.evaluate(() => { const a = window.__ns; a.tutorial?.dispose?.(); a.tutorial = null; a.sandbox({ god: true }); a.world.pendingLevels = 1; });
     await step('levelup');

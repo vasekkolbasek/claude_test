@@ -432,6 +432,8 @@ export const en: Dict = {
   'res.bestTime': "Sector best: {t}",
   'prerun.endlessHint': "Survive as long as you can. Your best time goes to the leaderboard.",
   'hud.tapToContinue': "Tap to continue",
+  'rotate.title': "Rotate your device to portrait",
+  'rotate.text': "The game is played in portrait orientation only",
   'unl.mb': "destroy your first mini-boss",
   'unl.sector': "clear the {name} sector",
   'unl.opens': "Unlocks: {cond}",

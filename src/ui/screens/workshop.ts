@@ -86,7 +86,7 @@ export function showWorkshop(app: App): void {
       }
     }
     if (pager) pager.setItems(cards, pager.current);
-    else pager = new Pager(cards, { minItemW: 250 });
+    else pager = new Pager(cards, { minEm: 23, targetEm: 27 });
   };
   render();
   app.ui.show(

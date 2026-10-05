@@ -36,7 +36,7 @@ export function showLeaders(app: App): void {
     );
   }
   body.append(status);
-  const pager = new Pager([], { minItemW: 280, maxCols: 2, gap: 6 });
+  const pager = new Pager([], { minEm: 16, targetEm: 22, maxCols: 2, gap: 6 });
   app.ui.show(h('div', { cls: 'dim' }, topbar(app, t('lb.title'), () => showMenu(app)), body, pager.el));
 
   app.platform

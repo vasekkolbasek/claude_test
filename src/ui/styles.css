@@ -1102,3 +1102,89 @@ body {
 
 .seg button + button { border-left: 1px solid rgba(130, 100, 255, 0.3); }
 .set-body .seg button { font-size: 0.82rem; }
+
+/* ---------------------------------------------------------------- readable cards
+ * Pager (pager.ts) picks the column count from a comfortable card width in rem; inside a card the
+ * text block never gets narrower than ≈ 11.5rem (≈ 26–30 characters of the description, a title
+ * on one line). If an action (price, «select», reward) does not fit beside it, the action wraps
+ * under the text instead of squeezing it to one word per line. */
+.li { flex-wrap: wrap; row-gap: 0.45rem; }
+.li .lb { flex: 1 1 min(11.5rem, calc(100% - 6rem)); }
+.li > .lb ~ * { flex: none; margin-left: auto; }
+.li .lt { line-height: 1.2; }
+.li .ld { line-height: 1.3; }
+.pg-page > .li { align-content: center; }
+/* tap targets ≥ 44 px even where the root font is small (phones) */
+.li .btn.small, .char-card .btn.small { min-height: max(2.3rem, 44px); }
+.pg-arrow, .news .pg-arrow { width: max(2.6rem, 44px); height: max(2.6rem, 44px); }
+.tabs .tab { min-height: max(2.9rem, 44px); }
+.btn.icon-only:not(.pause-btn) { width: max(2.9rem, 44px); height: max(2.9rem, 44px); }
+.char-card .cd { line-height: 1.3; }
+.sector .smod { line-height: 1.3; }
+.sector .sname, .sector .smod { overflow-wrap: break-word; }
+
+/* ---------------------------------------------------------------- portrait-only notice (phones/tablets) */
+.rotate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  padding: calc(var(--sat) + 1rem) calc(var(--sar) + 1.5rem) calc(var(--sab) + 1rem) calc(var(--sal) + 1.5rem);
+  background: radial-gradient(ellipse at 50% 40%, #1a0c46, #05030f 75%);
+  color: #e9fdff;
+  text-align: center;
+  touch-action: none;
+  animation: fadeIn 0.2s both;
+}
+.rot-phone {
+  position: relative;
+  width: 3.4rem;
+  height: 5.6rem;
+  border: 3px solid var(--cyan);
+  border-radius: 0.8rem;
+  box-shadow: 0 0 18px rgba(41, 246, 255, 0.7), inset 0 0 14px rgba(41, 246, 255, 0.35);
+  animation: rotPhone 2.6s cubic-bezier(0.6, 0, 0.3, 1) infinite;
+}
+.rot-phone::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0.35rem;
+  width: 0.9rem;
+  height: 0.22rem;
+  margin-left: -0.45rem;
+  border-radius: 999px;
+  background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan);
+}
+@keyframes rotPhone {
+  0%, 25% { transform: rotate(-90deg); }
+  60%, 100% { transform: rotate(0deg); }
+}
+.rot-title {
+  max-width: 28rem;
+  font-weight: 900;
+  font-size: 1.5rem;
+  line-height: 1.15;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 22px var(--cyan);
+}
+.rot-text { max-width: 28rem; color: var(--dim); font-size: 0.95rem; line-height: 1.35; }
+@media (prefers-reduced-motion: reduce) {
+  .rot-phone { animation: none; }
+}
+/* legible minimum on phones (the root font bottoms out at 13 px there): 15 px titles, 12 px text */
+.li .lt { font-size: max(0.98rem, 15px); }
+.li .ld { font-size: max(0.8rem, 12px); }
+.char-card .cd, .char-card .cw { font-size: max(0.8rem, 12px); }
+.char-card .cbonus { font-size: max(0.82rem, 12px); }
+.sector .smod { font-size: max(0.8rem, 12px); }
+.news .ni { font-size: max(0.9rem, 13px); line-height: 1.25; }
+/* the lock icon sits right next to its (left-aligned) condition text instead of floating apart */
+.ch-lock { text-align: left; }
+.ch-lock .ico { flex: none; }

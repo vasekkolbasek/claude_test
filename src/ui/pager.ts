@@ -1,9 +1,21 @@
 import { h } from './dom';
 import { icon } from './icons';
 
+/**
+ * Column sizing is expressed in `rem` (the root font size scales with the screen, and with the
+ * system font setting), so the rule is about the *text measure*, not about pixels:
+ *  - `minEm`: the narrowest card whose text still reads comfortably (≈ 25+ characters of the
+ *    description per line, the title on one line); a column is never narrower than this
+ *    (a single column may be — it simply takes the full width);
+ *  - `targetEm`: the ideal card width; among the column counts allowed by `minEm` the one whose
+ *    card width is closest to it (in ratio) wins, so a phone gets one full-width column, a
+ *    portrait tablet two, a wide desktop three or four.
+ */
 export interface PagerOptions {
-  /** minimal item width in px; decides the number of columns */
-  minItemW: number;
+  /** narrowest comfortable card, in rem */
+  minEm: number;
+  /** ideal card width, in rem (defaults to 1.3 × minEm) */
+  targetEm?: number;
   maxCols?: number;
   /** fixed number of rows (otherwise as many as fit) */
   rows?: number;
@@ -88,6 +100,40 @@ export class Pager {
 
   private perPage = 0;
 
+  /** Number of columns for an area `W` px wide (see PagerOptions). */
+  private columns(W: number, gap: number, rem: number): number {
+    const n = this.items.length || 1;
+    const maxCols = Math.max(1, Math.min(this.o.maxCols ?? 6, n));
+    const min = this.o.minEm * rem;
+    const target = (this.o.targetEm ?? this.o.minEm * 1.3) * rem;
+    let best = 1;
+    let bestD = Infinity;
+    for (let c = 1; c <= maxCols; c++) {
+      const w = (W - gap * (c - 1)) / c;
+      if (c > 1 && w < min) break;
+      const d = Math.abs(Math.log(w / target));
+      if (d < bestD - 1e-6) {
+        best = c;
+        bestD = d;
+      }
+    }
+    return best;
+  }
+
+  /** Lays the items into a probe `colW` px wide and returns the tallest one. */
+  private measure(colW: number): number {
+    const probe = h('div', { cls: 'pg-probe', style: { width: `${colW}px` } });
+    this.track.textContent = '';
+    this.track.appendChild(probe);
+    let itemH = 0;
+    for (const it of this.items) {
+      probe.appendChild(it);
+      itemH = Math.max(itemH, it.offsetHeight);
+    }
+    probe.remove();
+    return itemH;
+  }
+
   layout(): void {
     const W = this.view.clientWidth;
     const H = this.view.clientHeight;
@@ -98,31 +144,37 @@ export class Pager {
     this.lastW = W;
     this.lastH = H;
     const gap = this.o.gap ?? 8;
-    // never more columns than items: a short list gets wider cards instead of empty slots
-    const cols = Math.max(1, Math.min(this.o.maxCols ?? 99, this.items.length || 1, Math.floor((W + gap) / (this.o.minItemW + gap))));
-    const colW = (W - gap * (cols - 1)) / cols;
-    // measure the tallest item at the final column width
-    const probe = h('div', { cls: 'pg-probe', style: { width: `${colW}px` } });
-    this.track.textContent = '';
-    this.track.appendChild(probe);
-    let itemH = 0;
-    for (const it of this.items) {
-      probe.appendChild(it);
-      itemH = Math.max(itemH, it.offsetHeight);
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const n = this.items.length;
+    let cols = this.columns(W, gap, rem);
+    const colWidth = (c: number) => (W - gap * (c - 1)) / c;
+    let itemH = this.measure(colWidth(cols));
+    let rows = this.o.rows ?? Math.max(1, Math.floor((H + gap) / (itemH + gap)));
+    // everything on one page: balance the grid (5 items → 3 + 2, not 4 + 1)
+    if (n > 0 && !this.o.rows && Math.ceil(n / cols) <= rows) {
+      const balanced = Math.ceil(n / Math.ceil(n / cols));
+      if (balanced !== cols) {
+        cols = balanced;
+        itemH = this.measure(colWidth(cols));
+        rows = Math.max(1, Math.floor((H + gap) / (itemH + gap)));
+      }
     }
-    probe.remove();
-    const rows = this.o.rows ?? Math.max(1, Math.floor((H + gap) / (itemH + gap)));
     const per = Math.max(1, rows * cols);
     this.perPage = per;
-    this.pages = Math.max(1, Math.ceil(this.items.length / per));
+    this.pages = Math.max(1, Math.ceil(n / per));
+    // rows share the spare height (a little air in every card instead of a gap at the bottom),
+    // but a card never grows past 1.3× its content
+    const fill = (H - gap * (rows - 1)) / rows;
+    const rowH = Math.max(Math.min(itemH, H), Math.min(fill, itemH * 1.3));
     for (let p = 0; p < this.pages; p++) {
       const page = h('div', {
         cls: 'pg-page',
-        style: { 'grid-template-columns': `repeat(${cols}, minmax(0, 1fr))`, 'grid-auto-rows': `${Math.max(Math.min(itemH, (H - gap * (rows - 1)) / rows), Math.min(itemH, H))}px`, gap: `${gap}px` },
+        style: { 'grid-template-columns': `repeat(${cols}, minmax(0, 1fr))`, 'grid-auto-rows': `${Math.floor(rowH)}px`, gap: `${gap}px` },
       });
       for (const it of this.items.slice(p * per, (p + 1) * per)) page.appendChild(it);
       this.track.appendChild(page);
     }
+    this.el.dataset.cols = String(cols);
     this.page = Math.min(this.page, this.pages - 1);
     this.dots.textContent = '';
     for (let p = 0; p < this.pages; p++) {

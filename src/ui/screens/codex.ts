@@ -19,7 +19,7 @@ export function showCodex(app: App): void {
   const save = app.save.data;
   const tabs = h('div', { cls: 'tabs' });
   let items: HTMLElement[] = [];
-  const pager = new Pager([], { minItemW: 240 });
+  const pager = new Pager([], { minEm: 18.5, targetEm: 24 });
   const progress = h('div', { cls: 'note' });
 
   const unknown = (ico: HTMLElement | SVGElement, note = '') =>

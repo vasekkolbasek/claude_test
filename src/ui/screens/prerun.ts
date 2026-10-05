@@ -28,7 +28,7 @@ export function showPrerun(app: App): void {
     if (!sectorUnlocked(save, lastSector)) lastSector = 'ram';
   }
 
-  const pager = new Pager([], { minItemW: 280, maxCols: 2 });
+  const pager = new Pager([], { minEm: 19, targetEm: 26, maxCols: 2 });
   const hint = h('div', { cls: 'note' });
   const segN = h('button', { text: t('prerun.normal') });
   const segE = h('button', null, save.endlessUnlocked ? null : icon('lock'), t('prerun.endless'));

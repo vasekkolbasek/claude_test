@@ -27,7 +27,7 @@ import { QualityController } from './quality';
 import { applyStage, type StageRect } from './stage';
 
 type Mode = 'boot' | 'menu' | 'run' | 'results';
-export type PauseReason = 'user' | 'hidden' | 'ad' | 'platform' | 'revive' | 'levelup' | 'death';
+export type PauseReason = 'user' | 'hidden' | 'ad' | 'platform' | 'revive' | 'levelup' | 'death' | 'rotate';
 
 const SHOT_SFX: Record<number, SfxId> = {
   [SHOT.PULSE]: 'pulse',
@@ -124,6 +124,10 @@ export class App {
     this.wireLifecycle();
     this.onResize();
     window.addEventListener('resize', () => this.onResize());
+    window.addEventListener('orientationchange', () => this.onResize());
+    this.lockPortrait();
+    // locking usually needs a user gesture (and often fullscreen): retry once on the first touch
+    window.addEventListener('pointerdown', () => this.lockPortrait(), { once: true });
     this.pixi.ticker.add((tk) => this.tick(Math.min(tk.deltaMS / 1000, 0.1)));
     if (this.testFlow && new URLSearchParams(location.search).has('capture')) this.pixi.ticker.stop();
     if (new URLSearchParams(location.search).has('debug')) {
@@ -146,6 +150,55 @@ export class App {
     // the canvas follows #app through resizeTo; refresh it now so the camera sees the new size
     this.pixi.resize();
     this.view.resize(this.stage.w, this.stage.h);
+    this.checkOrientation();
+  }
+
+  // ---------------------------------------------------------------- portrait only on phones/tablets
+
+  private rotateEl: HTMLElement | null = null;
+
+  /** Touch devices are played in portrait: in landscape a full-screen «rotate» notice covers
+   * everything and the run is paused (GameplayAPI stop) until the device is turned back. */
+  private checkOrientation(): void {
+    const d = this.platform.device();
+    const on = (d === 'mobile' || d === 'tablet') && window.innerWidth > window.innerHeight;
+    if (on && !this.rotateEl) {
+      const el = document.createElement('div');
+      el.className = 'rotate-overlay';
+      el.setAttribute('role', 'alert');
+      el.setAttribute('data-test', 'rotate');
+      const phone = document.createElement('div');
+      phone.className = 'rot-phone';
+      const title = document.createElement('div');
+      title.className = 'rot-title';
+      title.textContent = t('rotate.title');
+      const text = document.createElement('div');
+      text.className = 'rot-text';
+      text.textContent = t('rotate.text');
+      el.append(phone, title, text);
+      // swallow every touch so nothing underneath reacts
+      for (const ev of ['pointerdown', 'pointerup', 'click', 'touchstart'] as const) el.addEventListener(ev, (e) => e.stopPropagation());
+      document.body.appendChild(el);
+      this.rotateEl = el;
+      this.input.reset();
+    } else if (!on && this.rotateEl) {
+      this.rotateEl.remove();
+      this.rotateEl = null;
+      // back in portrait mid-run: resume deliberately from the pause menu, not straight into the swarm
+      if (this.world?.state === 'playing' && !this.pauses.has('levelup')) this.openPauseMenu();
+    }
+    this.setPause('rotate', on);
+  }
+
+  private lockPortrait(): void {
+    const d = this.platform.device();
+    if (d !== 'mobile' && d !== 'tablet') return;
+    try {
+      const o = screen.orientation as unknown as { lock?: (o: string) => Promise<void> } | undefined;
+      o?.lock?.('portrait')?.catch(() => undefined);
+    } catch {
+      // not supported / not allowed outside fullscreen: the overlay covers it
+    }
   }
 
   private wireLifecycle(): void {
@@ -201,7 +254,7 @@ export class App {
   /** Re-derives GameplayAPI state, input and music muffling from the pause set. */
   sync(): void {
     const inRun = this.mode === 'run' && !!this.world;
-    const blocking = ['user', 'hidden', 'ad', 'platform', 'revive', 'death'] as const;
+    const blocking = ['user', 'hidden', 'ad', 'platform', 'revive', 'death', 'rotate'] as const;
     const gameplay = inRun && !blocking.some((r) => this.pauses.has(r));
     if (gameplay) this.platform.gameplayStart();
     else this.platform.gameplayStop();
@@ -210,7 +263,7 @@ export class App {
     // visible but unfocused (e.g. focus stayed on the host page after an ad): offer a tap to continue
     const needTap = inRun && this.pauses.has('hidden') && document.visibilityState === 'visible' && !this.pauses.has('ad');
     this.setTapOverlay(needTap);
-    this.audio.setMusicMuffled(inRun && (this.pauses.has('user') || this.pauses.has('levelup') || this.pauses.has('revive')));
+    this.audio.setMusicMuffled(inRun && (this.pauses.has('user') || this.pauses.has('levelup') || this.pauses.has('revive') || this.pauses.has('rotate')));
   }
 
   private tapEl: HTMLElement | null = null;

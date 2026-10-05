@@ -432,6 +432,8 @@ export const tr: Dict = {
   'res.bestTime': "Sektör rekoru: {t}",
   'prerun.endlessHint': "Olabildiğince uzun hayatta kal. En iyi süren liderlik tablosuna girer.",
   'hud.tapToContinue': "Devam etmek için dokun",
+  'rotate.title': "Cihazınızı dikey çevirin",
+  'rotate.text': "Oyun yalnızca dikey yönde oynanır",
   'unl.mb': "ilk mini patronu yok et",
   'unl.sector': "{name} sektörünü temizle",
   'unl.opens': "Açılır: {cond}",

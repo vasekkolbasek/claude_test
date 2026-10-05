@@ -43,7 +43,7 @@ export function showAchievements(app: App): void {
       { cls: 'dim' },
       topbar(app, t('ach.title'), () => showMenu(app)),
       h('div', { cls: 'note', text: t('ach.progress', { a: got, b: ACHIEVEMENTS.length }) }),
-      new Pager(items, { minItemW: 240 }).el,
+      new Pager(items, { minEm: 18.5, targetEm: 24 }).el,
     ),
   );
 }

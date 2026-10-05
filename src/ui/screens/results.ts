@@ -48,7 +48,7 @@ export function showResults(app: App, s: RunSummary): void {
   });
   if (s.bits <= 0) doubleBtn.style.display = 'none';
 
-  const news = new Pager([], { minItemW: 230, gap: 6 });
+  const news = new Pager([], { minEm: 16, targetEm: 24, gap: 6 });
   news.el.classList.add('news');
   const renderNews = () => {
     const list: HTMLElement[] = [];
