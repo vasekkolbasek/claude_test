@@ -130,6 +130,8 @@ export type EnemyId =
   | 'mb_trojan'
   | 'mb_crypto'
   | 'mb_hydra'
+  | 'mb_overclock'
+  | 'mb_botnet'
   | 'boss_core';
 
 export type EnemyAi =
@@ -147,6 +149,8 @@ export type EnemyAi =
   | 'mb_trojan'
   | 'mb_crypto'
   | 'mb_hydra'
+  | 'mb_overclock'
+  | 'mb_botnet'
   | 'boss_core';
 
 export type ShapeId =
@@ -171,6 +175,8 @@ export type ShapeId =
   | 'mb_trojan'
   | 'mb_crypto'
   | 'mb_hydra'
+  | 'mb_overclock'
+  | 'mb_botnet'
   | 'boss_core';
 
 export interface EnemyDef {
@@ -213,6 +219,8 @@ export interface WaveEvent {
   type: WaveEventType;
   enemy: EnemyId;
   count: number;
+  /** mini-boss events: which of the sector's two mini-bosses (0 or 1) */
+  slot?: number;
 }
 
 export type SectorId = 'ram' | 'cpu' | 'gpu' | 'bin';
@@ -233,6 +241,8 @@ export interface SectorDef {
   swap?: Partial<Record<EnemyId, EnemyId>>;
   /** roster weight multipliers */
   weights?: Partial<Record<EnemyId, number>>;
+  /** the sector's two mini-bosses, in order of appearance */
+  minibosses: [EnemyId, EnemyId];
 }
 
 export type CharacterId = 'spark' | 'sentinel' | 'volt' | 'sapper' | 'hunter';

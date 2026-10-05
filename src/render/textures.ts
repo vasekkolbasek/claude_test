@@ -196,6 +196,28 @@ export const SHAPES: Record<ShapeId, PathFn> = {
     c.moveTo(r * 0.18, 0);
     c.arc(0, 0, r * 0.18, 0, Math.PI * 2);
   },
+  // overclocker: a cog with a hot core
+  mb_overclock: (c, r) => {
+    star(c, 10, r, r * 0.78);
+    c.moveTo(r * 0.5, 0);
+    c.arc(0, 0, r * 0.5, 0, Math.PI * 2);
+    poly(c, [0.32, 0, -0.16, 0.28, -0.16, -0.28], r);
+  },
+  // botnet: a ring of linked nodes around a hub
+  mb_botnet: (c, r) => {
+    ngon(c, 6, r * 0.82, Math.PI / 6);
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 6 + (i * Math.PI) / 3;
+      const x = Math.cos(a) * r * 0.82;
+      const y = Math.sin(a) * r * 0.82;
+      c.moveTo(x + r * 0.16, y);
+      c.arc(x, y, r * 0.16, 0, Math.PI * 2);
+      c.moveTo(Math.cos(a) * r * 0.3, Math.sin(a) * r * 0.3);
+      c.lineTo(Math.cos(a) * r * 0.66, Math.sin(a) * r * 0.66);
+    }
+    c.moveTo(r * 0.3, 0);
+    c.arc(0, 0, r * 0.3, 0, Math.PI * 2);
+  },
   boss_core: (c, r) => {
     star(c, 12, r, r * 0.82);
     c.moveTo(r * 0.66, 0);

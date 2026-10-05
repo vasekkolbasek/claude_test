@@ -50,7 +50,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     progress: (c) => [EVOLUTION_IDS.filter((id) => c.save.codex.w.includes(id)).length, EVOLUTION_IDS.length],
   },
   { id: 'mb_1', reward: 50, icon: 'achievements', check: (c) => c.save.stats.miniBosses >= 1 },
-  { id: 'mb_all3', reward: 120, icon: 'achievements', check: run((w) => w.run.miniBosses >= 3) },
+  { id: 'mb_all3', reward: 120, icon: 'achievements', check: run((w) => w.run.miniBosses >= 2) },
   { id: 'boss_1', reward: 100, icon: 'leaders', check: (c) => c.save.stats.bossKills >= 1 },
   { id: 'elites_50', reward: 80, icon: 'crit', check: (c) => c.save.stats.elites >= 50, progress: (c) => [c.save.stats.elites, 50] },
   { id: 'nohit_60', reward: 60, icon: 'armor', check: run((w) => w.run.maxNoHit >= 60) },

@@ -244,6 +244,12 @@ export function updateEnemy(w: World, e: Enemy, dt: number): void {
     case 'mb_hydra':
       hydra(w, e, nx, ny, spd, dt);
       break;
+    case 'mb_overclock':
+      overclock(w, e, nx, ny, spd, dt);
+      break;
+    case 'mb_botnet':
+      botnet(w, e, nx, ny, d, spd, dt);
+      break;
     case 'boss_core':
       chaosCore(w, e, nx, ny, d, spd, dt);
       break;
@@ -347,6 +353,70 @@ function hydra(w: World, e: Enemy, nx: number, ny: number, spd: number, dt: numb
       w.queueSpawn('splitter', e.x + Math.cos(a) * e.r, e.y + Math.sin(a) * e.r, true);
     }
     w.events.push(EV.BOSS_PHASE, e.x, e.y, e.state, e.def.color);
+  }
+}
+
+function overclock(w: World, e: Enemy, nx: number, ny: number, spd: number, dt: number): void {
+  // state 0: chase · 1: wind-up (blinking) · 2: lunge (repeats `dashes` times)
+  e.t2 += dt;
+  if (e.state === 0) {
+    move(e, nx, ny, spd, dt);
+    e.ang += dt * 2;
+    if (e.t2 >= p(e, 'dashEvery', 3.4)) {
+      e.state = 1;
+      e.t2 = 0;
+      e.aux = p(e, 'dashes', 3);
+    }
+  } else if (e.state === 1) {
+    e.ang += dt * 14;
+    e.flash = Math.sin(e.t2 * 32) > 0 ? 0.05 : 0;
+    if (e.t2 >= p(e, 'windup', 0.55)) {
+      e.state = 2;
+      e.t2 = 0;
+      e.tx = nx;
+      e.ty = ny;
+      w.events.push(EV.DASH, e.x, e.y, e.def.color);
+    }
+  } else {
+    move(e, e.tx, e.ty, p(e, 'dashSpeed', 520), dt);
+    e.ang += dt * 20;
+    if (e.t2 >= p(e, 'dashTime', 0.3)) {
+      // every lunge ends with a ring of bullets
+      const n = p(e, 'ring', 10);
+      const off = w.rng.angle();
+      for (let i = 0; i < n; i++) w.fireEnemyBullet(e.x, e.y, off + (i / n) * TAU, p(e, 'bulletSpeed', 165), p(e, 'bulletDmg', 11), e.def.color, 7);
+      w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+      e.aux--;
+      e.t2 = 0;
+      e.state = e.aux > 0 ? 1 : 0;
+      if (e.state === 1) e.t2 = p(e, 'windup', 0.55) * 0.4; // quicker follow-up lunges
+    }
+  }
+}
+
+function botnet(w: World, e: Enemy, nx: number, ny: number, d: number, spd: number, dt: number): void {
+  if (e.age > BALANCE.miniBossEnrage) move(e, nx, ny, d > e.r + 30 ? spd * 1.5 : 0, dt);
+  else keepDistance(e, nx, ny, d, spd, p(e, 'keep', 240), dt);
+  e.ang += dt * 0.9;
+  e.t += dt;
+  e.t2 += dt;
+  if (e.t2 >= p(e, 'summonEvery', 5.5)) {
+    // surrounds the player with a ring of nano-viruses
+    e.t2 = 0;
+    const n = p(e, 'summon', 8);
+    const r = p(e, 'summonRadius', 210);
+    const pl = w.player;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU;
+      w.queueSpawn('nano', pl.x + Math.cos(a) * r, pl.y + Math.sin(a) * r);
+    }
+    w.events.push(EV.BOSS_PHASE, e.x, e.y, 0, e.def.color);
+  }
+  if (e.t >= p(e, 'shotEvery', 2.2)) {
+    e.t = 0;
+    const base = Math.atan2(ny, nx);
+    for (let i = -1; i <= 1; i++) w.fireEnemyBullet(e.x, e.y, base + i * 0.18, p(e, 'bulletSpeed', 185), p(e, 'bulletDmg', 11), e.def.color, 8);
+    w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
   }
 }
 

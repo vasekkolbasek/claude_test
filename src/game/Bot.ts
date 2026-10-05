@@ -1,4 +1,5 @@
 import { Rng } from '../core/math';
+import { EVOLUTIONS, WEAPONS } from '../data/weapons';
 import type { UpgradeCard } from '../data/types';
 import type { World } from './World';
 
@@ -137,9 +138,13 @@ export class Bot {
           s = w.weapons.length < 3 ? 24 : w.weapons.length < 5 ? 14 : 8;
           break;
         case 'passive_new':
-        case 'passive_up':
+        case 'passive_up': {
           s = (PASSIVE_PRIORITY[c.id] ?? 3) * 2 + c.rarity * 3;
+          // a sensible player completes evolution recipes (weapon 5 + module 5)
+          const recipe = w.weapons.some((x) => !x.evo && EVOLUTIONS[WEAPONS[x.id].evolution].passive === c.id);
+          if (recipe) s += 6 + skill * 10;
           break;
+        }
         case 'heal':
           s = w.player.hp < w.stats.maxHp * 0.5 ? 30 : 2;
           break;

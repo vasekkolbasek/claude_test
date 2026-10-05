@@ -73,6 +73,16 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
     id: 'mb_hydra', ai: 'mb_hydra', hp: 2600, speed: 58, dmg: 24, r: 44, xp: 120, color: 0x3dffb0, shape: 'mb_hydra', mass: 0.95,
     boss: 'mini', p: { shotEvery: 1.9, bulletSpeed: 210, bulletDmg: 13 },
   },
+  // «Разгонщик»: a chain of three lunges, each ending in a burst ring
+  mb_overclock: {
+    id: 'mb_overclock', ai: 'mb_overclock', hp: 1300, speed: 64, dmg: 18, r: 38, xp: 70, color: 0xff9a3d, shape: 'mb_overclock', mass: 0.95,
+    boss: 'mini', p: { dashEvery: 3.4, dashes: 3, windup: 0.55, dashSpeed: 520, dashTime: 0.3, ring: 10, bulletSpeed: 165, bulletDmg: 11 },
+  },
+  // «Ботнет»: keeps its distance, rings the player with nano-viruses and fires bursts
+  mb_botnet: {
+    id: 'mb_botnet', ai: 'mb_botnet', hp: 1900, speed: 46, dmg: 18, r: 42, xp: 90, color: 0x6dff8a, shape: 'mb_botnet', mass: 0.95,
+    boss: 'mini', p: { keep: 240, summonEvery: 5.5, summon: 8, summonRadius: 210, shotEvery: 2.2, bulletSpeed: 185, bulletDmg: 11 },
+  },
   boss_core: {
     id: 'boss_core', ai: 'boss_core', hp: 8500, speed: 40, dmg: 30, r: 64, xp: 0, color: 0xff2a55, shape: 'boss_core', mass: 1,
     boss: 'final', p: { bulletSpeed: 165, bulletDmg: 18 },
@@ -96,6 +106,8 @@ export const ENEMY_SECTOR: Partial<Record<EnemyId, SectorId>> = {
   sniper: 'gpu',
   phantom: 'bin',
   ransom: 'bin',
+  mb_overclock: 'cpu',
+  mb_botnet: 'gpu',
 };
 
 /**

@@ -12,7 +12,6 @@ export const BALANCE = {
   slots: { weapons: 6, passives: 6 },
   /** normal-mode final boss time (seconds) */
   bossTime: 360,
-  miniBossTimes: [110, 215, 325],
   maxEnemies: 650,
   /** share of regular spawns placed ahead of a player who keeps running one way (0..1) */
   aheadSpawnBias: 0.6,
@@ -88,7 +87,7 @@ export const BASE_STATS: PlayerStats = {
 export function xpForLevel(level: number): number {
   const l = level - 1;
   // cheap early levels, steep late ones: a won run ends around level 30-40, not with everything maxed
-  return Math.round(4 + 6.5 * l + 0.35 * l * l + 0.02 * l * l * l);
+  return Math.round(4 + 6.5 * l + 0.35 * l * l + 0.016 * l * l * l);
 }
 
 export function rarityWeights(luck: number): number[] {

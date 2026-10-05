@@ -16,7 +16,7 @@ describe('content requirements', () => {
     expect(EVOLUTION_IDS.length).toBeGreaterThanOrEqual(4);
     const regular = ENEMY_IDS.filter((id) => !ENEMIES[id].boss);
     expect(regular.length).toBeGreaterThanOrEqual(12);
-    expect(ENEMY_IDS.filter((id) => ENEMIES[id].boss === 'mini')).toHaveLength(3);
+    expect(ENEMY_IDS.filter((id) => ENEMIES[id].boss === 'mini')).toHaveLength(5);
     expect(ENEMY_IDS.filter((id) => ENEMIES[id].boss === 'final')).toHaveLength(1);
     expect(SECTOR_IDS).toHaveLength(4);
     expect(CHARACTER_IDS.length).toBeGreaterThanOrEqual(5);

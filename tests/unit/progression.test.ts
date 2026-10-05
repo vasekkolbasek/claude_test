@@ -17,7 +17,7 @@ describe('enemies by sector', () => {
     for (const id of ram) expect(enemyInSector(id as never, 'ram')).toBe(true);
     expect(ram.has('sniper')).toBe(false);
     const bin = seen('bin');
-    for (const id of Object.keys(ENEMY_SECTOR)) expect(bin.has(id)).toBe(true);
+    for (const id of Object.keys(ENEMY_SECTOR).filter((x) => !x.startsWith('mb_'))) expect(bin.has(id)).toBe(true);
     // each later sector brings something new
     for (let i = 1; i < SECTOR_IDS.length; i++) expect(seen(SECTOR_IDS[i]).size).toBeGreaterThan(seen(SECTOR_IDS[i - 1]).size);
   });
@@ -29,7 +29,7 @@ describe('enemies by sector', () => {
 
   it('every new virus is used by the wave script', () => {
     const used = new Set(WAVES.flatMap((w) => w.roster.map(([id]) => id)));
-    for (const id of Object.keys(ENEMY_SECTOR)) expect(used.has(id as never)).toBe(true);
+    for (const id of Object.keys(ENEMY_SECTOR).filter((x) => !x.startsWith('mb_'))) expect(used.has(id as never)).toBe(true);
   });
 });
 

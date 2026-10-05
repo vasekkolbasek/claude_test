@@ -777,7 +777,9 @@ export class World {
       case 'miniboss':
       case 'boss': {
         this.spawnPoint(pt, 80, true);
-        this.spawnEnemy(ev.enemy, pt.x, pt.y);
+        // each sector brings its own pair of mini-bosses
+        const id = ev.type === 'miniboss' && ev.slot !== undefined ? this.sector.minibosses[ev.slot] : ev.enemy;
+        this.spawnEnemy(id, pt.x, pt.y);
         break;
       }
       case 'ring': {

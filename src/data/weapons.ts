@@ -25,7 +25,7 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
       s({ dmg: 13, cd: 0.58, count: 1, pierce: 1, speed: 580, size: 6, knock: 40 }),
       s({ dmg: 13, cd: 0.54, count: 2, pierce: 1, speed: 600, size: 6.5, knock: 45 }),
       s({ dmg: 17, cd: 0.5, count: 2, pierce: 2, speed: 620, size: 7, knock: 45 }),
-      s({ dmg: 24, cd: 0.44, count: 3, pierce: 3, speed: 650, size: 7.5, knock: 50 }),
+      s({ dmg: 22, cd: 0.44, count: 3, pierce: 3, speed: 650, size: 7.5, knock: 50 }),
     ],
   },
   orbit: {
@@ -60,8 +60,8 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
       s({ dmg: 6, cd: 3.0, count: 1, dur: 0.8, size: 10, extra: 430 }),
       s({ dmg: 7, cd: 2.9, count: 1, dur: 1.0, size: 11, extra: 440 }),
       s({ dmg: 8, cd: 2.6, count: 1, dur: 1.05, size: 14, extra: 460 }),
-      s({ dmg: 13, cd: 2.4, count: 2, dur: 1.4, size: 15, extra: 470 }),
-      s({ dmg: 17, cd: 2.0, count: 2, dur: 2.0, size: 18, extra: 500 }),
+      s({ dmg: 14, cd: 2.4, count: 2, dur: 1.4, size: 15, extra: 470 }),
+      s({ dmg: 19, cd: 2.0, count: 2, dur: 2.0, size: 18, extra: 500 }),
     ],
   },
   mines: {
@@ -96,8 +96,8 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
       s({ dmg: 16, cd: 3.2, count: 1, size: 140, knock: 260 }),
       s({ dmg: 20, cd: 3.0, count: 1, size: 145, knock: 270 }),
       s({ dmg: 24, cd: 3.0, count: 1, size: 170, knock: 290 }),
-      s({ dmg: 26, cd: 2.5, count: 1, size: 175, knock: 300 }),
-      s({ dmg: 26, cd: 2.4, count: 2, size: 200, knock: 320 }),
+      s({ dmg: 24, cd: 2.6, count: 1, size: 175, knock: 300 }),
+      s({ dmg: 24, cd: 2.4, count: 2, size: 200, knock: 320 }),
     ],
   },
   drones: {
@@ -120,7 +120,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDef> = {
     from: 'pulse',
     passive: 'might',
     color: 0xffffff,
-    stats: s({ dmg: 25, cd: 0.32, count: 3, pierce: 2, speed: 720, size: 8, knock: 50, extra: 36 }),
+    stats: s({ dmg: 23, cd: 0.32, count: 3, pierce: 2, speed: 720, size: 8, knock: 50, extra: 36 }),
   },
   orbit_evo: {
     id: 'orbit_evo',
@@ -141,7 +141,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDef> = {
     from: 'laser',
     passive: 'duration',
     color: 0xff9ab0,
-    stats: s({ dmg: 18, cd: 0.1, count: 4, dur: 999, size: 20, extra: 520, speed: 0.9 }),
+    stats: s({ dmg: 20, cd: 0.1, count: 4, dur: 999, size: 20, extra: 520, speed: 0.9 }),
   },
   mines_evo: {
     id: 'mines_evo',
@@ -162,7 +162,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDef> = {
     from: 'shockwave',
     passive: 'armor',
     color: 0xb4ffc4,
-    stats: s({ dmg: 48, cd: 2.0, count: 2, size: 260, knock: 360, dur: 2.5 }),
+    stats: s({ dmg: 43, cd: 2.0, count: 2, size: 260, knock: 360, dur: 2.5 }),
   },
   drones_evo: {
     id: 'drones_evo',

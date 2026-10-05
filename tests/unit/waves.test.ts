@@ -40,12 +40,21 @@ describe('wave director', () => {
     for (const e of WAVE_EVENTS) expect(ENEMIES[e.enemy]).toBeDefined();
   });
 
-  it('mini-bosses every 3 minutes and the final boss at 10:00', () => {
+  it('two mini-bosses (the sector pair, in order) and then the final boss', () => {
     const out: WaveEvent[] = [];
     const all: WaveEvent[] = [];
-    for (let t = 0; t < 610; t += 0.5) all.push(...eventsBetween(t, t + 0.5, 'normal', out).slice());
-    const minis = all.filter((e) => e.type === 'miniboss').map((e) => e.at);
-    expect(minis).toEqual(BALANCE.miniBossTimes);
+    for (let t = 0; t < BALANCE.bossTime + 10; t += 0.5) all.push(...eventsBetween(t, t + 0.5, 'normal', out).slice());
+    const minis = all.filter((e) => e.type === 'miniboss');
+    expect(minis.map((e) => e.slot)).toEqual([0, 1]);
+    expect(minis[1].at).toBeLessThan(BALANCE.bossTime);
+    for (const id of SECTOR_IDS) {
+      const pair = SECTORS[id].minibosses;
+      expect(pair).toHaveLength(2);
+      for (const mb of pair) expect(ENEMIES[mb].boss).toBe('mini');
+    }
+    // every mini-boss appears somewhere
+    const used = new Set(SECTOR_IDS.flatMap((id) => SECTORS[id].minibosses));
+    for (const mb of Object.values(ENEMIES).filter((e) => e.boss === 'mini')) expect(used.has(mb.id)).toBe(true);
     expect(all.filter((e) => e.type === 'boss').map((e) => e.at)).toEqual([BALANCE.bossTime]);
   });
 

@@ -34,7 +34,8 @@ export function availableEvolutions(l: LoadoutView): EvolutionId[] {
     if (w.evo || w.level < MAX_LEVEL) continue;
     const evoId = WEAPONS[w.id].evolution;
     const need = EVOLUTIONS[evoId].passive;
-    if (l.passives.some((p) => p.id === need)) out.push(evoId);
+    // both halves of the recipe must be maxed: the weapon at level 5 and its module at level 5
+    if (l.passives.some((p) => p.id === need && p.level >= PASSIVES[need].maxLevel)) out.push(evoId);
   }
   return out;
 }
@@ -47,7 +48,9 @@ function candidates(l: LoadoutView): Candidate[] {
   }
   for (const w of l.weapons) {
     if (!w.evo && w.level < MAX_LEVEL) {
-      list.push({ card: { kind: 'weapon_up', id: w.id, levelFrom: w.level, levelTo: w.level + 1 }, weight: 12 });
+      // a weapon whose module is already owned is on its way to an evolution: favour it
+      const paired = l.passives.some((p) => p.id === EVOLUTIONS[WEAPONS[w.id].evolution].passive);
+      list.push({ card: { kind: 'weapon_up', id: w.id, levelFrom: w.level, levelTo: w.level + 1 }, weight: paired ? 15 : 12 });
     }
   }
   if (l.weapons.length < BALANCE.slots.weapons) {
@@ -58,7 +61,10 @@ function candidates(l: LoadoutView): Candidate[] {
   }
   for (const p of l.passives) {
     if (p.level < PASSIVES[p.id].maxLevel) {
-      list.push({ card: { kind: 'passive_up', id: p.id, levelFrom: p.level, levelTo: p.level + 1 }, weight: 9 });
+      // evolutions need the module maxed too: its upgrades show up much more often while an
+      // owned weapon is waiting for it
+      const recipe = l.weapons.some((w) => !w.evo && EVOLUTIONS[WEAPONS[w.id].evolution].passive === p.id);
+      list.push({ card: { kind: 'passive_up', id: p.id, levelFrom: p.level, levelTo: p.level + 1 }, weight: recipe ? 13 : 9 });
     }
   }
   if (l.passives.length < BALANCE.slots.passives) {

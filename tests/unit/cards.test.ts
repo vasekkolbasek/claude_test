@@ -31,7 +31,7 @@ describe('upgrade cards', () => {
   });
 
   it('guarantees an available evolution', () => {
-    const l = loadout({ weapons: [{ id: 'pulse', level: 5, evo: false, bonus: 0 }], passives: [{ id: 'might', level: 1, value: 0.1 }] });
+    const l = loadout({ weapons: [{ id: 'pulse', level: 5, evo: false, bonus: 0 }], passives: [{ id: 'might', level: 5, value: 0.5 }] });
     expect(availableEvolutions(l)).toEqual(['pulse_evo']);
     const rng = new Rng(3);
     for (let i = 0; i < 50; i++) {
@@ -40,9 +40,11 @@ describe('upgrade cards', () => {
     }
   });
 
-  it('does not offer evolution without the matching passive or below level 5', () => {
+  it('does not offer evolution without the matching passive or below level 5 (weapon and module)', () => {
     expect(availableEvolutions(loadout({ weapons: [{ id: 'pulse', level: 5, evo: false, bonus: 0 }], passives: [{ id: 'area', level: 1, value: 0.1 }] }))).toEqual([]);
     expect(availableEvolutions(loadout({ weapons: [{ id: 'pulse', level: 4, evo: false, bonus: 0 }], passives: [{ id: 'might', level: 1, value: 0.1 }] }))).toEqual([]);
+    // the module must be maxed too
+    expect(availableEvolutions(loadout({ weapons: [{ id: 'pulse', level: 5, evo: false, bonus: 0 }], passives: [{ id: 'might', level: 4, value: 0.4 }] }))).toEqual([]);
   });
 
   it('falls back to heal/bits when everything is maxed', () => {
