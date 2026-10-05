@@ -92,6 +92,8 @@ export interface PlayerState {
 const tmpEnemies: Enemy[] = [];
 const bulletNear: Enemy[] = [];
 const respawnPt = { x: 0, y: 0 };
+/** largest body among regular enemies, elites and bosses (collision query margin) */
+const MAX_ENEMY_R = Math.max(...Object.values(ENEMIES).map((d) => d.r * (d.boss ? 1 : BALANCE.eliteScale)));
 const sepNear: Enemy[] = [];
 
 export class World {
@@ -382,7 +384,8 @@ export class World {
 
   /** Enemies whose bodies overlap the circle. Returned array is reused. */
   enemiesInRadius(x: number, y: number, r: number): Enemy[] {
-    this.grid.query(x, y, r, tmpEnemies);
+    // the grid indexes centres: widen the query by the largest body so big enemies are found
+    this.grid.query(x, y, r + MAX_ENEMY_R, tmpEnemies);
     let n = 0;
     for (let i = 0; i < tmpEnemies.length; i++) {
       const e = tmpEnemies[i];
@@ -923,14 +926,22 @@ export class World {
           b.vy = Math.sin(na) * b.speed;
         }
       }
+      // swept test along this frame's path: a fast bullet must not skip an enemy that is
+      // right next to the player (it used to spawn past it and only check its end point)
+      const x0 = b.x;
+      const y0 = b.y;
       b.x += b.vx * dt;
       b.y += b.vy * dt;
-      this.grid.query(b.x, b.y, b.r, near);
+      const sx = b.x - x0;
+      const sy = b.y - y0;
+      const len2 = sx * sx + sy * sy || 1;
+      this.grid.query((x0 + b.x) / 2, (y0 + b.y) / 2, Math.sqrt(len2) / 2 + b.r + MAX_ENEMY_R, near);
       for (let i = 0; i < near.length; i++) {
         const e = near[i];
         if (!e.alive || e.spawnT < 0.3) continue;
-        const dx = e.x - b.x;
-        const dy = e.y - b.y;
+        const k = Math.max(0, Math.min(1, ((e.x - x0) * sx + (e.y - y0) * sy) / len2));
+        const dx = e.x - (x0 + sx * k);
+        const dy = e.y - (y0 + sy * k);
         const rr = e.r + b.r;
         if (dx * dx + dy * dy > rr * rr) continue;
         if (b.hits.includes(e.uid)) continue;

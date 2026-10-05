@@ -26,7 +26,7 @@ export const BALANCE = {
   /** mini-bosses that keep their distance stop doing so after this many seconds */
   miniBossEnrage: 45,
   /** per minute enemy HP growth: hpMult = 1 + a*m + b*m^2 */
-  hpGrowth: { a: 0.16, b: 0.09 },
+  hpGrowth: { a: 0.19, b: 0.105 },
   /** enemy HP also scales with the player's level (rubber band against snowballing) */
   hpPerLevel: 0.05,
   /** rate-based spawns stop above this multiple of the wave minimum */
