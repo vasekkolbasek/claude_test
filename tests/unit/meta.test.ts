@@ -63,6 +63,17 @@ describe('daily', () => {
     expect(questProgress(a, w)).toBeGreaterThan(0);
     expect(questProgress(a, w)).toBe(0);
   });
+
+  it('the daily quest does not pay out before the player can see it', () => {
+    const s = defaultSave();
+    s.daily.questId = 'kills';
+    const w = world();
+    w.run.kills = 10_000;
+    s.stats.runs = 2; // this run is the 3rd: the quest card was not in the menu before it
+    expect(applyRunResult(s, w, false).questReward).toBe(0);
+    expect(s.daily.questDone).toBe(false);
+    expect(applyRunResult(s, w, false).questReward).toBeGreaterThan(0);
+  });
 });
 
 describe('achievements and run results', () => {

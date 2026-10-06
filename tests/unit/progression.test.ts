@@ -49,6 +49,25 @@ describe('progressive menu', () => {
     expect(featureOpen(s, 'leaders')).toBe(true);
   });
 
+  it('codex opens with characters after run 2, daily after run 3, achievements after run 4', () => {
+    const s = defaultSave();
+    const open = () => FEATURES.filter((f) => featureOpen(s, f.id)).map((f) => f.id);
+    s.stats.runs = 2;
+    expect(open()).toEqual(['workshop', 'characters', 'codex']);
+    s.stats.runs = 3;
+    expect(open()).toEqual(['workshop', 'characters', 'codex', 'daily', 'chest']);
+    s.stats.runs = 4;
+    expect(open()).toContain('achievements');
+  });
+
+  it('a feature the player already visited never disappears when the schedule moves it', () => {
+    const s = defaultSave();
+    s.stats.runs = 3;
+    s.seen = ['achievements'];
+    expect(featureOpen(s, 'achievements')).toBe(true);
+    expect(featureNew(s, 'achievements')).toBe(false);
+  });
+
   it('existing players do not get a wall of «NEW» badges after the update', () => {
     const m = migrate({ v: 2, stats: { runs: 20 }, endlessUnlocked: true });
     for (const f of FEATURES) expect(featureNew(m, f.id)).toBe(false);

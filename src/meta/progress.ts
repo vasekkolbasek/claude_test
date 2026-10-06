@@ -5,6 +5,7 @@ import type { StatBonus } from '../game/stats';
 import type { World } from '../game/World';
 import { checkAchievements } from './achievements';
 import { questProgress } from './daily';
+import { featureOpen } from './features';
 import type { SaveData } from './save';
 import { passivePoolFor, unlockStage, unlocksBetween, weaponPoolFor, type UnlockNews } from './unlocks';
 import { workshopBonuses } from './workshop';
@@ -54,6 +55,8 @@ export function applyRunResult(save: SaveData, w: World, won: boolean): RunSumma
   const mode = w.mode;
   const sector = w.cfg.sector;
   const bits = w.computeBits(won);
+  // the daily quest only counts once the player can see it in the menu
+  const questOpen = featureOpen(save, 'daily');
   save.bits += bits;
   st.bitsEarned += bits;
   st.runs++;
@@ -104,7 +107,7 @@ export function applyRunResult(save: SaveData, w: World, won: boolean): RunSumma
   for (const id of w.weaponsSeen) if (!save.codex.w.includes(id)) save.codex.w.push(id);
   for (const p of w.passives) if (!save.codex.p.includes(p.id)) save.codex.p.push(p.id);
 
-  const questReward = questProgress(save, w);
+  const questReward = questOpen ? questProgress(save, w) : 0;
   if (questReward > 0) {
     save.bits += questReward;
     st.dailyQuests++;

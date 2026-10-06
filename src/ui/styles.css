@@ -1230,3 +1230,22 @@ body {
 .danger-vignette { box-shadow: inset 0 0 135px 38px rgba(255, 30, 70, 0.6); }
 .danger-vignette.on { animation: dangerPulse 0.9s ease-in-out infinite alternate; }
 @keyframes dangerPulse { from { opacity: 0.75; } to { opacity: 1; } }
+
+/* codex: how evolutions work — a gold callout, set apart from the list cards */
+.codex-tip {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0 0 0.35rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.8rem;
+  background: linear-gradient(90deg, rgba(255, 181, 46, 0.2), rgba(255, 181, 46, 0.06));
+  border: 1.5px dashed rgba(255, 181, 46, 0.7);
+  font-size: max(0.84rem, 13px);
+  line-height: 1.3;
+}
+.codex-tip[hidden] { display: none; }
+.codex-tip > .ico { flex: none; width: 1.5rem; height: 1.5rem; color: var(--r3); filter: drop-shadow(0 0 5px var(--r3)); margin-top: 0.1rem; }
+.codex-tip b { display: block; color: var(--r3); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.9em; margin-bottom: 0.1rem; }
+.codex-tip span { color: var(--text); }

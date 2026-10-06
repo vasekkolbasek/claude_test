@@ -64,9 +64,9 @@ export function showMenu(app: App): void {
   const tiles = [
     tile('workshop', 'workshop', t('menu.workshop'), () => showWorkshop(app), canBuyAnything(app)),
     tile('characters', 'characters', t('menu.characters'), () => showCharacters(app, () => showMenu(app)), canUnlockChar(app)),
+    tile('codex', 'codex', t('menu.codex'), () => showCodex(app)),
     tile('daily', 'daily', t('daily.title'), () => openDaily(app, () => showMenu(app)), login.can),
     tile('achievements', 'achievements', t('menu.achievements'), () => showAchievements(app)),
-    tile('codex', 'codex', t('menu.codex'), () => showCodex(app)),
     tile('leaders', 'leaders', t('menu.leaders'), () => showLeaders(app)),
   ].filter((x): x is HTMLButtonElement => x !== null);
   const grid = tiles.length ? h('div', { cls: `menu-grid n${tiles.length}` }, ...tiles) : null;

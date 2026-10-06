@@ -21,6 +21,13 @@ export function showCodex(app: App): void {
   let items: HTMLElement[] = [];
   const pager = new Pager([], { minEm: 18.5, targetEm: 24 });
   const progress = h('div', { cls: 'note' });
+  // how evolutions work, without giving the recipes away
+  const evoTip = h(
+    'div',
+    { cls: 'codex-tip' },
+    icon('star'),
+    h('div', {}, h('b', { text: t('codex.evoTipTitle') }), h('span', { text: t('codex.evoTip') })),
+  );
 
   const unknown = (ico: HTMLElement | SVGElement, note = '') =>
     h(
@@ -40,6 +47,7 @@ export function showCodex(app: App): void {
       });
       tabs.appendChild(b);
     }
+    evoTip.hidden = tab !== 'evolutions';
     items = [];
     let found = 0;
     let total = 0;
@@ -85,6 +93,7 @@ export function showCodex(app: App): void {
         }
         found++;
         const evo = EVOLUTIONS[def.evolution];
+        const evoKnown = save.codex.w.includes(def.evolution);
         items.push(
           h(
             'div',
@@ -95,7 +104,7 @@ export function showCodex(app: App): void {
               { cls: 'lb' },
               h('div', { cls: 'lt', text: t(`w.${id}`) }),
               h('div', { cls: 'ld', text: t(`w.${id}.desc`) }),
-              h('div', { cls: 'ld', style: { color: 'var(--r3)' } }, `${t('codex.recipeTitle')}: `, t('codex.recipe', { weapon: t(`w.${id}`), passive: t(`p.${evo.passive}`) })),
+              h('div', { cls: 'ld', style: { color: 'var(--r3)' } }, `${t('codex.recipeTitle')}: `, t('codex.recipe', { weapon: t(`w.${id}`), passive: evoKnown ? t(`p.${evo.passive}`) : t('codex.unknown') })),
             ),
           ),
         );
@@ -104,22 +113,25 @@ export function showCodex(app: App): void {
       for (const id of EVOLUTION_IDS) {
         total++;
         const evo = EVOLUTIONS[id];
+        // the recipe stays secret until the player assembles the evolution in a run
         const known = save.codex.w.includes(id);
-        const baseKnown = save.codex.w.includes(evo.from);
+        const unk = t('codex.unknown');
         if (known) found++;
         items.push(
           h(
             'div',
             { cls: `li ${known ? 'done' : 'locked'}` },
-            h('div', { cls: 'lic', style: { '--ic': known ? '#ffb52e' : '#556' } }, icon(evo.from)),
+            h('div', { cls: 'lic', style: { '--ic': known ? '#ffb52e' : '#556' } }, icon(known ? evo.from : 'star')),
             h(
               'div',
               { cls: 'lb' },
-              h('div', { cls: 'lt', text: known ? t(`w.${id}`) : t('codex.unknown') }),
+              h('div', { cls: 'lt', text: known ? t(`w.${id}`) : unk }),
               h('div', { cls: 'ld', text: known ? t(`w.${id}.desc`) : t('codex.unknownText') }),
-              baseKnown || known
-                ? h('div', { cls: 'ld', style: { color: 'var(--r3)' }, text: t('codex.recipe', { weapon: t(`w.${evo.from}`), passive: t(`p.${evo.passive}`) }) })
-                : null,
+              h('div', {
+                cls: 'ld',
+                style: { color: 'var(--r3)' },
+                text: known ? t('codex.recipe', { weapon: t(`w.${evo.from}`), passive: t(`p.${evo.passive}`) }) : t('codex.recipe', { weapon: unk, passive: unk }),
+              }),
             ),
           ),
         );
@@ -147,5 +159,5 @@ export function showCodex(app: App): void {
     pager.setItems(items);
   };
   render();
-  app.ui.show(h('div', { cls: 'dim' }, topbar(app, t('codex.title'), () => showMenu(app)), tabs, progress, pager.el));
+  app.ui.show(h('div', { cls: 'dim' }, topbar(app, t('codex.title'), () => showMenu(app)), tabs, evoTip, progress, pager.el));
 }
