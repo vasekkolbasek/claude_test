@@ -1,5 +1,6 @@
 // Layout audit: every screen/dialog on 14 phone/tablet/desktop sizes (incl. 125% system font)
-// in Yandex-like mode; reports scrollable boxes, elements off-screen, overlaps and clipped text.
+// in Yandex-like mode; reports scrollable boxes, elements off-screen, overlaps, clipped text and
+// text cut with an ellipsis (TRUNC).
 // Touch devices are portrait-only: on landscape phone sizes it only checks that the «rotate the
 // device» overlay covers the screen and that a run started there stays paused (gameplay stopped).
 //   npm run build && node scripts/serve.mjs dist 4192 / & node scripts/layout-audit.mjs <outDir> [WxH]
@@ -9,6 +10,8 @@ const only = process.argv[3];
 const b = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || undefined });
 const audit = (p) => p.evaluate(() => {
   const vw = innerWidth, vh = innerHeight, bad = [];
+  // full one-line text width (scrollWidth reports the width already cut by the ellipsis)
+  const textW = (el, cs) => { const sp = document.createElement('span'); sp.textContent = el.textContent; Object.assign(sp.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'nowrap', fontFamily: cs.fontFamily, fontSize: cs.fontSize, fontWeight: cs.fontWeight, letterSpacing: cs.letterSpacing, textTransform: cs.textTransform }); document.body.appendChild(sp); const w = sp.getBoundingClientRect().width; sp.remove(); return w; };
   const vis = (el) => { if (el.closest('.leave') || el.closest('.covered') || el.closest('.pg-probe')) return false; const s = getComputedStyle(el); if (s.display === 'none' || s.visibility === 'hidden' || +s.opacity === 0) return false; const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return false; const v = el.closest('.pg-view'); if (v) { const vr = v.getBoundingClientRect(); if (r.right <= vr.left + 1 || r.left >= vr.right - 1) return false; } return true; };
   const modals = [...document.querySelectorAll('#ui .modal:not(.leave):not(.covered)')];
   const layer = modals.length ? modals[modals.length - 1] : document.querySelector('#ui .screen:not(.leave)');
@@ -25,6 +28,7 @@ const audit = (p) => p.evaluate(() => {
     if (r.left < -1 || r.right > vw + 1 || r.top < -1 || r.bottom > vh + 1) bad.push(`OUT ${els[i].tagName}.${els[i].className} "${(els[i].textContent || '').trim().slice(0, 16)}"`);
     const e = els[i];
     const cs = getComputedStyle(e); if ((cs.overflowX === 'hidden' || cs.overflowX === 'clip') && e.scrollWidth > e.clientWidth + 2 && cs.textOverflow !== 'ellipsis') bad.push(`CLIP "${e.textContent.trim().slice(0, 18)}"`);
+    if (cs.textOverflow === 'ellipsis' && cs.whiteSpace === 'nowrap' && textW(e, cs) > e.getBoundingClientRect().width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth) + 0.01) bad.push(`TRUNC "${e.textContent.trim().slice(0, 18)}"`);
     for (let j = i + 1; j < els.length; j++) {
       if (e.contains(els[j]) || els[j].contains(e)) continue;
       const q = rects[j];

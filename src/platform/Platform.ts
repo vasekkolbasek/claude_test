@@ -11,8 +11,10 @@ export interface LeaderboardResult {
 }
 
 export interface AdHooks {
-  /** called right before the ad covers the game (pause + mute here) */
+  /** called right before the ad is requested (pause + mute here; the ad may still fail to appear) */
   onOpen?: () => void;
+  /** called when the platform confirms the ad is actually on screen */
+  onShown?: () => void;
   /** called once when the ad is gone for any reason */
   onClose?: () => void;
 }

@@ -526,6 +526,25 @@ export class World {
           best = g;
         }
       }
+      if (best && bd > BALANCE.gemFuseRange * BALANCE.gemFuseRange) {
+        // the nearest one is far away (often off-screen behind the player): bring the crystal
+        // farthest from the player over to the kill instead, so the XP stays within reach
+        const p = this.player;
+        let fd = -1;
+        for (const g of this.gems) {
+          if (!g.alive || g.kind !== GEM_XP || g.pulled) continue;
+          const d = (g.x - p.x) * (g.x - p.x) + (g.y - p.y) * (g.y - p.y);
+          if (d > fd) {
+            fd = d;
+            best = g;
+          }
+        }
+        best.x = x;
+        best.y = y;
+        best.vx = 0;
+        best.vy = 0;
+        best.t = 0;
+      }
       if (best) {
         best.value += value;
         best.tier = gemTier(best.value);

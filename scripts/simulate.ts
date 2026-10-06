@@ -9,6 +9,7 @@
  * (players learn), and the next sector is attempted after a win.
  * Reports survival time, level tempo, bits and the run on which the first victory happened.
  */
+import { ACHIEVEMENTS } from '../src/data/achievements';
 import { WORKSHOP } from '../src/data/workshop';
 import { Bot } from '../src/game/Bot';
 import { World } from '../src/game/World';
@@ -50,6 +51,8 @@ export interface RunReport {
   hpLeft: number;
   timeout: boolean;
   bossFights: string;
+  /** achievements shown on the results screen of this run */
+  ach: string[];
 }
 
 function spend(save: SaveData): string[] {
@@ -144,6 +147,7 @@ export function simulateRun(save: SaveData, sector: SectorId, skill: number, see
     weapons: w.weapons.map((x) => `${x.id}${x.evo ? '*' : x.level}`).join(' '),
     hpLeft: Math.round(w.player.hp),
     timeout: w.state === 'playing',
+    ach: summary.achievements,
     bossFights: fights.join(' ') + (w.boss ? ` core:${Math.round((w.boss.hp / w.boss.maxHp) * 100)}%@${Math.round(w.boss.age)}s` : ''),
   };
 }
@@ -160,6 +164,18 @@ function fmt(t: number): string {
 function main(): void {
   const firstRun: number[] = [];
   const winRun: number[] = [];
+  /** per career: bits from runs, bits from achievements (12 runs) */
+  const runBits: number[] = [];
+  const achBits: number[] = [];
+  const achFirst: number[] = [];
+  const achFirstLost: number[] = [];
+  const achWin: number[] = [];
+  const achTotal: number[] = [];
+  const achPerRun: number[] = new Array(RUNS).fill(0);
+  const bitsPerRun: number[] = new Array(RUNS).fill(0);
+  const reward = new Map(ACHIEVEMENTS.map((a) => [a.id, a.reward]));
+  /** run numbers on which each achievement was unlocked (one entry per career that got it) */
+  const achRun = new Map<string, number[]>(ACHIEVEMENTS.map((a) => [a.id, []]));
   const order: SectorId[] = ['ram', 'cpu', 'gpu', 'bin'];
   const t0 = Date.now();
   for (let c = 0; c < CAREERS; c++) {
@@ -167,11 +183,23 @@ function main(): void {
     let skill = SKILL0;
     let sectorIdx = 0;
     let firstWin = -1;
+    let rb = 0;
+    let ab = 0;
+    let an = 0;
     if (VERBOSE) console.log(`\n=== career ${c + 1} ===`);
     for (let r = 0; r < RUNS; r++) {
       const sector = order[Math.min(sectorIdx, order.length - 1)];
       const rep = simulateRun(save, sector, skill, 1000 * (c + OFFSET) + r + 1);
-      checkAchievements(save, null, false);
+      const late = checkAchievements(save, null, false);
+      rb += rep.bits;
+      for (const id of [...rep.ach, ...late]) ab += reward.get(id) ?? 0;
+      an += rep.ach.length + late.length;
+      for (const id of [...rep.ach, ...late]) achRun.get(id)?.push(r + 1);
+      achPerRun[r] += rep.ach.length;
+      bitsPerRun[r] += rep.bits + [...rep.ach, ...late].reduce((a, id) => a + (reward.get(id) ?? 0), 0);
+      if (r === 0) achFirst.push(rep.ach.length);
+      if (r === 0 && !rep.won) achFirstLost.push(rep.ach.length);
+      if (rep.won && sector === 'ram' && firstWin < 0) achWin.push(rep.ach.length);
       const bought = spend(save);
       if (r === 0) firstRun.push(rep.t);
       if (rep.won && firstWin < 0 && sector === 'ram') firstWin = r + 1;
@@ -179,18 +207,31 @@ function main(): void {
       if (VERBOSE) {
         const l10 = rep.levelTimes[8] ?? NaN;
         console.log(
-          `run ${r + 1} [${sector}] skill ${skill.toFixed(2)}: ${rep.won ? 'WIN ' : rep.timeout ? 'TIME' : 'dead'} ${fmt(rep.t)} lvl ${rep.level} kills ${rep.kills} maxE ${rep.maxEnemies} bits +${rep.bits} (bank ${save.bits}) lvl10@${fmt(l10)} | ${rep.weapons} | ${rep.bossFights} | bought ${bought.length}`,
+          `run ${r + 1} [${sector}] skill ${skill.toFixed(2)}: ${rep.won ? 'WIN ' : rep.timeout ? 'TIME' : 'dead'} ${fmt(rep.t)} lvl ${rep.level} kills ${rep.kills} maxE ${rep.maxEnemies} bits +${rep.bits} ach ${rep.ach.length} (bank ${save.bits}) lvl10@${fmt(l10)} | ${rep.weapons} | ${rep.bossFights} | bought ${bought.length}`,
         );
       }
       skill = Math.min(0.9, skill + LEARN);
     }
     winRun.push(firstWin);
+    runBits.push(rb);
+    achBits.push(ab);
+    achTotal.push(an);
   }
   const avg = (a: number[]) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
   console.log('\n--- summary ---');
   console.log(`first run survival: avg ${fmt(avg(firstRun))}  [${firstRun.map(fmt).join(', ')}]`);
   console.log(`RAW first=${JSON.stringify(firstRun.map((x) => Math.round(x)))} win=${JSON.stringify(winRun)}`);
   console.log(`run of first RAM victory: [${winRun.map((x) => (x < 0 ? '—' : x)).join(', ')}]`);
+  const f1 = (x: number) => x.toFixed(1);
+  console.log(`bits in ${RUNS} runs (per career): runs avg ${Math.round(avg(runBits))} + achievements avg ${Math.round(avg(achBits))} = ${Math.round(avg(runBits) + avg(achBits))}`);
+  console.log(`achievements: first run avg ${f1(avg(achFirst))} (max ${Math.max(...achFirst)}; lost first runs avg ${f1(avg(achFirstLost))}), first RAM win avg ${f1(avg(achWin))} (max ${Math.max(0, ...achWin)}), total in ${RUNS} runs avg ${f1(avg(achTotal))} of ${ACHIEVEMENTS.length}`);
+  let cum = 0;
+  console.log(`bits earned by the end of run N (runs + achievements): [${bitsPerRun.map((x) => Math.round((cum += x) / CAREERS)).join(', ')}]`);
+  console.log(`achievements on results by run: [${achPerRun.map((x) => f1(x / CAREERS)).join(', ')}]`);
+  if (process.argv.includes('--ach')) {
+    console.log('achievement: careers that got it / avg run');
+    for (const [id, runs] of achRun) console.log(`  ${id.padEnd(15)} ${String(runs.length).padStart(3)}/${CAREERS}  ${runs.length ? f1(avg(runs)) : '—'}`);
+  }
   console.log('avg damage per run that ended with the weapon (* = evolved):');
   for (const [k, v] of [...dmgTotals.entries()].sort((a, b) => b[1].dmg / b[1].runs - a[1].dmg / a[1].runs)) {
     console.log(`  ${k.padEnd(11)} ${Math.round(v.dmg / v.runs).toString().padStart(8)}  (${v.runs} runs)`);

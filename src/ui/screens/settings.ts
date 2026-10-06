@@ -2,6 +2,7 @@ import type { App } from '../../app/App';
 import { t } from '../../i18n';
 import type { QualitySetting } from '../../meta/save';
 import { h } from '../dom';
+import { scheduleRefit } from '../fit';
 import { icon } from '../icons';
 
 /** Settings dialog. `inRun` hides destructive actions. */
@@ -40,11 +41,11 @@ export function openSettings(app: App, inRun: boolean, onReset?: () => void): vo
   const row = (ico: string, label: string, ctrl: HTMLElement) => h('div', { cls: 'set-row' }, icon(ico), h('span', { cls: 'sl', text: label }), ctrl);
 
   const qualities: QualitySetting[] = ['auto', 0, 1, 2];
-  const seg = h('div', { cls: 'seg', style: { width: '100%' } });
+  const seg = h('div', { cls: 'seg fit-row', style: { width: '100%' } });
   const renderSeg = () => {
     seg.textContent = '';
     for (const q of qualities) {
-      const b = h('button', { cls: s.quality === q ? 'on' : '', text: t(q === 'auto' ? 'set.q.auto' : `set.q.${q}`) });
+      const b = h('button', { cls: `fit-text ${s.quality === q ? 'on' : ''}`, text: t(q === 'auto' ? 'set.q.auto' : `set.q.${q}`) });
       b.addEventListener('click', () => {
         s.quality = q;
         persist();
@@ -52,6 +53,8 @@ export function openSettings(app: App, inRun: boolean, onReset?: () => void): vo
       });
       seg.appendChild(b);
     }
+    // large system fonts: shrink a label rather than cut it with «…»
+    scheduleRefit();
   };
   renderSeg();
 

@@ -79,11 +79,47 @@ describe('daily', () => {
 describe('achievements and run results', () => {
   it('grants kills_1000 once (characters are no longer achievement rewards)', () => {
     const s = defaultSave();
-    s.stats.kills = 1000;
+    s.stats.kills = 20_000;
     const got = checkAchievements(s, null, false);
     expect(got).toContain('kills_1000');
     expect(s.chars).toEqual(['spark']);
     expect(checkAchievements(s, null, false)).toEqual([]);
+  });
+
+  it('a typical first run gives one or two achievements, the first win no more than five', () => {
+    const s = defaultSave();
+    const w = world();
+    // a fair first run: 4:20, ~1800 kills, level 15, one mini-boss, a revive, 80 s without a hit
+    w.t = 260;
+    w.run.kills = 1800;
+    w.player.level = 15;
+    w.run.miniBosses = 1;
+    w.run.revives = 1;
+    w.run.maxNoHit = 80;
+    const first = applyRunResult(s, w, false).achievements;
+    expect(first).toEqual(['first_run', 'survive_3']);
+    // the first win a few runs later: ~7:25, 11 000 kills, level 38, both mini-bosses
+    s.stats.runs = 3;
+    s.stats.kills = 4000;
+    const win = world();
+    win.t = 445;
+    win.run.kills = 11_000;
+    win.player.level = 38;
+    win.run.miniBosses = 2;
+    win.run.bossKills = 1;
+    win.run.maxNoHit = 95;
+    const got = applyRunResult(s, win, true).achievements;
+    expect(got.length).toBeLessThanOrEqual(5);
+    expect(got).toContain('win_ram');
+  });
+
+  it('achievements earned under the old, easier thresholds are kept', () => {
+    const s = defaultSave();
+    s.ach = { level_10: 1, mb_1: 2 };
+    s.stats.kills = 0;
+    checkAchievements(s, null, false);
+    expect(s.ach.level_10).toBe(1);
+    expect(s.ach.mb_1).toBe(2);
   });
 
   it('applies a winning run: bits, sector unlock, endless unlock, codex', () => {

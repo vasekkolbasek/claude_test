@@ -5,6 +5,7 @@ import { EVOLUTIONS, EVOLUTION_IDS, WEAPONS, WEAPON_IDS } from '../../data/weapo
 import { drawShapeIcon } from '../../render/textures';
 import { t } from '../../i18n';
 import { fmtNum, h, hexColor } from '../dom';
+import { scheduleRefit } from '../fit';
 import { icon } from '../icons';
 import { Pager } from '../pager';
 import { passiveAvailable, passiveStage, weaponAvailable, weaponStage } from '../../meta/unlocks';
@@ -17,7 +18,7 @@ let tab: Tab = 'enemies';
 
 export function showCodex(app: App): void {
   const save = app.save.data;
-  const tabs = h('div', { cls: 'tabs' });
+  const tabs = h('div', { cls: 'tabs fit-row' });
   let items: HTMLElement[] = [];
   const pager = new Pager([], { minEm: 18.5, targetEm: 24 });
   const progress = h('div', { cls: 'note' });
@@ -40,13 +41,14 @@ export function showCodex(app: App): void {
   const render = () => {
     tabs.textContent = '';
     for (const k of ['enemies', 'weapons', 'evolutions', 'passives'] as Tab[]) {
-      const b = h('button', { cls: `tab ${k === tab ? 'on' : ''}`, text: t(`codex.${k}`) });
+      const b = h('button', { cls: `tab fit-text ${k === tab ? 'on' : ''}`, text: t(`codex.${k}`) });
       b.addEventListener('click', () => {
         tab = k;
         render();
       });
       tabs.appendChild(b);
     }
+    scheduleRefit();
     evoTip.hidden = tab !== 'evolutions';
     items = [];
     let found = 0;
@@ -104,7 +106,7 @@ export function showCodex(app: App): void {
               { cls: 'lb' },
               h('div', { cls: 'lt', text: t(`w.${id}`) }),
               h('div', { cls: 'ld', text: t(`w.${id}.desc`) }),
-              h('div', { cls: 'ld', style: { color: 'var(--r3)' } }, `${t('codex.recipeTitle')}: `, t('codex.recipe', { weapon: t(`w.${id}`), passive: evoKnown ? t(`p.${evo.passive}`) : t('codex.unknown') })),
+              h('div', { cls: 'ld', style: { color: 'var(--r3)' }, text: t('codex.evoWith', { passive: evoKnown ? t(`p.${evo.passive}`) : t('codex.unknown') }) }),
             ),
           ),
         );

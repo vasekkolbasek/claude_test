@@ -108,6 +108,7 @@ export class YandexPlatform implements Platform {
           callbacks: {
             onOpen: () => {
               opened = true;
+              hooks.onShown?.();
             },
             onClose: () => finish(),
             onError: (e) => {
@@ -144,8 +145,13 @@ export class YandexPlatform implements Platform {
           callbacks: {
             onOpen: () => {
               opened = true;
+              hooks.onShown?.();
             },
             onRewarded: () => {
+              if (!opened) {
+                opened = true;
+                hooks.onShown?.();
+              }
               rewarded = true;
             },
             onClose: () => finish(),

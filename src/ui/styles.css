@@ -1088,6 +1088,11 @@ body {
 /* bigger section tabs (workshop, codex): equal-width, easy to hit */
 .tabs { flex-wrap: nowrap; gap: 0.45rem; }
 .tabs .tab { flex: 1 1 0; min-width: 0; min-height: 2.9rem; font-size: 1rem; padding: 0.55em 0.6em; border-radius: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* narrow phones: four tabs in a row must show «Эволюции» / «Evolutions» in full (fit-text shrinks the rest) */
+@media (max-width: 420px) {
+  .tabs { gap: 0.25rem; }
+  .tabs .tab { padding-left: 0.15em; padding-right: 0.15em; }
+}
 /* never let a grid column or a segmented control grow past the screen (large system fonts) */
 .menu-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .menu-grid.n1 { grid-template-columns: minmax(0, 1fr); }

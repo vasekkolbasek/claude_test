@@ -5,6 +5,7 @@ import { t } from '../../i18n';
 import { checkAchievements } from '../../meta/achievements';
 import { buyNode, nodeAvailable, nodeCost, nodeLevel } from '../../meta/workshop';
 import { fmtNum, h, hexColor } from '../dom';
+import { scheduleRefit } from '../fit';
 import { icon } from '../icons';
 import { Pager } from '../pager';
 import { bitsPill, topbar } from './common';
@@ -28,20 +29,21 @@ let branch: Branch = 'offense';
 export function showWorkshop(app: App): void {
   const save = app.save.data;
   const pill = bitsPill(save.bits);
-  const tabs = h('div', { cls: 'tabs' });
+  const tabs = h('div', { cls: 'tabs fit-row' });
   let pager: Pager | null = null;
   const render = () => {
     pill.querySelector('span')!.textContent = fmtNum(save.bits);
     tabs.textContent = '';
     for (const b of BRANCHES) {
       const canBuy = WORKSHOP.some((n) => inBranch(n.branch, b) && nodeAvailable(save, n.id) && (nodeCost(save, n.id) ?? Infinity) <= save.bits);
-      const tb = h('button', { cls: `tab ${b === branch ? 'on' : ''}`, text: t(`ws.b.${b}`) }, canBuy ? h('i', { cls: 'tab-dot' }) : null);
+      const tb = h('button', { cls: `tab fit-text ${b === branch ? 'on' : ''}`, text: t(`ws.b.${b}`) }, canBuy ? h('i', { cls: 'tab-dot' }) : null);
       tb.addEventListener('click', () => {
         branch = b;
         render();
       });
       tabs.appendChild(tb);
     }
+    scheduleRefit();
     const cards: HTMLElement[] = [];
     {
       const items = WORKSHOP.filter((n) => inBranch(n.branch, branch));

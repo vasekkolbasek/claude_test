@@ -6,7 +6,7 @@ import { t } from '../../i18n';
 import { chestReward } from '../../meta/progress';
 import { currentQuest, dayIndex, ensureDaily, loginRewardState } from '../../meta/daily';
 import { charAvailable } from '../../meta/unlocks';
-import { featureNew, featureOpen, FEATURES, markSeen, type FeatureId } from '../../meta/features';
+import { featureNew, featureOpen, freshFeatures, markSeen, type FeatureId } from '../../meta/features';
 import { nodeAvailable, nodeCost } from '../../meta/workshop';
 import { WORKSHOP } from '../../data/workshop';
 import { h } from '../dom';
@@ -20,6 +20,17 @@ import { showLeaders } from './leaders';
 import { showPrerun } from './prerun';
 import { openSettings } from './settings';
 import { showWorkshop } from './workshop';
+
+/** menu label of each feature (for the hint when several open at once) */
+const FEATURE_LABEL: Record<FeatureId, string> = {
+  workshop: 'menu.workshop',
+  achievements: 'menu.achievements',
+  characters: 'menu.characters',
+  codex: 'menu.codex',
+  daily: 'daily.title',
+  chest: 'menu.chest',
+  leaders: 'menu.leaders',
+};
 
 function canBuyAnything(app: App): boolean {
   const s = app.save.data;
@@ -70,9 +81,12 @@ export function showMenu(app: App): void {
     tile('leaders', 'leaders', t('menu.leaders'), () => showLeaders(app)),
   ].filter((x): x is HTMLButtonElement => x !== null);
   const grid = tiles.length ? h('div', { cls: `menu-grid n${tiles.length}` }, ...tiles) : null;
-  // one short line about the newest feature, so the player knows why a button appeared
-  const fresh = [...FEATURES].reverse().find((f) => featureNew(save, f.id));
-  const featHint = fresh ? h('div', { cls: 'feat-hint', text: t(`feat.${fresh.id}`) }) : null;
+  // one short line about the new features, so the player knows why buttons appeared:
+  // what a single one is for, or just their names when several open at once
+  const fresh = freshFeatures(save);
+  const names = fresh.map((id) => t(FEATURE_LABEL[id]));
+  const hintText = fresh.length === 1 ? t(`feat.${fresh[0]}`) : t('feat.many', { list: names.slice(0, -1).join(', ') + t('feat.and') + names[names.length - 1] });
+  const featHint = fresh.length ? h('div', { cls: 'feat-hint', text: hintText }) : null;
 
   // a brand-new player goes straight into the first sector
   const play = h(

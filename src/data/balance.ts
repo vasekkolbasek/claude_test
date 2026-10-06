@@ -16,6 +16,9 @@ export const BALANCE = {
   /** share of regular spawns placed ahead of a player who keeps running one way (0..1) */
   aheadSpawnBias: 0.6,
   maxGems: 380,
+  /** at the gem limit, XP fuses into the nearest crystal only within this range of the kill;
+   *  otherwise the crystal farthest from the player is moved to the kill (XP stays collectable) */
+  gemFuseRange: 360,
   /** while a boss is alive the director spawns this fraction of the usual */
   bossSpawnFactor: 0.45,
   /** ...but only for the first seconds of the fight */

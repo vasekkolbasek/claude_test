@@ -86,6 +86,7 @@ export class LocalPlatform implements Platform {
     this.log.push('ad:interstitial');
     if (!this.mockAds) return;
     hooks.onOpen?.();
+    hooks.onShown?.();
     await this.fakeAd('interstitial', 700);
     hooks.onClose?.();
   }
@@ -94,6 +95,7 @@ export class LocalPlatform implements Platform {
     this.log.push('ad:rewarded');
     if (!this.mockAds) return false;
     hooks.onOpen?.();
+    hooks.onShown?.();
     await this.fakeAd('rewarded video', 900);
     hooks.onClose?.();
     return true;

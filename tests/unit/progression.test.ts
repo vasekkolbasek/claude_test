@@ -3,7 +3,7 @@ import { ENEMY_IDS, ENEMY_SECTOR, enemyFor, enemyInSector } from '../../src/data
 import { SECTORS, SECTOR_IDS } from '../../src/data/sectors';
 import { WAVES, WAVE_EVENTS } from '../../src/data/waves';
 import { waveStateAt } from '../../src/game/director';
-import { FEATURES, featureNew, featureOpen, markSeen } from '../../src/meta/features';
+import { FEATURES, featureNew, featureOpen, freshFeatures, markSeen } from '../../src/meta/features';
 import { defaultSave, migrate } from '../../src/meta/save';
 
 describe('enemies by sector', () => {
@@ -49,15 +49,28 @@ describe('progressive menu', () => {
     expect(featureOpen(s, 'leaders')).toBe(true);
   });
 
-  it('codex opens with characters after run 2, daily after run 3, achievements after run 4', () => {
+  it('achievements open with the workshop after run 1, codex with characters after run 2, daily after run 3', () => {
     const s = defaultSave();
     const open = () => FEATURES.filter((f) => featureOpen(s, f.id)).map((f) => f.id);
+    s.stats.runs = 1;
+    expect(open()).toEqual(['workshop', 'achievements']);
     s.stats.runs = 2;
-    expect(open()).toEqual(['workshop', 'characters', 'codex']);
+    expect(open()).toEqual(['workshop', 'achievements', 'characters', 'codex']);
     s.stats.runs = 3;
-    expect(open()).toEqual(['workshop', 'characters', 'codex', 'daily', 'chest']);
-    s.stats.runs = 4;
-    expect(open()).toContain('achievements');
+    expect(open()).toEqual(['workshop', 'achievements', 'characters', 'codex', 'daily', 'chest']);
+    s.stats.runs = 10;
+    expect(open()).not.toContain('leaders');
+  });
+
+  it('the menu hint lists every new feature at once', () => {
+    const s = defaultSave();
+    s.stats.runs = 1;
+    expect(freshFeatures(s)).toEqual(['workshop', 'achievements']);
+    markSeen(s, 'achievements');
+    expect(freshFeatures(s)).toEqual(['workshop']);
+    s.stats.runs = 2;
+    markSeen(s, 'workshop');
+    expect(freshFeatures(s)).toEqual(['characters', 'codex']);
   });
 
   it('a feature the player already visited never disappears when the schedule moves it', () => {

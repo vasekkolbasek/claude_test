@@ -24,7 +24,7 @@
 ## Инструменты проверки
 - `npm run dev` — dev-сервер с заглушкой SDK и эмуляцией рекламы; для телефона в той же Wi-Fi сети — `npm run dev -- --host`. Что нельзя проверить автоматически (звук, плавность, управление) — просить проверить владельца.
 - URL-параметры: `?test=1&mock=1` (тестовый режим), `?debug=1` (FPS и время кадра), `?q=0|1|2` (качество). Тестовые хуки `window.__ns`: `sandbox({...})`, `enableBot()`, `world`, `save.data`, `goMenu`, `openPauseMenu`, `ui.closeAllModals`, `captureFrame`.
-- Симулятор баланса: `npm run sim` / `npx tsx scripts/simulate.ts --careers 24 --runs 12` (`--verbose`, `--land`, `--runner`). Стенд оружия: `npx tsx scripts/weapons-bench.ts`. Любое изменение баланса — с цифрами «до/после».
+- Симулятор баланса: `npm run sim` / `npx tsx scripts/simulate.ts --careers 24 --runs 12` (`--verbose`, `--land`, `--runner`, `--ach` — на каком забеге открывается каждое достижение). Стенд оружия: `npx tsx scripts/weapons-bench.ts`. Любое изменение баланса — с цифрами «до/после».
 - Аудит вёрстки: `npm run build`, `node scripts/serve.mjs dist 4192 /`, затем `node scripts/layout-audit.mjs <папка> [WxH]` (14 размеров). Известный ложный сигнал — «CLIP» на эпических/легендарных карточках из-за декоративного блика.
 - Полный прогон игры ботом через настоящие экраны (новый игрок → все сектора → «Бесконечность»): `node scripts/playthrough.mjs <папка> [WxH]` (с тем же serve), ≈15 мин; лог и скриншоты в папке.
 - Стресс-тест производительности: `node scripts/perf-stress.mjs [WxH] [кадры]` (с тем же serve).

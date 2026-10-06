@@ -111,7 +111,7 @@ for (let r = 0; r < PLAN.length; r++) {
   await p.waitForTimeout(1200);
   const res = await p.evaluate(() => {
     const a = window.__ns; const s = a.summary;
-    return { won: s?.won, time: s?.time, level: s?.level, kills: s?.kills, bits: s?.bits, news: document.querySelector('.screen:not(.leave) .news')?.textContent ?? '',
+    return { won: s?.won, time: s?.time, level: s?.level, kills: s?.kills, bits: s?.bits, news: document.querySelector('.screen:not(.leave) .news')?.textContent ?? '', newsLines: document.querySelectorAll('.screen:not(.leave) .news .pg-page .ni').length, newsPages: document.querySelectorAll('.screen:not(.leave) .news .pg-dot').length || 1,
       weapons: a.world ? a.world.weapons.map((w) => `${w.id}${w.evo ? '★' : ''}:${w.level}`).join(' ') : '', ach: (s?.achievements ?? []).join(',') };
   });
   await shot(`results-${r}`);

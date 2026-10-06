@@ -316,12 +316,15 @@ export class App {
   async rewarded(): Promise<boolean> {
     if (this.adBusy) return false;
     this.adBusy = true;
-    let opened = false;
+    // pause + mute for the whole attempt; only a confirmed ad counts as shown
+    let shown = false;
     const ok = await this.platform.showRewarded({
       onOpen: () => {
-        opened = true;
         this.setPause('ad', true);
         this.audio.mute('ad', true);
+      },
+      onShown: () => {
+        shown = true;
       },
       onClose: () => {
         this.setPause('ad', false);
@@ -332,7 +335,7 @@ export class App {
     if (ok) {
       this.save.data.stats.adsWatched++;
       this.save.save();
-    } else if (!opened) this.ui.toast(t('common.adUnavailable'), 'info', 'video');
+    } else if (!shown) this.ui.toast(t('common.adUnavailable'), 'info', 'video');
     return ok;
   }
 
