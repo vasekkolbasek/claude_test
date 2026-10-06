@@ -78,7 +78,7 @@ export const tr: Dict = {
   'pause.quitConfirm': 'Koşu bitirilsin mi? Kazandığın bitler korunur.',
   'pause.build': 'Donanım',
 
-  'revive.title': 'Kıvılcım sönüyor…',
+  'revive.title': '{name} sönüyor…',
   'revive.text': 'Sistemi onarıp savaşmaya devam etmek ister misin?',
   'revive.ad': 'Reklamla diril',
   'revive.free': 'Diril ({n} kaldı)',
@@ -271,7 +271,7 @@ export const tr: Dict = {
   'e.nano.desc': 'Minicik ama çok sayıda.',
   'e.bomber': 'Mantık Bombası',
   'e.bomber.desc': 'Yanına sokulur ve patlar.',
-  'e.spawner': 'Botnet',
+  'e.spawner': 'Kuluçka',
   'e.spawner.desc': 'Nanobot üreten hantal bir düğüm.',
   'e.rootkit': 'Rootkit',
   'e.rootkit.desc': 'Yaklaşana kadar görünmez.',

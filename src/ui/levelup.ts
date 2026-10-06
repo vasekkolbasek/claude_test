@@ -127,8 +127,9 @@ export function buildLevelUp(o: LevelUpOptions): HTMLElement {
         h(
           'div',
           { cls: 'cbody' },
-          h('div', { cls: 'crar', text: c.kind === 'evolution' ? t('card.evolution') : t(`rarity.${c.rarity}`) }),
-          h('div', { cls: 'ctop' }, h('span', { cls: 'cname', text: info.name }), info.isNew ? h('span', { cls: 'cnew', text: t('card.new') }) : null, info.level ? h('span', { cls: 'clvl', text: info.level }) : null),
+          // «NEW» sits on the rarity line, so a long name never wraps around the tag
+          h('div', { cls: 'crar' }, h('span', { text: c.kind === 'evolution' ? t('card.evolution') : t(`rarity.${c.rarity}`) }), info.isNew ? h('span', { cls: 'cnew', text: t('card.new') }) : null),
+          h('div', { cls: 'ctop' }, h('span', { cls: 'cname', text: info.name }), info.level ? h('span', { cls: 'clvl', text: info.level }) : null),
           h('div', { cls: 'cdesc', text: info.desc }),
         ),
       );

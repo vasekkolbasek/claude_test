@@ -19,7 +19,7 @@ export const BALANCE = {
   /** while a boss is alive the director spawns this fraction of the usual */
   bossSpawnFactor: 0.45,
   /** ...but only for the first seconds of the fight */
-  bossCalmTime: 30,
+  bossCalmTime: 40,
   /** overtime: regular enemies spawned after N minutes of overtime deal (1 + N * this) damage */
   overtimeDmgPerMin: 1.2,
   /** mini-bosses that keep their distance stop doing so after this many seconds */

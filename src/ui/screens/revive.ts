@@ -53,5 +53,5 @@ export function openRevive(app: App, o: ReviveOptions): void {
       },
     }, t('revive.decline')),
   );
-  const m = app.ui.openModal(h('div', null, h('div', { cls: 'dialog panel' }, h('h3', { text: t('revive.title') }), h('p', { text: t('revive.text') }), btns)));
+  const m = app.ui.openModal(h('div', null, h('div', { cls: 'dialog panel' }, h('h3', { text: t('revive.title', { name: t(`c.${app.save.data.char}`) }) }), h('p', { text: t('revive.text') }), btns)));
 }

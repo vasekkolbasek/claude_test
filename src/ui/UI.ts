@@ -49,6 +49,8 @@ export class UI {
     if (el.parentElement !== this.layer) this.layer.appendChild(el);
     this.screen = el;
     el.querySelectorAll<HTMLElement>('.topbar h2').forEach((x) => x.classList.add('fit-text'));
+    // toasts belong to the screen they were raised on: never let them cover the next one
+    this.toasts.textContent = '';
     scheduleRefit();
   }
 

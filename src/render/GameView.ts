@@ -165,6 +165,8 @@ export class GameView {
     const evs = world.events;
     const fb = this.feedback;
     const p = world.player;
+    // a boss on the field: impacts get a little screen shake for action
+    const bossFight = world.bosses.length > 0;
     for (let i = 0; i < evs.count; i++) {
       const e = evs.items[i];
       switch (e.type) {
@@ -180,7 +182,7 @@ export class GameView {
             fx.burst(e.x, e.y, 0xffffff, 50, 500, 1.6, 1.0);
             for (let k = 0; k < 4; k++) fx.ring(e.x, e.y, k % 2 ? 0xffffff : e.a, 260 + k * 120, 0.6 + k * 0.25);
             fx.flare(e.x, e.y, e.a, 200, 1.2, 200);
-            this.addTrauma(0.55);
+            this.addTrauma(0.9);
             this.flashScreen(0xffffff, 0.8);
             fb.hitStop = Math.max(fb.hitStop, 0.25);
             fb.vibrate = Math.max(fb.vibrate, 300);
@@ -189,7 +191,7 @@ export class GameView {
             fx.ring(e.x, e.y, e.a, 220, 0.6);
             fx.ring(e.x, e.y, 0xffffff, 140, 0.4, true);
             fx.flare(e.x, e.y, e.a, 120, 0.7, 80);
-            this.addTrauma(0.35);
+            this.addTrauma(0.6);
             this.flashScreen(e.a, 0.35);
             fb.hitStop = Math.max(fb.hitStop, 0.06);
             fb.vibrate = Math.max(fb.vibrate, 120);
@@ -206,6 +208,7 @@ export class GameView {
           break;
         }
         case EV.PLAYER_HIT:
+          if (bossFight) this.addTrauma(0.38);
           this.flashScreen(0xff2a55, 0.28);
           this.playerHitT = 0.25;
           fx.burst(p.x, p.y, 0xff2a55, 10, 260, 0.9, 0.4);
@@ -233,7 +236,7 @@ export class GameView {
           fx.text(p.x, p.y - 30, `+${Math.round(e.a)}`, 0x6dff8a);
           break;
         case EV.BOSS:
-          this.addTrauma(0.35);
+          this.addTrauma(0.6);
           this.flashScreen(e.a === 1 ? 0xff2a55 : 0xff9a3d, 0.35);
           fb.vibrate = Math.max(fb.vibrate, 200);
           break;
@@ -271,12 +274,13 @@ export class GameView {
           fx.flare(e.x, e.y, e.a, 22, 0.15);
           break;
         case EV.DASH:
+          if (bossFight) this.addTrauma(0.38);
           fx.burst(e.x, e.y, e.a, 8, 220, 0.8, 0.35);
           break;
         case EV.BOSS_PHASE:
           fx.ring(e.x, e.y, e.b, 300, 0.6);
           fx.burst(e.x, e.y, e.b, 40, 450, 1.4, 0.8);
-          this.addTrauma(0.3);
+          this.addTrauma(0.5);
           this.flashScreen(e.b, 0.3);
           fb.vibrate = Math.max(fb.vibrate, 150);
           break;
@@ -327,7 +331,7 @@ export class GameView {
     let sx = 0;
     let sy = 0;
     if (this.trauma > 0) {
-      const s = this.shakeEnabled ? this.trauma * this.trauma * 9 : 0;
+      const s = this.shakeEnabled ? this.trauma * this.trauma * 12 : 0;
       sx = (Math.random() * 2 - 1) * s;
       sy = (Math.random() * 2 - 1) * s;
       this.trauma = Math.max(0, this.trauma - dt * 2.2);

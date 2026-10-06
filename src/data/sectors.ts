@@ -2,7 +2,7 @@ import type { SectorDef, SectorId } from './types';
 
 export const SECTORS: Record<SectorId, SectorDef> = {
   // Оперативная память — baseline
-  ram: { id: 'ram', bg: 0x070418, grid: 0x2a1f6e, accent: 0x29f6ff, hpMult: 1.1, speedMult: 1, spawnMult: 1, xpMult: 1, bitsMult: 1, dmgMult: 1,
+  ram: { id: 'ram', bg: 0x070418, grid: 0x2a1f6e, accent: 0x29f6ff, hpMult: 0.99, speedMult: 1, spawnMult: 1, xpMult: 1, bitsMult: 1, dmgMult: 1,
     minibosses: ['mb_trojan', 'mb_crypto'] },
   // Процессор — «Перегрев»: enemies are faster
   cpu: {

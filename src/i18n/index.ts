@@ -32,9 +32,31 @@ export function getLang(): Lang {
   return current;
 }
 
+/** Index of the plural form for `n` (ru: one/few/many, en: one/other, tr: single form). */
+export function pluralIndex(n: number, lang: Lang = current): number {
+  const a = Math.abs(Math.floor(n));
+  if (lang === 'ru') {
+    if (a % 10 === 1 && a % 100 !== 11) return 0;
+    if (a % 10 >= 2 && a % 10 <= 4 && (a % 100 < 12 || a % 100 > 14)) return 1;
+    return 2;
+  }
+  if (lang === 'en') return a === 1 ? 0 : 1;
+  return 0;
+}
+
+/**
+ * Translates `key`. `{name}` is replaced by params.name; `{name|form1|form2|…}` picks the plural
+ * form for the number params.name (e.g. «{n|бит|бита|битов}»).
+ */
 export function t(key: string, params?: Record<string, string | number>): string {
   let s = dict[key] ?? en[key] ?? key;
   if (params) {
+    s = s.replace(/\{(\w+)\|([^}]*)\}/g, (m, name: string, forms: string) => {
+      const v = Number(params[name]);
+      if (!Number.isFinite(v)) return m;
+      const list = forms.split('|');
+      return list[Math.min(list.length - 1, pluralIndex(v))] ?? m;
+    });
     for (const k in params) s = s.split(`{${k}}`).join(String(params[k]));
   }
   return s;

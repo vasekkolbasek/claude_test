@@ -674,7 +674,8 @@ export class App {
         reroll: () => {
           w.reroll(false);
         },
-        canAdReroll: () => !this.rerollAdUsed,
+        // no ad offer on the very first level-ups of the very first run
+        canAdReroll: () => !this.rerollAdUsed && !(this.save.data.stats.runs === 0 && w.player.level <= 3),
         adReroll: async () => {
           const ok = await this.rewarded();
           if (ok) {

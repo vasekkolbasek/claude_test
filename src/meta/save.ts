@@ -209,6 +209,9 @@ export function migrate(input: unknown): SaveData {
   // older saves knew no gated menu: whatever is already open is not «new»
   s.seen = Array.isArray(raw.seen) ? strArr<string>(raw.seen, []) : seenForExisting(s);
   s.adUnlock = numRecord(raw.adUnlock);
+  // the ad-unlocked character moved from Sentinel to Volt: carry the watched videos over
+  if (s.adUnlock.sentinel && !s.adUnlock.volt && !s.chars.includes('volt')) s.adUnlock.volt = s.adUnlock.sentinel;
+  delete s.adUnlock.sentinel;
   s.v = SAVE_VERSION;
   return s;
 }

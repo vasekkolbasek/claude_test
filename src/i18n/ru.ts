@@ -15,7 +15,7 @@ export const ru: Dict = {
   'menu.chest': 'Сундук',
   'menu.chestOpen': 'Открыть за рекламу',
   'menu.chestIn': 'через {t}',
-  'menu.chestReward': 'Сундук открыт: +{n} битов!',
+  'menu.chestReward': 'Сундук открыт: +{n} {n|бит|бита|битов}!',
   'menu.daily': 'Задание дня',
 
   // common
@@ -71,7 +71,7 @@ export const ru: Dict = {
   'card.heal.name': 'Восстановление',
   'card.heal.desc': 'Восстанавливает {n}% здоровья',
   'card.bits.name': 'Тайник битов',
-  'card.bits.desc': '+{n} битов в конце забега',
+  'card.bits.desc': '+{n} {n|бит|бита|битов} в конце забега',
   'rarity.0': 'Обычная',
   'rarity.1': 'Редкая',
   'rarity.2': 'Эпическая',
@@ -85,7 +85,7 @@ export const ru: Dict = {
   'pause.build': 'Сборка',
 
   // revive
-  'revive.title': 'Искра гаснет…',
+  'revive.title': '{name} гаснет…',
   'revive.text': 'Восстановить систему и продолжить бой?',
   'revive.ad': 'Воскреснуть за рекламу',
   'revive.free': 'Воскреснуть (осталось: {n})',
@@ -144,7 +144,7 @@ export const ru: Dict = {
   'ach.title': 'Достижения',
   'ach.progress': 'Получено: {a} из {b}',
   'ach.unlocked': 'Достижение: {name}',
-  'ach.reward': '+{n} битов',
+  'ach.reward': '+{n} {n|бит|бита|битов}',
 
   // leaderboard
   'lb.title': 'Лидеры',
@@ -186,12 +186,12 @@ export const ru: Dict = {
   'daily.quest': 'Задание дня',
   'daily.done': 'Выполнено',
   'daily.reward': 'Награда: {n}',
-  'quest.kills': 'Уничтожьте {n} вирусов за один забег',
+  'quest.kills': 'Уничтожьте {n} {n|вирус|вируса|вирусов} за один забег',
   'quest.survive': 'Продержитесь {n} мин. в одном забеге',
   'quest.level': 'Достигните {n} уровня в одном забеге',
-  'quest.gems': 'Соберите {n} кристаллов за один забег',
+  'quest.gems': 'Соберите {n} {n|кристалл|кристалла|кристаллов} за один забег',
   'quest.miniboss': 'Победите мини-босса',
-  'quest.elites': 'Уничтожьте {n} элитных вирусов за один забег',
+  'quest.elites': 'Уничтожьте {n} {n|элитный вирус|элитных вируса|элитных вирусов} за один забег',
 
   // tutorial
   'tut.moveTouch': 'Ведите пальцем в любом месте экрана, чтобы двигаться',
@@ -291,13 +291,13 @@ export const ru: Dict = {
   'e.nano.desc': 'Крошечный, но многочисленный рой.',
   'e.bomber': 'Логическая бомба',
   'e.bomber.desc': 'Подбирается вплотную и взрывается.',
-  'e.spawner': 'Ботнет',
+  'e.spawner': 'Инкубатор',
   'e.spawner.desc': 'Неповоротливый узел, порождающий наноботов.',
   'e.rootkit': 'Руткит',
   'e.rootkit.desc': 'Невидим, пока не подберётся близко.',
   'e.mb_trojan': 'Мегатроян',
   'e.mb_trojan.desc': 'Таранит и призывает байты.',
-  'e.mb_crypto': 'Шифровальщик',
+  'e.mb_crypto': 'Криптолокер',
   'e.mb_crypto.desc': 'Выпускает кольца снарядов и прячется за щитом.',
   'e.mb_hydra': 'Гидра',
   'e.mb_hydra.desc': 'Отращивает элитных Фрагментаторов при ранении.',

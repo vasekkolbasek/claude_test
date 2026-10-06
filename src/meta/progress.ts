@@ -135,7 +135,7 @@ export function applyRunResult(save: SaveData, w: World, won: boolean): RunSumma
 
 export function chestReward(save: SaveData): number {
   // grows a little with progression so it stays relevant
-  return Math.round(40 + Math.min(160, save.stats.runs * 4 + save.sectorsCleared.length * 25));
+  return Math.round(100 + Math.min(150, save.stats.runs * 5 + save.sectorsCleared.length * 30));
 }
 
 export { BALANCE };

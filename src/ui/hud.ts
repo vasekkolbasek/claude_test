@@ -18,6 +18,14 @@ export class Hud {
   private readonly bossName: HTMLElement;
   private readonly bossFill: HTMLElement;
   private readonly danger: HTMLElement;
+  private readonly hpRow: HTMLElement;
+  private readonly hpFill: HTMLElement;
+  private readonly hpTrail: HTMLElement;
+  private readonly hpText: HTMLElement;
+  private lastHpText = '';
+  private hpFrac = 1;
+  private trailFrac = 1;
+  private lastHpT = 0;
   private readonly banners: HTMLElement;
   private readonly bossPtr: HTMLElement;
   private bossPtrOn = false;
@@ -46,11 +54,17 @@ export class Hud {
     this.banners = h('div');
     this.bossPtr = h('div', { cls: 'boss-ptr' }, h('i'));
     this.danger = h('div', { cls: 'danger-vignette' });
+    // health: heart + bar (with a short white «just lost» trail) + numbers
+    this.hpFill = h('i');
+    this.hpTrail = h('s');
+    this.hpText = h('b');
+    this.hpRow = h('div', { cls: 'hp-row' }, icon('maxhp'), h('div', { cls: 'hp-bar' }, this.hpTrail, this.hpFill), this.hpText);
     this.el = h(
       'div',
       { cls: 'hud' },
       this.xpBox,
       h('div', { cls: 'bar2' }, this.lvl, this.timer, this.kills, pauseBtn),
+      this.hpRow,
       this.items,
       this.boss,
       this.banners,
@@ -64,6 +78,10 @@ export class Hud {
     this.lastItems = '';
     this.lastBoss = '';
     this.lastBossFrac = -1;
+    this.lastHpText = '';
+    this.hpFrac = this.trailFrac = 1;
+    this.lastHpT = 0;
+    this.hpRow.classList.remove('low');
     // the boss bar / pointer only change on a boss switch, so a run that ended mid-fight would
     // otherwise leave them on screen for the next run
     this.boss.classList.remove('on');
@@ -116,6 +134,7 @@ export class Hud {
         this.bossFill.style.transform = `scaleX(${f.toFixed(3)})`;
       }
     }
+    this.updateHp(p.hp, w.stats.maxHp);
     this.setDanger(p.hp / w.stats.maxHp < 0.3 && w.state === 'playing');
     this.updateBossPointer(w, b);
   }
@@ -141,6 +160,26 @@ export class Hud {
       this.bossPtrOn = on;
       this.bossPtr.classList.toggle('on', on);
     }
+  }
+
+  private updateHp(hp: number, max: number): void {
+    const now = performance.now();
+    const dt = this.lastHpT ? Math.min(0.1, (now - this.lastHpT) / 1000) : 0;
+    this.lastHpT = now;
+    const f = Math.max(0, Math.min(1, hp / Math.max(1, max)));
+    // the trail lingers for a moment, then slides down to the current value
+    this.trailFrac = f >= this.trailFrac ? f : Math.max(f, this.trailFrac - dt * 0.6);
+    if (Math.abs(f - this.hpFrac) > 0.002 || dt === 0) {
+      this.hpFrac = f;
+      this.hpFill.style.transform = `scaleX(${f.toFixed(3)})`;
+    }
+    this.hpTrail.style.transform = `scaleX(${this.trailFrac.toFixed(3)})`;
+    const text = `${Math.ceil(Math.max(0, hp))} / ${Math.round(max)}`;
+    if (text !== this.lastHpText) {
+      this.lastHpText = text;
+      this.hpText.textContent = text;
+    }
+    this.hpRow.classList.toggle('low', f < 0.3);
   }
 
   private setDanger(on: boolean): void {
