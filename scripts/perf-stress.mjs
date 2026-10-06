@@ -5,7 +5,7 @@
 import { chromium } from 'playwright';
 const [W, H] = (process.argv[2] ?? '1280x800').split('x').map(Number);
 const FRAMES = Number(process.argv[3] ?? 240);
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const b = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || undefined });
 const p = await b.newPage({ viewport: { width: W, height: H } });
 p.on('pageerror', (e) => console.log('pageerror', e.message));
 await p.goto('http://localhost:4192/index.html?test=1&mock=1&capture=1&q=2');

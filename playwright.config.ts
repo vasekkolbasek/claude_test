@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const executablePath = process.env.PW_CHROMIUM ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+// PW_CHROMIUM overrides the browser; otherwise Playwright's bundled Chromium is used.
+const executablePath = process.env.PW_CHROMIUM || undefined;
 
 export default defineConfig({
   testDir: 'tests/e2e',

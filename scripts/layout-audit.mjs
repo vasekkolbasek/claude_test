@@ -6,7 +6,7 @@
 import { chromium } from 'playwright';
 const out = process.argv[2];
 const only = process.argv[3];
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const b = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || undefined });
 const audit = (p) => p.evaluate(() => {
   const vw = innerWidth, vh = innerHeight, bad = [];
   const vis = (el) => { if (el.closest('.leave') || el.closest('.covered') || el.closest('.pg-probe')) return false; const s = getComputedStyle(el); if (s.display === 'none' || s.visibility === 'hidden' || +s.opacity === 0) return false; const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return false; const v = el.closest('.pg-view'); if (v) { const vr = v.getBoundingClientRect(); if (r.right <= vr.left + 1 || r.left >= vr.right - 1) return false; } return true; };

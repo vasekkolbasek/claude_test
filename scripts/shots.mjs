@@ -7,7 +7,7 @@ import { chromium } from '@playwright/test';
 const PORT = 4190;
 const BASE = `http://localhost:${PORT}/`;
 const OUT = 'release';
-const exe = process.env.PW_CHROMIUM ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const exe = process.env.PW_CHROMIUM || undefined;
 
 const server = spawn('node', ['scripts/serve.mjs', 'dist', String(PORT), '/'], { stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 800));
