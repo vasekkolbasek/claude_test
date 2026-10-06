@@ -66,6 +66,7 @@ export class GameView {
   /** attract-mode decorative drifters for the menu */
   private readonly decor: { x: number; y: number; vx: number; vy: number; r: number; tex: string; rot: number; vr: number }[] = [];
   shakeEnabled = true;
+  private readonly enemyTex = new Map<string, [Texture, Texture]>();
 
   constructor(app: Application) {
     this.app = app;
@@ -293,6 +294,10 @@ export class GameView {
         case EV.PICKUP:
           fx.flare(e.x, e.y, 0x6dff8a, 40, 0.3);
           break;
+        case EV.BLOCK:
+          fx.ring(e.x, e.y, 0x29f6ff, 22, 0.22, true);
+          fx.burst(e.x, e.y, e.a, 5, 160, 0.7, 0.25);
+          break;
         case EV.SPLIT:
           fx.ring(e.x, e.y, e.a, 40, 0.25, true);
           break;
@@ -363,6 +368,8 @@ export class GameView {
     const vh = this.viewHalf();
     world.view.hw = vh.hw;
     world.view.hh = vh.hh;
+    // thin out cosmetic particles as the crowd grows (300 enemies → 80 %, 600 → 50 %)
+    this.fx.crowd = clamp(1 - (world.enemies.length - 150) / 900, 0.5, 1);
     this.fx.update(dt);
     this.beginLayers();
     this.drawWorld(world);
@@ -424,7 +431,12 @@ export class GameView {
       const scale = (e.r / def.r) * sp * inv;
       // hit flash is an overlay (not a texture swap) so dense fights do not wash out to white
       const big = !!def.boss;
-      const tex = t[`e_${def.id}`];
+      let tx = this.enemyTex.get(def.id);
+      if (!tx) {
+        tx = [t[`e_${def.id}`], t[`e_${def.id}_f`]];
+        this.enemyTex.set(def.id, tx);
+      }
+      const tex = tx[0];
       const rot = DIRECTIONAL.has(def.shape) ? e.ang : e.ang;
       const alpha = e.alpha * (e.spawnT < 1 ? 0.3 + e.spawnT * 0.7 : 1);
       if (def.boss) this.drawBossExtras(e.x, e.y, e.r, def.color, e.state, def.boss === 'final');
@@ -432,7 +444,7 @@ export class GameView {
         glow(this.enemiesL, e.x, e.y, e.r * 2.6, def.color, 0.4 + Math.sin(time * 6 + e.uid) * 0.12);
       }
       this.enemiesL.add(tex, e.x, e.y, scale, scale, rot, 0xffffff, alpha);
-      if (e.flash > 0) this.enemiesL.add(t[`e_${def.id}_f`], e.x, e.y, scale, scale, rot, 0xffffff, big ? 0.22 : 0.55 * alpha);
+      if (e.flash > 0) this.enemiesL.add(tx[1], e.x, e.y, scale, scale, rot, 0xffffff, big ? 0.22 : 0.55 * alpha);
       // AI telegraphs
       if (def.ai === 'dash' && e.state === 1) {
         this.enemiesL.add(t.beam, e.x, e.y, 210 / 32, 10 / (24 * TS), Math.atan2(e.ty, e.tx), def.color, 0.25 + (1 - e.t / 0.6) * 0.4, 0, 0.5);
@@ -589,6 +601,7 @@ export class GameView {
         vr: (Math.random() - 0.5) * 1.5,
       });
     }
+    this.fx.crowd = 1;
     this.fx.update(dt);
     this.beginLayers();
     for (let i = this.decor.length - 1; i >= 0; i--) {

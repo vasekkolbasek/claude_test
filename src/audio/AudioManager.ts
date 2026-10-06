@@ -5,6 +5,19 @@ import { zzfxSamples } from './zzfx';
 export type MuteReason = 'hidden' | 'ad' | 'platform';
 
 /**
+ * «Swarm» sounds: the ones a big fight fires dozens of times per second. They share a bus that
+ * mixes them as one texture instead of a hiss: the busier it gets, the longer the gap between
+ * repeats of the same sound, the quieter each voice (total loudness grows like √N, not N) and
+ * the lower a low-pass cutoff (a crowd turns into a soft patter). Important sounds (taking a hit,
+ * a boss, a level-up…) briefly duck the swarm so they are always heard.
+ */
+const SWARM: Partial<Record<SfxId, true>> = { hit: true, kill: true, gem: true, enemyShot: true, pulse: true, drone: true, mine: true, shield: true };
+const PRIORITY: Partial<Record<SfxId, true>> = { hurt: true, boss: true, bossPhase: true, levelup: true, evolve: true, chest: true, warn: true, revive: true, heal: true, magnet: true, victory: true, defeat: true };
+const SWARM_VOICES = 10;
+/** averaging window of the swarm density, s */
+const RATE_TAU = 0.6;
+
+/**
  * Owns the AudioContext. Nothing is created before the first user gesture.
  * Any mute reason (tab hidden, ad, platform pause) silences everything and suspends the context.
  */
@@ -13,6 +26,12 @@ export class AudioManager {
   private master!: GainNode;
   private sfxBus!: GainNode;
   private musicBus!: GainNode;
+  private swarmBus!: GainNode;
+  private swarmLp!: BiquadFilterNode;
+  /** exponentially averaged swarm plays (≈ plays per second × RATE_TAU) */
+  private swarmRate = 0;
+  private swarmRateT = 0;
+  private swarmVoices = 0;
   private music: Music | null = null;
   private readonly buffers = new Map<SfxId, AudioBuffer>();
   private readonly lastPlay = new Map<SfxId, number>();
@@ -56,6 +75,12 @@ export class AudioManager {
       this.sfxBus = ctx.createGain();
       this.musicBus = ctx.createGain();
       this.sfxBus.connect(this.master);
+      this.swarmLp = ctx.createBiquadFilter();
+      this.swarmLp.type = 'lowpass';
+      this.swarmLp.frequency.value = 12000;
+      this.swarmLp.Q.value = 0.5;
+      this.swarmBus = ctx.createGain();
+      this.swarmBus.connect(this.swarmLp).connect(this.sfxBus);
       this.musicBus.connect(this.master);
       this.applyVolumes();
       this.music = new Music(ctx, this.musicBus);
@@ -117,29 +142,60 @@ export class AudioManager {
     }
   }
 
+  /** Swarm sounds per second over the last ~0.6 s. */
+  private swarmDensity(now: number): number {
+    this.swarmRate *= Math.exp(-Math.max(0, now - this.swarmRateT) / RATE_TAU);
+    this.swarmRateT = now;
+    return this.swarmRate / RATE_TAU;
+  }
+
   play(id: SfxId, vol = 1, rate = 1): void {
     const ctx = this.ctx;
     if (!ctx || this.reasons.size > 0 || this.sfxVol <= 0 || ctx.state !== 'running') return;
     const now = ctx.currentTime;
-    const gap = SFX_GAP[id] ?? 0.02;
+    const swarm = SWARM[id] === true;
+    let gap = SFX_GAP[id] ?? 0.02;
+    let detune = 0.1;
+    if (swarm) {
+      const d = this.swarmDensity(now);
+      // 40 sounds/s → the same sound at most ~3× less often, each voice at ~40 % volume
+      gap *= 1 + d / 20;
+      vol /= Math.sqrt(1 + d / 8);
+      if (this.swarmVoices >= SWARM_VOICES) return;
+      const cutoff = Math.max(1800, 12000 / (1 + d / 10));
+      this.swarmLp.frequency.setTargetAtTime(cutoff, now, 0.12);
+      detune = 0.04;
+    }
     const last = this.lastPlay.get(id) ?? -1;
     if (now - last < gap) return;
     if (this.voices > 28) return;
     const buf = this.buffers.get(id);
     if (!buf) return;
     this.lastPlay.set(id, now);
+    if (swarm) this.swarmRate += 1;
+    if (PRIORITY[id]) this.duckSwarm(now);
     const src = ctx.createBufferSource();
     src.buffer = buf;
-    src.playbackRate.value = rate * (0.95 + Math.random() * 0.1);
+    src.playbackRate.value = rate * (1 - detune / 2 + Math.random() * detune);
     const g = ctx.createGain();
     g.gain.value = vol;
-    src.connect(g).connect(this.sfxBus);
+    src.connect(g).connect(swarm ? this.swarmBus : this.sfxBus);
     this.voices++;
+    if (swarm) this.swarmVoices++;
     src.onended = () => {
       this.voices--;
+      if (swarm) this.swarmVoices--;
       g.disconnect();
     };
     src.start(now);
+  }
+
+  /** Pushes the swarm down for a moment so an important sound cuts through. */
+  private duckSwarm(now: number): void {
+    const gn = this.swarmBus.gain;
+    gn.cancelScheduledValues(now);
+    gn.setValueAtTime(Math.min(gn.value, 0.35), now);
+    gn.linearRampToValueAtTime(1, now + 0.45);
   }
 
   setMusic(mode: MusicMode): void {

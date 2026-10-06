@@ -21,11 +21,11 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     color: 0x29f6ff,
     evolution: 'pulse_evo',
     levels: [
-      s({ dmg: 10, cd: 0.62, count: 1, pierce: 0, speed: 560, size: 6, knock: 40 }),
-      s({ dmg: 13, cd: 0.58, count: 1, pierce: 1, speed: 580, size: 6, knock: 40 }),
-      s({ dmg: 13, cd: 0.54, count: 2, pierce: 1, speed: 600, size: 6.5, knock: 45 }),
-      s({ dmg: 17, cd: 0.5, count: 2, pierce: 2, speed: 620, size: 7, knock: 45 }),
-      s({ dmg: 22, cd: 0.44, count: 3, pierce: 3, speed: 650, size: 7.5, knock: 50 }),
+      s({ dmg: 12, cd: 0.62, count: 1, pierce: 0, speed: 560, size: 6, knock: 40 }),
+      s({ dmg: 16, cd: 0.58, count: 1, pierce: 1, speed: 580, size: 6, knock: 40 }),
+      s({ dmg: 16, cd: 0.54, count: 2, pierce: 1, speed: 600, size: 6.5, knock: 45 }),
+      s({ dmg: 20, cd: 0.5, count: 2, pierce: 2, speed: 620, size: 7, knock: 45 }),
+      s({ dmg: 26, cd: 0.44, count: 3, pierce: 3, speed: 650, size: 7.5, knock: 50 }),
     ],
   },
   orbit: {
@@ -120,7 +120,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDef> = {
     from: 'pulse',
     passive: 'might',
     color: 0xffffff,
-    stats: s({ dmg: 23, cd: 0.32, count: 3, pierce: 2, speed: 720, size: 8, knock: 50, extra: 36 }),
+    stats: s({ dmg: 28, cd: 0.32, count: 3, pierce: 2, speed: 720, size: 8, knock: 50, extra: 36 }),
   },
   orbit_evo: {
     id: 'orbit_evo',

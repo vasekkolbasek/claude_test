@@ -39,6 +39,9 @@ const SHOT_SFX: Record<number, SfxId> = {
   [SHOT.DRONE]: 'drone',
 };
 
+/** playback rates of a major pentatonic scale (C D E G A) */
+const PENTA = [1, 9 / 8, 5 / 4, 3 / 2, 5 / 3];
+
 export class App {
   pixi!: Application;
   view!: GameView;
@@ -73,6 +76,7 @@ export class App {
   private quality!: QualityController;
   private runMenuMusic = false;
   private debugEl: HTMLElement | null = null;
+  private killNote = 0;
   private dbg = { acc: 0, frames: 0, sim: 0, view: 0 };
 
   constructor(readonly platform: Platform) {}
@@ -149,6 +153,7 @@ export class App {
     this.stage = applyStage(this.clampStage());
     // the canvas follows #app through resizeTo; refresh it now so the camera sees the new size
     this.pixi.resize();
+    if (this.quality) this.applyQuality(this.quality.level);
     this.view.resize(this.stage.w, this.stage.h);
     this.checkOrientation();
   }
@@ -231,10 +236,24 @@ export class App {
     this.quality.setSetting(s.quality);
   }
 
+  /**
+   * Backing-store resolution for a quality level. The neon look is mostly soft glow, so a
+   * Retina laptop does not need every physical pixel: the canvas is capped by a pixel budget
+   * (high ≈ 3.2 MP, medium ≈ 2 MP, low ≈ 1.2 MP), which keeps the fill rate of hundreds of
+   * additive sprites in check on 2×–3× screens while phones keep their native sharpness.
+   */
+  private resolutionFor(q: QualityLevel): number {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const css = Math.max(1, this.stage.w * this.stage.h);
+    const budget = [1.2e6, 2e6, 3.2e6][q];
+    const byBudget = Math.sqrt(budget / css);
+    const cap = q === 2 ? dpr : q === 1 ? Math.min(dpr, 1.5) : Math.min(dpr, 1);
+    return Math.max(Math.min(1, dpr), Math.min(cap, Math.round(byBudget * 8) / 8));
+  }
+
   private applyQuality(q: QualityLevel): void {
     this.view.setQuality(q);
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const res = q === 2 ? dpr : q === 1 ? Math.min(dpr, 1.5) : 1;
+    const res = this.resolutionFor(q);
     if (Math.abs(this.pixi.renderer.resolution - res) > 0.01) {
       this.pixi.renderer.resolution = res;
       this.pixi.renderer.resize(this.stage.w, this.stage.h, res);
@@ -552,7 +571,9 @@ export class App {
         case EV.KILL:
           if (e.c & 6) this.sfx('killBig', 1);
           else if (e.c & 1) this.sfx('killBig', 0.55, 1.3);
-          else this.sfx('kill', 0.7, 1.35 - Math.min(0.5, e.b / 40));
+          // ordinary kills are notes of a pentatonic scale (bigger viruses an octave lower):
+          // a crowd melting sounds like a chime run, not static
+          else this.sfx('kill', 0.7, PENTA[(this.killNote = (this.killNote + 1 + ((Math.random() * 2) | 0)) % PENTA.length)] * (e.b > 16 ? 0.5 : 1));
           break;
         case EV.PLAYER_HIT:
           this.sfx('hurt');
@@ -584,6 +605,9 @@ export class App {
           this.sfx('boss');
           this.hud.banner(t('hud.warnBoss', { name: t(`e.${String(e.ref)}`) }), 'boss');
           if (e.a === 1) this.audio.setMusic('boss');
+          break;
+        case EV.BLOCK:
+          this.sfx('shield', 0.4, 1.4);
           break;
         case EV.SHIELD_HIT:
           this.sfx('shield', 0.6);

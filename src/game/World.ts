@@ -981,10 +981,11 @@ export class World {
       const dy = b.y - p.y;
       const rr = b.r + p.r * 0.8;
       if (dx * dx + dy * dy < rr * rr) {
-        if (p.inv <= 0) {
-          this.hurtPlayer(b.dmg, b.x, b.y);
-          b.alive = false;
-        }
+        // a bullet that reaches the player always ends there: it deals damage, or — during the
+        // short post-hit invulnerability — visibly breaks on the shield instead of flying through
+        b.alive = false;
+        if (p.inv <= 0) this.hurtPlayer(b.dmg, b.x, b.y);
+        else this.events.push(EV.BLOCK, b.x, b.y, b.color);
       }
     }
   }

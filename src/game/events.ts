@@ -23,6 +23,8 @@ export const EV = {
   REVIVE: 21,
   PICKUP: 22,
   SPLIT: 23,
+  /** an enemy bullet absorbed by the player's post-hit invulnerability (x, y, a=color) */
+  BLOCK: 24,
 } as const;
 
 export type EventType = (typeof EV)[keyof typeof EV];

@@ -54,6 +54,9 @@ export class FxSystem {
   private readonly nums: Num[] = [];
   private readonly bolts: Bolt[] = [];
   q: FxQuality = { maxParticles: 1400, density: 1, numbers: true };
+  /** 0..1 thinning for crowded scenes (set by the view from the enemy count) */
+  crowd = 1;
+  private glyphs: Record<string, Texture | undefined> | null = null;
 
   get count(): number {
     return this.list.length;
@@ -67,7 +70,12 @@ export class FxSystem {
   }
 
   spawn(tex: Texture, x: number, y: number, vx: number, vy: number, life: number, size: number, color: number, opts?: Partial<Fx>): void {
-    if (this.list.length >= this.q.maxParticles) return;
+    const cap = this.q.maxParticles;
+    const n = this.list.length;
+    if (n >= cap) return;
+    // past 60 % of the budget only every other cosmetic particle survives, so big fights
+    // keep the important flashes (bosses, level-ups) instead of a wall of sparks
+    if (n > cap * 0.6 && Math.random() < (n - cap * 0.6) / (cap * 0.4)) return;
     const f =
       this.free.pop() ??
       ({} as Fx);
@@ -91,7 +99,7 @@ export class FxSystem {
 
   burst(x: number, y: number, color: number, count: number, speed: number, size = 1, life = 0.5): void {
     const t = getAtlas().tex;
-    const n = Math.max(1, Math.round(count * this.q.density));
+    const n = Math.max(1, Math.round(count * this.q.density * this.crowd));
     for (let i = 0; i < n; i++) {
       const a = Math.random() * 6.283;
       const s = speed * (0.35 + Math.random() * 0.9);
@@ -212,6 +220,11 @@ export class FxSystem {
       }
     }
     const t = getAtlas().tex;
+    if (!this.glyphs) {
+      this.glyphs = {};
+      for (const ch of '0123456789!+-') this.glyphs[ch] = t[`g_${ch}`];
+    }
+    const glyphs = this.glyphs;
     for (const b of this.bolts) {
       const k = b.life / b.max;
       const pts = b.pts;
@@ -237,7 +250,7 @@ export class FxSystem {
       const startX = m.x - ((m.text.length - 1) * w) / 2;
       const color = m.crit ? 0xffd23d : m.color;
       for (let i = 0; i < m.text.length; i++) {
-        const g = t[`g_${m.text[i]}`];
+        const g = glyphs[m.text[i]] ?? t[`g_${m.text[i]}`];
         if (g) nums.add(g, startX + i * w, m.y, s, s, 0, color, k);
       }
     }
