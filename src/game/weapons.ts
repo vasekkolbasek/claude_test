@@ -196,13 +196,19 @@ function pulse(world: World, w: WeaponInst, e: Eff, dt: number): void {
   if (w.t < 0) w.t = 0;
 }
 
+/** evolved orbit radius: from MIN to MIN + SWEEP times the base, one cycle per 2π/FREQ s */
+const ORBIT_EVO_MIN = 0.8;
+const ORBIT_EVO_SWEEP = 0.6;
+const ORBIT_EVO_FREQ = 1.6;
+
 function orbit(world: World, w: WeaponInst, e: Eff, dt: number): void {
   const p = world.player;
   const st = e.st;
   w.a += st.speed * dt * (0.85 + 0.15 * e.dur);
   const n = e.count;
   let R = st.extra * e.area;
-  if (w.evo) R *= 0.82 + 0.28 * Math.sin(world.t * 2.2);
+  // «Вихрь»: the evolved ring keeps flaring out to sweep the swarm and pulls back in
+  if (w.evo) R *= ORBIT_EVO_MIN + ORBIT_EVO_SWEEP * (0.5 - 0.5 * Math.cos(world.t * ORBIT_EVO_FREQ));
   const br = st.size * e.area;
   const interval = e.cd;
   // the hub: enemies pressed against the player are inside the blade circle and would never
