@@ -35,11 +35,11 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     levels: [
       // a wider orbit reaches the swarm a dodging player keeps at a distance; little knockback so
       // the blades do not push enemies out of their own reach
-      s({ dmg: 12, cd: 0.42, count: 2, speed: 3.2, size: 14, extra: 106, knock: 27 }),
-      s({ dmg: 13.5, cd: 0.42, count: 3, speed: 3.3, size: 14, extra: 112, knock: 27 }),
-      s({ dmg: 16, cd: 0.4, count: 3, speed: 3.6, size: 15, extra: 120, knock: 30 }),
-      s({ dmg: 22.5, cd: 0.38, count: 4, speed: 3.8, size: 16, extra: 129, knock: 30 }),
-      s({ dmg: 29, cd: 0.36, count: 5, speed: 4.2, size: 17, extra: 140, knock: 33 }),
+      s({ dmg: 14.5, cd: 0.42, count: 2, speed: 3.2, size: 14, extra: 106, knock: 27 }),
+      s({ dmg: 16, cd: 0.42, count: 3, speed: 3.3, size: 14, extra: 112, knock: 27 }),
+      s({ dmg: 19, cd: 0.4, count: 3, speed: 3.6, size: 15, extra: 120, knock: 30 }),
+      s({ dmg: 27, cd: 0.38, count: 4, speed: 3.8, size: 16, extra: 129, knock: 30 }),
+      s({ dmg: 35, cd: 0.36, count: 5, speed: 4.2, size: 17, extra: 140, knock: 33 }),
     ],
   },
   chain: {
@@ -129,7 +129,7 @@ export const EVOLUTIONS: Record<EvolutionId, EvolutionDef> = {
     from: 'orbit',
     passive: 'area',
     color: 0xff7df7,
-    stats: s({ dmg: 44, cd: 0.26, count: 8, speed: 4.6, size: 25, extra: 140, knock: 42 }),
+    stats: s({ dmg: 47, cd: 0.26, count: 8, speed: 4.6, size: 25, extra: 140, knock: 42 }),
   },
   chain_evo: {
     id: 'chain_evo',

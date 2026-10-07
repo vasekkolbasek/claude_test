@@ -3,7 +3,7 @@
  * the steering bot for 60 s of game time from a given minute. Reports effective damage per
  * second (overkill excluded), kills and damage dealt to a mini-boss.
  *
- *   npx tsx scripts/weapons-bench.ts [--at 240] [--seeds 3]
+ *   npx tsx scripts/weapons-bench.ts [--at 240] [--seeds 3] [--stand] [--only orbit]
  */
 import { PASSIVE_IDS } from '../src/data/passives';
 import type { PassiveId, WeaponId } from '../src/data/types';
@@ -24,6 +24,8 @@ const TANK = arg('tank', 1);
 const SKILL = arg('skill', 0.7);
 /** player stands still inside the swarm (melee weapons' best case) */
 const STAND = process.argv.includes('--stand');
+/** bench a single weapon */
+const ONLY = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1] : null;
 
 /** a typical mid-run passive set; each weapon also gets its own evolution passive */
 const BUILD: [PassiveId, number][] = [
@@ -81,7 +83,7 @@ function bench(id: WeaponId, level: number, evo: boolean, seed: number) {
 }
 
 const rows: string[] = [];
-for (const id of WEAPON_IDS) {
+for (const id of WEAPON_IDS.filter((x) => !ONLY || x === ONLY)) {
   for (const [label, lv, evo] of [['L1', 1, false], ['L3', 3, false], ['L5', 5, false], ['EVO', 5, true]] as const) {
     let dps = 0;
     let kills = 0;

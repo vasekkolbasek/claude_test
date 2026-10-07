@@ -211,18 +211,8 @@ function orbit(world: World, w: WeaponInst, e: Eff, dt: number): void {
   if (w.evo) R *= ORBIT_EVO_MIN + ORBIT_EVO_SWEEP * (0.5 - 0.5 * Math.cos(world.t * ORBIT_EVO_FREQ));
   const br = st.size * e.area;
   const interval = e.cd;
-  // the hub: enemies pressed against the player are inside the blade circle and would never
-  // be touched, so the orbit also strikes (and pushes back) anything in contact
-  const hub = world.enemiesInRadius(p.x, p.y, p.r + 8);
-  for (let j = hub.length - 1; j >= 0; j--) {
-    const en = hub[j];
-    if (world.t - en.hitT[w.slot] < interval) continue;
-    en.hitT[w.slot] = world.t;
-    const dx = en.x - p.x;
-    const dy = en.y - p.y;
-    const d = Math.hypot(dx, dy) || 1;
-    world.hurtEnemy(en, e.dmg, w.slot, (dx / d) * st.knock * 1.5, (dy / d) * st.knock * 1.5);
-  }
+  // blades only strike where they actually pass: an enemy inside the ring (e.g. pressed against
+  // the player) is safe from them
   for (let i = 0; i < n; i++) {
     const ang = w.a + (i / n) * TAU;
     const bx = p.x + Math.cos(ang) * R;
