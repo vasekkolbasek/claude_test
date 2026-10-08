@@ -37,6 +37,8 @@ const TRACE = process.argv.includes('--trace');
 const LAND = process.argv.includes('--land');
 /** "runner" player: just holds one direction the whole run (exploit check) */
 const RUNNER = process.argv.includes('--runner');
+/** play the first run without the newcomer's gentle opening (to compare) */
+const NO_GENTLE = process.argv.includes('--no-gentle');
 
 export interface RunReport {
   sector: SectorId;
@@ -76,7 +78,7 @@ function spend(save: SaveData): string[] {
 }
 
 export function simulateRun(save: SaveData, sector: SectorId, skill: number, seed: number): RunReport {
-  const w = new World({ mode: 'normal', sector, character: save.char, seed, bonuses: runBonuses(save), weaponPool: weaponPoolFor(save), passivePool: passivePoolFor(save) });
+  const w = new World({ mode: 'normal', sector, character: save.char, seed, bonuses: runBonuses(save), weaponPool: weaponPoolFor(save), passivePool: passivePoolFor(save), gentleStart: save.stats.runs === 0 && !NO_GENTLE });
   w.view.hw = LAND ? 560 : 260;
   w.view.hh = LAND ? 315 : 520;
   const bot = new Bot({ skill, seed: seed * 7 + 1 });

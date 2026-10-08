@@ -318,20 +318,23 @@ export class App {
     this.adBusy = true;
     // pause + mute for the whole attempt; only a confirmed ad counts as shown
     let shown = false;
-    const ok = await this.platform.showRewarded({
-      onOpen: () => {
-        this.setPause('ad', true);
-        this.audio.mute('ad', true);
-      },
-      onShown: () => {
-        shown = true;
-      },
-      onClose: () => {
-        this.setPause('ad', false);
-        this.audio.mute('ad', false);
-      },
-    });
-    this.adBusy = false;
+    const hold = this.adHold();
+    let ok = false;
+    try {
+      ok = await this.platform.showRewarded({
+        onOpen: hold.on,
+        onShown: () => {
+          shown = true;
+        },
+        onClose: hold.off,
+      });
+    } catch (e) {
+      console.warn('[ads] rewarded failed', e);
+    } finally {
+      // whatever the SDK did, nothing stays paused, muted or busy
+      hold.off();
+      this.adBusy = false;
+    }
     if (ok) {
       this.save.data.stats.adsWatched++;
       this.save.save();
@@ -346,17 +349,33 @@ export class App {
     if (this.save.data.stats.runs < CONFIG.interstitialMinRuns) return;
     this.adBusy = true;
     this.lastInterstitial = Date.now();
-    await this.platform.showInterstitial({
-      onOpen: () => {
+    const hold = this.adHold();
+    try {
+      await this.platform.showInterstitial({ onOpen: hold.on, onClose: hold.off });
+    } catch (e) {
+      console.warn('[ads] interstitial failed', e);
+    } finally {
+      hold.off();
+      this.adBusy = false;
+    }
+  }
+
+  /** Pause + mute while an ad attempt is on; `off` is safe to call more than once. */
+  private adHold(): { on: () => void; off: () => void } {
+    let held = false;
+    return {
+      on: () => {
+        held = true;
         this.setPause('ad', true);
         this.audio.mute('ad', true);
       },
-      onClose: () => {
+      off: () => {
+        if (!held) return;
+        held = false;
         this.setPause('ad', false);
         this.audio.mute('ad', false);
       },
-    });
-    this.adBusy = false;
+    };
   }
 
   // ---------------------------------------------------------------- navigation
@@ -393,6 +412,7 @@ export class App {
       bonuses: runBonuses(save),
       weaponPool: weaponPool(save),
       passivePool: passivePool(save),
+      gentleStart: save.stats.runs === 0,
     });
     const vh = this.view.viewHalf();
     this.world.view.hw = vh.hw;

@@ -16,6 +16,10 @@ export const BALANCE = {
   /** share of regular spawns placed ahead of a player who keeps running one way (0..1) */
   aheadSpawnBias: 0.6,
   maxGems: 380,
+  /** the very first run eases in: swarm density and early wave events start at `from` and reach
+   *  full strength by `until` seconds (well before the first mini-boss); viruses start at `speed`
+   *  of their usual speed, and are worth 1/density more XP so levelling keeps its pace */
+  gentleStart: { until: 75, from: 0.45, speed: 0.75 },
   /** at the gem limit, XP fuses into the nearest crystal only within this range of the kill;
    *  otherwise the crystal farthest from the player is moved to the kill (XP stays collectable) */
   gemFuseRange: 360,

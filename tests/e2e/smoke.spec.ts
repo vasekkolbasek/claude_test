@@ -112,9 +112,11 @@ test('loads cleanly, plays a run with random input and reaches the results scree
   await page.locator('[data-test=revive-ad]').click({ timeout: 15_000 });
   await expect.poll(async () => (await appState(page)).state, { timeout: 15_000 }).toBe('playing');
   expect((await platformLog(page))).toContain('ad:rewarded');
-  // die again in the middle of a boss fight (the boss bar must not leak into the next run)
-  await page.evaluate(() => (window as unknown as { __ns: { sandbox(c: unknown): void } }).__ns.sandbox({ spawn: [['mb_trojan', 1, 260]] }));
-  await expect(page.locator('.bossbar.on')).toHaveCount(1, { timeout: 5000 });
+  // die again in the middle of a boss fight (the boss bars must not leak into the next run);
+  // two mini-bosses alive at once get a bar each
+  await page.evaluate(() => (window as unknown as { __ns: { sandbox(c: unknown): void } }).__ns.sandbox({ spawn: [['mb_trojan', 1, 260], ['mb_crypto', 1, 300]] }));
+  await expect(page.locator('.bossbar.on')).toHaveCount(2, { timeout: 5000 });
+  await expect(page.locator('.bossbars.multi')).toHaveCount(1);
   await page.waitForTimeout(800);
   await kill();
   // the ad revive is spent and there are no free revives: straight to the results

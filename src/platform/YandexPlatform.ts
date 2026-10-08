@@ -1,7 +1,11 @@
 import type { AdHooks, DeviceType, LeaderboardResult, Platform } from './Platform';
-import type { YPlayer, YSDK } from './yandex-sdk';
+import type { YCallbacks, YPlayer, YSDK } from './yandex-sdk';
 
 const SAVE_KEY = 'save';
+/** no answer from the SDK at all: give up and resume the game */
+const AD_NO_ANSWER_MS = 12_000;
+/** an ad is on screen but its close never arrives: resume anyway (videos run ~15–30 s) */
+const AD_MAX_SHOWN_MS = 90_000;
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -89,45 +93,21 @@ export class YandexPlatform implements Platform {
   }
 
   showInterstitial(hooks: AdHooks): Promise<void> {
-    return new Promise<void>((resolve) => {
-      let done = false;
-      const finish = () => {
-        if (done) return;
-        done = true;
-        hooks.onClose?.();
-        resolve();
-      };
-      let opened = false;
-      // safety net: if the SDK never reports anything, do not leave the game hanging
-      setTimeout(() => {
-        if (!opened) finish();
-      }, 12_000);
-      try {
-        hooks.onOpen?.();
-        this.sdk.adv.showFullscreenAdv({
-          callbacks: {
-            onOpen: () => {
-              opened = true;
-              hooks.onShown?.();
-            },
-            onClose: () => finish(),
-            onError: (e) => {
-              console.warn('[ysdk] fullscreen ad error', e);
-              finish();
-            },
-            onOffline: () => finish(),
-          },
-        });
-      } catch (e) {
-        console.warn('[ysdk] fullscreen ad failed', e);
-        finish();
-      }
-    });
+    return this.playAd('fullscreen', (callbacks) => this.sdk.adv.showFullscreenAdv({ callbacks }), hooks).then(() => undefined);
   }
 
   showRewarded(hooks: AdHooks): Promise<boolean> {
+    return this.playAd('rewarded', (callbacks) => this.sdk.adv.showRewardedVideo({ callbacks }), hooks);
+  }
+
+  /**
+   * One SDK ad call. Resolves (true only after onRewarded) once the game may go on, whatever the
+   * SDK does: an error, a refusal, no answer at all, or an ad whose close never arrives.
+   */
+  private playAd(kind: string, call: (callbacks: YCallbacks) => void, hooks: AdHooks): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
       let rewarded = false;
+      let opened = false;
       let done = false;
       const finish = () => {
         if (done) return;
@@ -135,34 +115,36 @@ export class YandexPlatform implements Platform {
         hooks.onClose?.();
         resolve(rewarded);
       };
-      let opened = false;
+      const shown = () => {
+        if (opened) return;
+        opened = true;
+        hooks.onShown?.();
+        setTimeout(() => {
+          if (done) return;
+          console.warn(`[ysdk] ${kind} ad never closed`);
+          finish();
+        }, AD_MAX_SHOWN_MS);
+      };
       setTimeout(() => {
         if (!opened) finish();
-      }, 12_000);
+      }, AD_NO_ANSWER_MS);
       try {
         hooks.onOpen?.();
-        this.sdk.adv.showRewardedVideo({
-          callbacks: {
-            onOpen: () => {
-              opened = true;
-              hooks.onShown?.();
-            },
-            onRewarded: () => {
-              if (!opened) {
-                opened = true;
-                hooks.onShown?.();
-              }
-              rewarded = true;
-            },
-            onClose: () => finish(),
-            onError: (e) => {
-              console.warn('[ysdk] rewarded ad error', e);
-              finish();
-            },
+        call({
+          onOpen: shown,
+          onRewarded: () => {
+            shown();
+            rewarded = true;
           },
+          onClose: () => finish(),
+          onError: (e) => {
+            console.warn(`[ysdk] ${kind} ad error`, e);
+            finish();
+          },
+          onOffline: () => finish(),
         });
       } catch (e) {
-        console.warn('[ysdk] rewarded ad failed', e);
+        console.warn(`[ysdk] ${kind} ad failed`, e);
         finish();
       }
     });

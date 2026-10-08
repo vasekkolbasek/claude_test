@@ -484,12 +484,22 @@ body {
   line-height: 1.2;
 }
 .hud .item.evo { border-color: var(--r3); box-shadow: 0 0 8px rgba(255, 181, 46, 0.6); }
-.hud .bossbar {
+.hud .bossbars {
   margin: 0.6rem auto 0;
   width: min(90%, 32rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.hud .bossbar {
   text-align: center;
   display: none;
 }
+.hud .bossbar.final { order: -1; }
+/* two or three bosses at once: slimmer bars so the field stays visible */
+.hud .bossbars.multi { gap: 0.25rem; }
+.hud .bossbars.multi .bossbar .nm { font-size: 0.72rem; }
+.hud .bossbars.multi .bossbar .bb { height: 0.5rem; margin-top: 0.1rem; }
 .hud .boss-ptr { position: absolute; display: none; width: 2.6rem; height: 2.6rem; filter: drop-shadow(0 0 6px var(--red)); }
 .hud .boss-ptr.on { display: block; }
 .hud .boss-ptr i {

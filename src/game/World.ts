@@ -54,6 +54,8 @@ export interface RunConfig {
   bonuses?: StatBonus[];
   weaponPool: WeaponId[];
   passivePool: PassiveId[];
+  /** the player's very first run: a calmer opening (BALANCE.gentleStart) */
+  gentleStart?: boolean;
 }
 
 export interface RunStats {
@@ -592,6 +594,13 @@ export class World {
     e.speed = def.speed * this.sector.speedMult * speedGrowth * (def.boss ? 1 : this.rng.range(0.9, 1.1)) * (e.elite ? 0.9 : 1);
     e.dmg = def.dmg * this.wave.dmgMult * (e.elite ? 1.5 : 1) * (overtime && !def.boss ? 1 + BALANCE.overtimeDmgPerMin * ot : 1);
     e.xp = def.xp * (e.elite ? BALANCE.eliteXpMult : 1);
+    if (!def.boss && this.cfg.gentleStart) {
+      // first-run opening: fewer and slower viruses, but the same flow of XP (each is worth more),
+      // so the newcomer is not under-levelled when the swarm reaches full strength
+      const ease = this.easeIn();
+      e.speed *= BALANCE.gentleStart.speed + (1 - BALANCE.gentleStart.speed) * ease;
+      e.xp /= ease;
+    }
     e.flash = 0;
     e.spawnT = 0;
     e.ang = Math.atan2(this.player.y - y, this.player.x - x);
@@ -758,9 +767,10 @@ export class World {
     // and keeps escalating every minute until the run ends one way or the other
     const ot = this.overtime();
     const overtime = ot >= 0;
-    const min = overtime ? w.min * (2.5 + 1.5 * ot) : w.min * bossFactor;
+    const ease = this.easeIn();
+    const min = overtime ? w.min * (2.5 + 1.5 * ot) : w.min * bossFactor * ease;
     if (regular < min) this.spawnAcc += (min - regular) * dt * 2.5;
-    if (overtime || regular < min * BALANCE.overflowCap) this.spawnAcc += w.rate * (overtime ? 3 : bossFactor) * dt;
+    if (overtime || regular < min * BALANCE.overflowCap) this.spawnAcc += w.rate * (overtime ? 3 : bossFactor * ease) * dt;
     const pt = { x: 0, y: 0 };
     let guard = 0;
     while (this.spawnAcc >= 1 && guard++ < 40) {
@@ -781,6 +791,14 @@ export class World {
     this.prevT = this.t;
   }
 
+  /** First-run opening: 1 at full strength, less while the newcomer finds their feet. */
+  easeIn(): number {
+    if (!this.cfg.gentleStart) return 1;
+    const { until, from } = BALANCE.gentleStart;
+    const f = Math.min(1, this.t / until);
+    return from + (1 - from) * f * f * (3 - 2 * f);
+  }
+
   /** Minutes of overtime in normal mode (negative before it starts). */
   overtime(): number {
     if (this.mode !== 'normal') return -1;
@@ -791,7 +809,7 @@ export class World {
     const p = this.player;
     const pt = { x: 0, y: 0 };
     // scripted waves use a stand-in when the sector does not have that virus yet
-    const ev = raw.type === 'boss' || raw.type === 'miniboss' ? raw : { ...raw, enemy: enemyFor(raw.enemy, this.sector.id) };
+    const ev = raw.type === 'boss' || raw.type === 'miniboss' ? raw : { ...raw, enemy: enemyFor(raw.enemy, this.sector.id), count: Math.max(1, Math.round(raw.count * this.easeIn())) };
     switch (ev.type) {
       case 'miniboss':
       case 'boss': {

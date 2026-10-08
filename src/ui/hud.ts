@@ -1,10 +1,24 @@
 import { formatTime } from '../core/math';
 import { PASSIVES } from '../data/passives';
 import { EVOLUTIONS, WEAPONS } from '../data/weapons';
+import type { Enemy } from '../game/entities';
 import type { World } from '../game/World';
 import { t } from '../i18n';
 import { h, hexColor } from './dom';
 import { icon } from './icons';
+
+/** at most this many boss bars at once (endless can stack mini-bosses) */
+const MAX_BOSS_BARS = 3;
+
+interface BossSlot {
+  uid: number;
+  frac: number;
+  bar: HTMLElement;
+  name: HTMLElement;
+  fill: HTMLElement;
+  ptr: HTMLElement;
+  ptrOn: boolean;
+}
 
 export class Hud {
   readonly el: HTMLElement;
@@ -14,9 +28,9 @@ export class Hud {
   private readonly timer: HTMLElement;
   private readonly kills: HTMLElement;
   private readonly items: HTMLElement;
-  private readonly boss: HTMLElement;
-  private readonly bossName: HTMLElement;
-  private readonly bossFill: HTMLElement;
+  /** one bar per alive boss (a slot keeps its boss until it dies, so bars do not jump) */
+  private readonly bossBox: HTMLElement;
+  private readonly bossSlots: BossSlot[] = [];
   private readonly danger: HTMLElement;
   private readonly hpRow: HTMLElement;
   private readonly hpFill: HTMLElement;
@@ -27,16 +41,12 @@ export class Hud {
   private trailFrac = 1;
   private lastHpT = 0;
   private readonly banners: HTMLElement;
-  private readonly bossPtr: HTMLElement;
-  private bossPtrOn = false;
   private hintEl: HTMLElement | null = null;
   private lastXp = -1;
   private lastLvl = -1;
   private lastSec = -1;
   private lastKills = -1;
   private lastItems = '';
-  private lastBoss = '';
-  private lastBossFrac = -1;
   private dangerOn = false;
 
   constructor(onPause: () => void) {
@@ -48,11 +58,21 @@ export class Hud {
     const pauseBtn = h('button', { cls: 'btn icon-only pause-btn', attrs: { 'aria-label': t('hud.pause') }, onClick: () => onPause() }, icon('pause'));
     pauseBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     this.items = h('div', { cls: 'items' });
-    this.bossName = h('div', { cls: 'nm' });
-    this.bossFill = h('i');
-    this.boss = h('div', { cls: 'bossbar' }, this.bossName, h('div', { cls: 'bb' }, this.bossFill));
+    for (let i = 0; i < MAX_BOSS_BARS; i++) {
+      const name = h('div', { cls: 'nm' });
+      const fill = h('i');
+      this.bossSlots.push({
+        uid: 0,
+        frac: -1,
+        bar: h('div', { cls: 'bossbar' }, name, h('div', { cls: 'bb' }, fill)),
+        name,
+        fill,
+        ptr: h('div', { cls: 'boss-ptr' }, h('i')),
+        ptrOn: false,
+      });
+    }
+    this.bossBox = h('div', { cls: 'bossbars' }, ...this.bossSlots.map((x) => x.bar));
     this.banners = h('div');
-    this.bossPtr = h('div', { cls: 'boss-ptr' }, h('i'));
     this.danger = h('div', { cls: 'danger-vignette' });
     // health: heart + bar (with a short white «just lost» trail) + numbers
     this.hpFill = h('i');
@@ -66,9 +86,9 @@ export class Hud {
       h('div', { cls: 'bar2' }, this.lvl, this.timer, this.kills, pauseBtn),
       this.hpRow,
       this.items,
-      this.boss,
+      this.bossBox,
       this.banners,
-      this.bossPtr,
+      ...this.bossSlots.map((x) => x.ptr),
     );
     document.body.appendChild(this.danger);
   }
@@ -76,18 +96,14 @@ export class Hud {
   reset(): void {
     this.lastXp = this.lastLvl = this.lastSec = this.lastKills = -1;
     this.lastItems = '';
-    this.lastBoss = '';
-    this.lastBossFrac = -1;
     this.lastHpText = '';
     this.hpFrac = this.trailFrac = 1;
     this.lastHpT = 0;
     this.hpRow.classList.remove('low');
-    // the boss bar / pointer only change on a boss switch, so a run that ended mid-fight would
-    // otherwise leave them on screen for the next run
-    this.boss.classList.remove('on');
-    this.bossFill.style.transform = 'scaleX(1)';
-    this.bossPtrOn = false;
-    this.bossPtr.classList.remove('on');
+    // boss bars / pointers only change when a boss comes or goes, so a run that ended mid-fight
+    // would otherwise leave them on screen for the next run
+    for (const slot of this.bossSlots) this.freeSlot(slot);
+    this.bossBox.classList.remove('multi');
     this.banners.textContent = '';
     this.hideHint();
     this.setDanger(false);
@@ -119,46 +135,69 @@ export class Hud {
       this.lastItems = sig;
       this.renderItems(w);
     }
-    // boss bar: the strongest alive boss
-    const b = w.boss ?? w.bosses[0] ?? null;
-    const key = b ? `${b.uid}` : '';
-    if (key !== this.lastBoss) {
-      this.lastBoss = key;
-      this.boss.classList.toggle('on', !!b);
-      if (b) this.bossName.textContent = t(`e.${b.def.id}`);
-    }
-    if (b) {
-      const f = Math.max(0, b.hp / b.maxHp);
-      if (Math.abs(f - this.lastBossFrac) > 0.002) {
-        this.lastBossFrac = f;
-        this.bossFill.style.transform = `scaleX(${f.toFixed(3)})`;
-      }
-    }
+    this.updateBosses(w);
     this.updateHp(p.hp, w.stats.maxHp);
     this.setDanger(p.hp / w.stats.maxHp < 0.3 && w.state === 'playing');
-    this.updateBossPointer(w, b);
+  }
+
+  /**
+   * A bar for every alive boss (up to MAX_BOSS_BARS): a mini-boss that outlives the next one's
+   * arrival keeps its own bar. A slot stays with its boss until it dies; the final boss is
+   * shown on top (CSS order).
+   */
+  private updateBosses(w: World): void {
+    for (const slot of this.bossSlots) {
+      if (slot.uid && !w.bosses.some((b) => b.uid === slot.uid)) this.freeSlot(slot);
+    }
+    for (const b of w.bosses) {
+      let slot = this.bossSlots.find((x) => x.uid === b.uid);
+      if (!slot) {
+        slot = this.bossSlots.find((x) => x.uid === 0);
+        if (!slot) continue;
+        slot.uid = b.uid;
+        slot.frac = -1;
+        slot.name.textContent = t(`e.${b.def.id}`);
+        slot.bar.classList.toggle('final', b.def.boss === 'final');
+        slot.bar.classList.add('on');
+      }
+      const f = Math.max(0, b.hp / b.maxHp);
+      if (Math.abs(f - slot.frac) > 0.002) {
+        slot.frac = f;
+        slot.fill.style.transform = `scaleX(${f.toFixed(3)})`;
+      }
+      this.updateBossPointer(w, b, slot);
+    }
+    this.bossBox.classList.toggle('multi', this.bossSlots.filter((x) => x.uid).length > 1);
+  }
+
+  private freeSlot(slot: BossSlot): void {
+    slot.uid = 0;
+    slot.frac = -1;
+    slot.bar.classList.remove('on', 'final');
+    slot.fill.style.transform = 'scaleX(1)';
+    if (slot.ptrOn) {
+      slot.ptrOn = false;
+      slot.ptr.classList.remove('on');
+    }
   }
 
   /** Edge arrow towards an off-screen boss. */
-  private updateBossPointer(w: World, b: World['boss']): void {
-    let on = false;
-    if (b) {
-      const dx = b.x - w.player.x;
-      const dy = b.y - w.player.y;
-      const { hw, hh } = w.view;
-      if (Math.abs(dx) > hw + b.r * 0.5 || Math.abs(dy) > hh + b.r * 0.5) {
-        on = true;
-        const k = Math.min((hw * 0.9) / Math.max(1e-6, Math.abs(dx)), (hh * 0.84) / Math.max(1e-6, Math.abs(dy)));
-        const x = 50 + ((dx * k) / hw) * 50;
-        const y = 50 + ((dy * k) / hh) * 50;
-        this.bossPtr.style.left = `${x.toFixed(2)}%`;
-        this.bossPtr.style.top = `${y.toFixed(2)}%`;
-        this.bossPtr.style.transform = `translate(-50%, -50%) rotate(${Math.atan2(dy, dx).toFixed(3)}rad)`;
-      }
+  private updateBossPointer(w: World, b: Enemy, slot: BossSlot): void {
+    const dx = b.x - w.player.x;
+    const dy = b.y - w.player.y;
+    const { hw, hh } = w.view;
+    const on = Math.abs(dx) > hw + b.r * 0.5 || Math.abs(dy) > hh + b.r * 0.5;
+    if (on) {
+      const k = Math.min((hw * 0.9) / Math.max(1e-6, Math.abs(dx)), (hh * 0.84) / Math.max(1e-6, Math.abs(dy)));
+      const x = 50 + ((dx * k) / hw) * 50;
+      const y = 50 + ((dy * k) / hh) * 50;
+      slot.ptr.style.left = `${x.toFixed(2)}%`;
+      slot.ptr.style.top = `${y.toFixed(2)}%`;
+      slot.ptr.style.transform = `translate(-50%, -50%) rotate(${Math.atan2(dy, dx).toFixed(3)}rad)`;
     }
-    if (on !== this.bossPtrOn) {
-      this.bossPtrOn = on;
-      this.bossPtr.classList.toggle('on', on);
+    if (on !== slot.ptrOn) {
+      slot.ptrOn = on;
+      slot.ptr.classList.toggle('on', on);
     }
   }
 
