@@ -25,6 +25,8 @@ function fail(msg) {
 
 const files = walk(DIST).sort();
 if (!files.some((f) => relative(DIST, f) === 'index.html')) fail('dist/index.html is missing — run `npm run build` first');
+// licence notices of PixiJS, the Exo 2 font and ZzFX must ship with the game (public/)
+if (!files.some((f) => relative(DIST, f) === 'third-party-licenses.txt')) fail('dist/third-party-licenses.txt is missing');
 
 let total = 0;
 const problems = [];

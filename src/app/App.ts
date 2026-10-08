@@ -273,8 +273,10 @@ export class App {
   /** Re-derives GameplayAPI state, input and music muffling from the pause set. */
   sync(): void {
     const inRun = this.mode === 'run' && !!this.world;
-    const blocking = ['user', 'hidden', 'ad', 'platform', 'revive', 'death', 'rotate'] as const;
-    const gameplay = inRun && !blocking.some((r) => this.pauses.has(r));
+    // GameplayAPI marks only live play: an upgrade choice (the world stands still) and the victory
+    // slow-down count as stopped, like a menu or the end of a level
+    const blocking = ['user', 'hidden', 'ad', 'platform', 'revive', 'death', 'rotate', 'levelup'] as const;
+    const gameplay = inRun && this.world?.state !== 'won' && !blocking.some((r) => this.pauses.has(r));
     if (gameplay) this.platform.gameplayStart();
     else this.platform.gameplayStop();
     const running = inRun && this.pauses.size === 0 && this.world?.state === 'playing';
@@ -573,6 +575,7 @@ export class App {
     else if (w.state === 'dead' && !this.pauses.has('death') && !this.pauses.has('revive')) this.startDeath(w);
     else if (w.state === 'won' && this.winT <= 0) {
       this.winT = 1.7;
+      this.sync();
       this.input.setEnabled(false);
       this.audio.setMusicMuffled(true);
     }

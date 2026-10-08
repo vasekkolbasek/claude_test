@@ -51,12 +51,18 @@ test('loads cleanly, plays a run with random input and reaches the results scree
   const keys = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'];
   const start = Date.now();
   let held: string | null = null;
+  let choiceSeen = false;
   while (Date.now() - start < 60_000) {
     if (held) await page.keyboard.up(held);
     held = keys[Math.floor(Math.random() * keys.length)];
     await page.keyboard.down(held);
     const cards = page.locator('.card:not(.locked)');
     const n = await cards.count();
+    // the world stands still during an upgrade choice: GameplayAPI must be stopped (Yandex 1.19.3)
+    if (n > 0 && !choiceSeen) {
+      choiceSeen = true;
+      expect((await platformLog(page)).at(-1)).toBe('gameplay:stop');
+    }
     if (n > 0) await cards.nth(Math.floor(Math.random() * n)).click({ timeout: 2000 }).catch(() => undefined);
     await page.waitForTimeout(400);
   }
@@ -70,6 +76,8 @@ test('loads cleanly, plays a run with random input and reaches the results scree
   const st = await appState(page);
   expect(st.t).toBeGreaterThan(15);
   expect(st.mode).toBe('run');
+  expect(choiceSeen).toBe(true);
+  expect((await platformLog(page)).at(-1)).toBe('gameplay:start');
 
   // background tab → pause + mute, gameplay stop; return → resume
   await page.evaluate(() => {
