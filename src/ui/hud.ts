@@ -267,6 +267,8 @@ export class Hud {
   }
 
   banner(text: string, kind: 'boss' | 'info' | 'gold'): void {
+    // banners share one spot on screen: a new one replaces the one still showing
+    this.banners.textContent = '';
     const el = h('div', { cls: `banner ${kind}`, text });
     this.banners.appendChild(el);
     setTimeout(() => el.remove(), 2500);

@@ -55,7 +55,6 @@ export const ru: Dict = {
   'hud.warnRush': 'Волна приближается!',
   'hud.warnRing': 'Окружение!',
   'hud.evolved': 'Эволюция: {name}!',
-  'hud.chest': 'Контейнер данных!',
   'hud.pause': 'Пауза',
 
   // level up

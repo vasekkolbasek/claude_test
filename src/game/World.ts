@@ -19,7 +19,7 @@ import type {
   WaveEvent,
   WeaponId,
 } from '../data/types';
-import { availableEvolutions, rollCards, type LoadoutView } from './cards';
+import { rollCards, type LoadoutView } from './cards';
 import { eventsBetween, waveStateAt, type GameMode, type WaveState } from './director';
 import { updateEnemy } from './enemyAi';
 import {
@@ -292,6 +292,9 @@ export class World {
     if (this.state !== 'levelup') return;
     const card = this.choices[index];
     if (!card) return;
+    // events of the last frame were already shown; start a fresh batch for this card (an
+    // evolution's flash, sound and banner) that the app consumes right after the choice
+    this.events.clear();
     this.applyCard(card);
     this.pendingLevels--;
     this.chestChoice = false;
@@ -312,6 +315,8 @@ export class World {
   }
 
   revive(): void {
+    // the death frame's events were already shown: only the revive's own go to the app
+    this.events.clear();
     const p = this.player;
     p.hp = this.stats.maxHp;
     p.inv = BALANCE.player.reviveInvuln;
@@ -1115,13 +1120,11 @@ export class World {
       case GEM_CHEST: {
         this.run.chests++;
         this.run.bitsBonus += 15;
-        const evos = availableEvolutions(this.loadout());
-        this.events.push(EV.CHEST, g.x, g.y, evos.length > 0 ? 1 : 0);
-        if (evos.length > 0) this.evolve(evos[0]);
-        else {
-          this.pendingLevels++;
-          this.chestChoice = true;
-        }
+        // a container always opens a card choice; a ready evolution is one of the cards
+        // (rollCards guarantees it), so the player sees and picks it instead of getting it silently
+        this.events.push(EV.CHEST, g.x, g.y);
+        this.pendingLevels++;
+        this.chestChoice = true;
         break;
       }
     }

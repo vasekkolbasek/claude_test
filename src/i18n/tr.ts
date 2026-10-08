@@ -51,7 +51,6 @@ export const tr: Dict = {
   'hud.warnRush': 'Sürü yaklaşıyor!',
   'hud.warnRing': 'Kuşatıldın!',
   'hud.evolved': 'Evrim: {name}!',
-  'hud.chest': 'Veri önbelleği!',
   'hud.pause': 'Duraklat',
 
   'lvl.title': 'Seviye atladın!',

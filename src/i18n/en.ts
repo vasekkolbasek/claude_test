@@ -51,7 +51,6 @@ export const en: Dict = {
   'hud.warnRush': 'Incoming swarm!',
   'hud.warnRing': 'Surrounded!',
   'hud.evolved': 'Evolved: {name}!',
-  'hud.chest': 'Data cache!',
   'hud.pause': 'Pause',
 
   'lvl.title': 'Level up!',

@@ -77,7 +77,12 @@ test('loads cleanly, plays a run with random input and reaches the results scree
   expect(st.t).toBeGreaterThan(15);
   expect(st.mode).toBe('run');
   expect(choiceSeen).toBe(true);
-  expect((await platformLog(page)).at(-1)).toBe('gameplay:start');
+  // read together: another level-up may open at any moment, and then «stop» is right
+  const mark = await page.evaluate(() => {
+    const w = window as unknown as { __ns: TestApp; __platformLog: string[] };
+    return { state: w.__ns.world?.state, last: w.__platformLog.at(-1) };
+  });
+  expect(mark.last).toBe(mark.state === 'playing' ? 'gameplay:start' : 'gameplay:stop');
 
   // background tab → pause + mute, gameplay stop; return → resume
   await page.evaluate(() => {

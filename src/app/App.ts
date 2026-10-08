@@ -653,8 +653,8 @@ export class App {
           this.sfx('shield', 0.6);
           break;
         case EV.CHEST:
+          // no banner: the container's choice window opens at once under the same title
           this.sfx('chest');
-          this.hud.banner(t('hud.chest'), 'gold');
           break;
         case EV.EVOLVE:
           this.sfx('evolve');
@@ -731,6 +731,8 @@ export class App {
         getCards: () => w.choices,
         pick: (i) => {
           w.chooseCard(i);
+          // update() starts by clearing the event queue: show the card's effects now
+          this.onEvents(w);
           this.rerollAdUsed = false;
         },
         hasMore: () => w.state === 'levelup',
