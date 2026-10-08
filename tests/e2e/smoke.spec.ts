@@ -271,3 +271,40 @@ test('settings window never scrolls sideways', async ({ page }) => {
   expect(await dialog.evaluate((el) => getComputedStyle(el).overflowX)).toBe('hidden');
   expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
 });
+
+test('iOS: a context left dead after the background is replaced on the first touch', async ({ page }) => {
+  await page.addInitScript(() => {
+    let vis: DocumentVisibilityState = 'visible';
+    Object.defineProperty(document, 'visibilityState', { get: () => vis });
+    Object.defineProperty(document, 'hidden', { get: () => vis === 'hidden' });
+    (window as unknown as { __setVis(v: DocumentVisibilityState): void }).__setVis = (v) => {
+      vis = v;
+      document.dispatchEvent(new Event('visibilitychange'));
+    };
+  });
+  await page.goto('index.html?test=1&mock=1');
+  await expect(page.locator('[data-test=play]')).toBeVisible({ timeout: 20_000 });
+  await page.mouse.click(5, 200);
+  type Audio = { ctx: AudioContext | null; muted: boolean };
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __ns: { audio: Audio } }).__ns.audio.ctx?.state)).toBe('running');
+  await page.evaluate(() => {
+    const w = window as unknown as { __setVis(v: string): void; __ns: { audio: Audio }; __old: AudioContext | null };
+    w.__setVis('hidden');
+    // what Safari does to a backgrounded page: the context is «interrupted» and resume() never settles
+    const ctx = w.__ns.audio.ctx as AudioContext;
+    w.__old = ctx;
+    Object.defineProperty(ctx, 'state', { get: () => 'interrupted' });
+    ctx.resume = () => new Promise<void>(() => undefined);
+    w.__setVis('visible');
+  });
+  await page.waitForTimeout(900);
+  await page.mouse.click(5, 200);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const w = window as unknown as { __ns: { audio: Audio }; __old: AudioContext | null };
+        return w.__ns.audio.ctx !== w.__old && w.__ns.audio.ctx?.state === 'running';
+      }),
+    )
+    .toBe(true);
+});

@@ -43,6 +43,14 @@ export class AudioManager {
   private sfxVol = 0.8;
   private musicVol = 0.7;
   private unlocked = false;
+  private muffled = false;
+  /** bumped with every new context: sources of a replaced one must not touch the counters */
+  private gen = 0;
+  /** back from the background: run one suspend → resume cycle (what a tab switch does) */
+  private kick = false;
+  /** the context did not come back by itself: replace it on the next touch */
+  private stuck = false;
+  private checkTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     const unlock = () => {
@@ -64,11 +72,23 @@ export class AudioManager {
 
   private unlock(): void {
     if (this.unlocked) return;
+    if (!this.build()) return;
+    this.unlocked = true;
+    this.applyMute();
+  }
+
+  /** Creates the context and the whole graph (inside a gesture). False without Web Audio. */
+  private build(): boolean {
     try {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!Ctor) return;
+      if (!Ctor) return false;
       const ctx = new Ctor({ latencyHint: 'interactive' });
       this.ctx = ctx;
+      this.gen++;
+      this.voices = 0;
+      this.swarmVoices = 0;
+      this.swarmRate = 0;
+      this.lastPlay.clear();
       this.master = ctx.createGain();
       const comp = ctx.createDynamicsCompressor();
       comp.threshold.value = -12;
@@ -86,25 +106,47 @@ export class AudioManager {
       this.musicBus.connect(this.master);
       this.applyVolumes();
       this.music = new Music(ctx, this.musicBus);
+      this.buffers.clear();
       for (const id of Object.keys(SFX) as SfxId[]) {
         const data = zzfxSamples(ctx.sampleRate, SFX[id]);
         const buf = ctx.createBuffer(1, Math.max(1, data.length), ctx.sampleRate);
         buf.getChannelData(0).set(data);
         this.buffers.set(id, buf);
       }
-      this.unlocked = true;
       // the system may stop the context by itself (iOS: a call, another app's audio, the
       // background): when that happens while we want sound, get it back on the next touch
       ctx.onstatechange = () => {
+        if (ctx !== this.ctx) return;
         if (ctx.state === 'running') this.fadeIn();
         else if (this.reasons.size === 0) this.resumeAudio();
       };
       void ctx.resume().catch(() => undefined);
       this.music.setMode(this.musicMode);
-      this.applyMute();
+      if (this.muffled) this.music.setMuffled(true);
+      return true;
     } catch (e) {
       console.warn('[audio] unavailable', e);
+      return false;
     }
+  }
+
+  /**
+   * iOS Safari can leave a context dead after the app was in the background: `resume()` never
+   * settles, or the context reports «running» while its clock stands still. A fresh context
+   * created inside a touch always plays, so the old one is replaced (the music restarts).
+   */
+  private rebuild(): void {
+    const old = this.ctx;
+    this.music?.stop();
+    this.music = null;
+    this.ctx = null;
+    if (old) {
+      old.onstatechange = null;
+      void old.close().catch(() => undefined);
+    }
+    this.stuck = false;
+    this.kick = false;
+    if (this.build()) this.applyMute();
   }
 
   setVolumes(music: number, sfx: number): void {
@@ -121,6 +163,7 @@ export class AudioManager {
   }
 
   mute(reason: MuteReason, on: boolean): void {
+    if (reason === 'hidden' && !on && this.reasons.has('hidden')) this.kick = true;
     if (on) this.reasons.add(reason);
     else this.reasons.delete(reason);
     this.applyMute();
@@ -153,15 +196,43 @@ export class AudioManager {
   private resumeAudio(): void {
     const ctx = this.ctx;
     if (!ctx || this.reasons.size > 0) return;
+    this.watch();
     if (ctx.state === 'running') {
+      if (this.kick) {
+        // «running» right after the background may still be silent on iOS: cycle it like a tab switch
+        this.kick = false;
+        void ctx
+          .suspend()
+          .then(() => ctx.resume())
+          .then(() => this.fadeIn())
+          .catch(() => undefined);
+        return;
+      }
       this.fadeIn();
       return;
     }
+    this.kick = false;
     this.armGestureResume();
     void ctx
       .resume()
       .then(() => this.fadeIn())
       .catch(() => undefined);
+  }
+
+  /** Shortly after the sound should be back, checks that the context really plays (its clock moves). */
+  private watch(): void {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    if (this.checkTimer) clearTimeout(this.checkTimer);
+    const t0 = ctx.currentTime;
+    this.checkTimer = setTimeout(() => {
+      this.checkTimer = null;
+      if (ctx !== this.ctx || this.reasons.size > 0) return;
+      if (ctx.state !== 'running' || ctx.currentTime <= t0) {
+        this.stuck = true;
+        this.armGestureResume();
+      }
+    }, 700);
   }
 
   private fadeIn(): void {
@@ -178,11 +249,17 @@ export class AudioManager {
   private readonly onGesture = () => {
     const ctx = this.ctx;
     if (!ctx || this.reasons.size > 0) return;
-    // inside the gesture: the one moment a phone always lets the context run again
+    // inside the gesture: the one moment a phone always lets audio run again
+    const state: string = ctx.state;
+    if (this.stuck || state === 'interrupted' || state === 'closed') {
+      this.rebuild();
+      return;
+    }
     void ctx
       .resume()
       .then(() => this.fadeIn())
       .catch(() => undefined);
+    this.watch();
   };
 
   private armGestureResume(): void {
@@ -237,10 +314,12 @@ export class AudioManager {
     src.connect(g).connect(swarm ? this.swarmBus : this.sfxBus);
     this.voices++;
     if (swarm) this.swarmVoices++;
+    const gen = this.gen;
     src.onended = () => {
+      g.disconnect();
+      if (gen !== this.gen) return;
       this.voices--;
       if (swarm) this.swarmVoices--;
-      g.disconnect();
     };
     src.start(now);
   }
@@ -259,7 +338,14 @@ export class AudioManager {
   }
 
   setMusicMuffled(on: boolean): void {
+    this.muffled = on;
     this.music?.setMuffled(on);
+  }
+
+  /** For the `?debug=1` overlay: context state and clock (a frozen clock = no sound). */
+  debugState(): string {
+    const ctx = this.ctx;
+    return ctx ? `${ctx.state} ${ctx.currentTime.toFixed(1)}s${this.stuck ? ' stuck' : ''}` : 'locked';
   }
 
   setMusicProgress(p: number, intensity: number): void {

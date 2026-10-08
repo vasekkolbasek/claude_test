@@ -228,6 +228,8 @@ export class App {
       true,
     );
     window.addEventListener('pagehide', () => this.save.flushNow());
+    // iOS Safari back from the background (or the back-forward cache) may report it this way only
+    window.addEventListener('pageshow', () => onHidden(document.visibilityState === 'hidden'));
     this.platform.onPause(() => {
       this.setPause('platform', true);
       this.audio.mute('platform', true);
@@ -698,7 +700,7 @@ export class App {
     d.view += view;
     if (d.acc < 0.5 || !this.debugEl) return;
     const w = this.world;
-    this.debugEl.textContent = `${Math.round(d.frames / d.acc)} fps | sim ${(d.sim / d.frames).toFixed(2)} ms | view ${(d.view / d.frames).toFixed(2)} ms | q${this.quality.level} | e ${w?.enemies.length ?? 0} b ${w?.bullets.length ?? 0} g ${w?.gems.length ?? 0} fx ${this.view.stats().particles}`;
+    this.debugEl.textContent = `${Math.round(d.frames / d.acc)} fps | sim ${(d.sim / d.frames).toFixed(2)} ms | view ${(d.view / d.frames).toFixed(2)} ms | q${this.quality.level} | e ${w?.enemies.length ?? 0} b ${w?.bullets.length ?? 0} g ${w?.gems.length ?? 0} fx ${this.view.stats().particles} | a ${this.audio.debugState()}`;
     d.acc = d.frames = d.sim = d.view = 0;
   }
 
