@@ -16,9 +16,9 @@ export interface UnlockStage {
 }
 
 export const UNLOCK_STAGES: UnlockStage[] = [
-  { req: 'start', weapons: ['pulse', 'orbit', 'laser'], passives: ['might', 'haste', 'speed', 'magnet', 'maxhp', 'area'], chars: ['spark', 'volt'] },
+  { req: 'start', weapons: ['pulse', 'orbit', 'laser'], passives: ['might', 'haste', 'speed', 'magnet', 'maxhp', 'area'], chars: ['spark', 'sentinel'] },
   { req: 'mb', weapons: ['chain', 'shockwave'], passives: ['armor', 'regen', 'duration'], chars: [] },
-  { req: 'ram', weapons: ['mines'], passives: ['crit', 'growth'], chars: ['sentinel'] },
+  { req: 'ram', weapons: ['mines'], passives: ['crit', 'growth'], chars: ['volt'] },
   { req: 'cpu', weapons: ['missiles'], passives: ['luck'], chars: ['sapper'] },
   { req: 'gpu', weapons: ['drones'], passives: ['amount'], chars: ['hunter'] },
 ];

@@ -57,6 +57,8 @@ export class GameView {
   camX = 0;
   camY = 0;
   private trauma = 0;
+  private rumbleT = 0;
+  private rumbleLv = 0;
   private flashA = 0;
   private flashColor = 0xffffff;
   private time = 0;
@@ -140,9 +142,18 @@ export class GameView {
     return { hw: this.w / 2 / this.zoom, hh: this.h / 2 / this.zoom };
   }
 
-  /** Screen shake is reserved for boss moments (spawn, phase change, kill) and the player's death. */
+  /**
+   * Screen shake is reserved for boss fights (arrival, attacks, phase changes, hits taken, the
+   * kill) and the player's death.
+   */
   addTrauma(v: number): void {
     this.trauma = Math.min(1, this.trauma + v);
+  }
+
+  /** A rumble: shake never drops below `level` for `time` seconds (boss arrival, phase, death). */
+  private rumble(level: number, time: number): void {
+    this.rumbleLv = Math.max(this.rumbleT > 0 ? this.rumbleLv : 0, level);
+    this.rumbleT = Math.max(this.rumbleT, time);
   }
 
   flashScreen(color: number, a: number): void {
@@ -155,6 +166,7 @@ export class GameView {
     this.camX = world.player.x;
     this.camY = world.player.y;
     this.trauma = 0;
+    this.rumbleT = 0;
     this.flashA = 0;
     this.playerHitT = 0;
     this.setSector(world.cfg.sector);
@@ -184,7 +196,8 @@ export class GameView {
             fx.burst(e.x, e.y, 0xffffff, 50, 500, 1.6, 1.0);
             for (let k = 0; k < 4; k++) fx.ring(e.x, e.y, k % 2 ? 0xffffff : e.a, 260 + k * 120, 0.6 + k * 0.25);
             fx.flare(e.x, e.y, e.a, 200, 1.2, 200);
-            this.addTrauma(0.9);
+            this.addTrauma(1);
+            this.rumble(0.7, 1.2);
             this.flashScreen(0xffffff, 0.8);
             fb.hitStop = Math.max(fb.hitStop, 0.25);
             fb.vibrate = Math.max(fb.vibrate, 300);
@@ -193,7 +206,8 @@ export class GameView {
             fx.ring(e.x, e.y, e.a, 220, 0.6);
             fx.ring(e.x, e.y, 0xffffff, 140, 0.4, true);
             fx.flare(e.x, e.y, e.a, 120, 0.7, 80);
-            this.addTrauma(0.6);
+            this.addTrauma(1);
+            this.rumble(0.55, 0.5);
             this.flashScreen(e.a, 0.35);
             fb.hitStop = Math.max(fb.hitStop, 0.06);
             fb.vibrate = Math.max(fb.vibrate, 120);
@@ -210,7 +224,7 @@ export class GameView {
           break;
         }
         case EV.PLAYER_HIT:
-          if (bossFight) this.addTrauma(0.38);
+          if (bossFight) this.addTrauma(0.6);
           this.flashScreen(0xff2a55, 0.28);
           this.playerHitT = 0.25;
           fx.burst(p.x, p.y, 0xff2a55, 10, 260, 0.9, 0.4);
@@ -238,7 +252,9 @@ export class GameView {
           fx.plus(p.x, p.y - 30, e.a, 0x6dff8a);
           break;
         case EV.BOSS:
-          this.addTrauma(0.6);
+          // the arrival: a heavy jolt, then the ground keeps trembling for a moment
+          this.addTrauma(1);
+          this.rumble(e.a === 1 ? 0.75 : 0.6, e.a === 1 ? 1.6 : 1);
           this.flashScreen(e.a === 1 ? 0xff2a55 : 0xff9a3d, 0.35);
           fb.vibrate = Math.max(fb.vibrate, 200);
           break;
@@ -274,15 +290,18 @@ export class GameView {
           break;
         case EV.ENEMY_SHOOT:
           fx.flare(e.x, e.y, e.a, 22, 0.15);
+          // a boss volley (rings of bullets) kicks the camera
+          if (e.b === 1) this.addTrauma(0.45);
           break;
         case EV.DASH:
-          if (bossFight) this.addTrauma(0.38);
+          if (e.b === 1) this.addTrauma(0.6);
           fx.burst(e.x, e.y, e.a, 8, 220, 0.8, 0.35);
           break;
         case EV.BOSS_PHASE:
           fx.ring(e.x, e.y, e.b, 300, 0.6);
           fx.burst(e.x, e.y, e.b, 40, 450, 1.4, 0.8);
-          this.addTrauma(0.5);
+          this.addTrauma(1);
+          this.rumble(0.55, 0.8);
           this.flashScreen(e.b, 0.3);
           fb.vibrate = Math.max(fb.vibrate, 150);
           break;
@@ -336,11 +355,17 @@ export class GameView {
   private applyCamera(dt: number, parallax = true): void {
     let sx = 0;
     let sy = 0;
+    if (this.rumbleT > 0) {
+      this.rumbleT -= dt;
+      this.trauma = Math.max(this.trauma, this.rumbleLv);
+    }
     if (this.trauma > 0) {
-      const s = this.shakeEnabled ? this.trauma * this.trauma * 12 : 0;
+      // up to ≈ 5.5 % of the short screen side: felt on a phone, not nauseating on a monitor
+      const maxPx = clamp(Math.min(this.w, this.h) * 0.055, 16, 30);
+      const s = this.shakeEnabled ? this.trauma * this.trauma * maxPx : 0;
       sx = (Math.random() * 2 - 1) * s;
       sy = (Math.random() * 2 - 1) * s;
-      this.trauma = Math.max(0, this.trauma - dt * 2.2);
+      this.trauma = Math.max(0, this.trauma - dt * 1.6);
     }
     const z = this.zoom;
     this.root.scale.set(z);

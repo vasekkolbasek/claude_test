@@ -21,6 +21,17 @@ describe('save migration', () => {
     expect(migrate([1, 2])).toEqual(defaultSave());
   });
 
+  it('unfinished videos for Volt count for Sentinel, the ad character again; owned characters stay', () => {
+    const m = migrate({ v: 3, chars: ['spark'], adUnlock: { volt: 3 } });
+    expect(m.adUnlock.sentinel).toBe(3);
+    expect(m.adUnlock.volt).toBeUndefined();
+    const owned = migrate({ v: 3, chars: ['spark', 'volt'], adUnlock: { volt: 5 } });
+    expect(owned.chars).toContain('volt');
+    expect(owned.adUnlock.sentinel).toBeUndefined(); // the videos were spent on Volt
+    const both = migrate({ v: 3, chars: ['spark', 'sentinel'], adUnlock: { volt: 2 } });
+    expect(both.chars).toContain('sentinel');
+  });
+
   it('round-trips the current schema', () => {
     const s = defaultSave();
     s.bits = 123;

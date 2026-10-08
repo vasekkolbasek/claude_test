@@ -51,8 +51,8 @@ describe('progressive unlocks', () => {
     expect(unlockStage(s)).toBe(1);
     expect(weaponPoolFor(s)).toEqual(['pulse', 'orbit', 'laser']);
     expect(passivePoolFor(s)).toHaveLength(6);
-    expect(charAvailable(s, 'volt')).toBe(true); // for rewarded ads from the start
-    expect(charAvailable(s, 'sentinel')).toBe(false);
+    expect(charAvailable(s, 'sentinel')).toBe(true); // for rewarded ads from the start
+    expect(charAvailable(s, 'volt')).toBe(false);
     s.stats.miniBosses = 1;
     expect(unlockStage(s)).toBe(2);
     s.sectorsCleared.push('ram', 'cpu', 'gpu');
@@ -72,9 +72,9 @@ describe('progressive unlocks', () => {
 
   it('sector characters become purchasable when their sector is cleared', () => {
     const s = defaultSave();
-    expect(charAvailable(s, 'sentinel')).toBe(false);
+    expect(charAvailable(s, 'volt')).toBe(false);
     s.sectorsCleared.push('ram');
-    expect(charAvailable(s, 'sentinel')).toBe(true);
+    expect(charAvailable(s, 'volt')).toBe(true);
     expect(charAvailable(s, 'sapper')).toBe(false);
     checkAchievements(s, null, false);
     expect(s.chars).toEqual(['spark']); // never granted for free

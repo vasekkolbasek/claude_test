@@ -209,9 +209,10 @@ export function migrate(input: unknown): SaveData {
   // older saves knew no gated menu: whatever is already open is not «new»
   s.seen = Array.isArray(raw.seen) ? strArr<string>(raw.seen, []) : seenForExisting(s);
   s.adUnlock = numRecord(raw.adUnlock);
-  // the ad-unlocked character moved from Sentinel to Volt: carry the watched videos over
-  if (s.adUnlock.sentinel && !s.adUnlock.volt && !s.chars.includes('volt')) s.adUnlock.volt = s.adUnlock.sentinel;
-  delete s.adUnlock.sentinel;
+  // the ad-unlocked character is Sentinel again (it was Volt for a while): unfinished progress
+  // towards Volt carries over; whoever already unlocked Volt keeps him (those videos are spent)
+  if (s.adUnlock.volt && !s.chars.includes('volt') && !s.chars.includes('sentinel')) s.adUnlock.sentinel = Math.max(s.adUnlock.sentinel ?? 0, s.adUnlock.volt);
+  delete s.adUnlock.volt;
   s.v = SAVE_VERSION;
   return s;
 }

@@ -49,7 +49,7 @@ export function updateEnemy(w: World, e: Enemy, dt: number): void {
         if (e.t <= 0) {
           e.state = 2;
           e.t = p(e, 'dashTime', 0.42);
-          w.events.push(EV.DASH, e.x, e.y, e.def.color);
+          w.events.push(EV.DASH, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
         }
       } else {
         e.t -= dt;
@@ -70,7 +70,7 @@ export function updateEnemy(w: World, e: Enemy, dt: number): void {
         e.t = p(e, 'fireCd', 2.6);
         if (d < 560) {
           w.fireEnemyBullet(e.x, e.y, Math.atan2(dy, dx), p(e, 'bulletSpeed', 170), p(e, 'bulletDmg', 9), e.def.color);
-          w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+          w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
         }
       }
       break;
@@ -198,7 +198,7 @@ export function updateEnemy(w: World, e: Enemy, dt: number): void {
         e.flash = Math.sin(e.t2 * 28) > 0 ? 0.05 : 0;
         if (e.t2 <= 0) {
           w.fireEnemyBullet(e.x, e.y, Math.atan2(dy, dx), p(e, 'bulletSpeed', 430), p(e, 'bulletDmg', 13), e.def.color, 6);
-          w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+          w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
           e.state = 0;
           e.t = p(e, 'fireCd', 3.4);
         }
@@ -230,7 +230,7 @@ export function updateEnemy(w: World, e: Enemy, dt: number): void {
         const n = p(e, 'shots', 5);
         const base = Math.atan2(pl.y - e.y, pl.x - e.x);
         for (let i = 0; i < n; i++) w.fireEnemyBullet(e.x, e.y, base + (i - (n - 1) / 2) * 0.22, p(e, 'bulletSpeed', 165), p(e, 'bulletDmg', 8), e.def.color, 7);
-        w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+        w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
       }
       e.ang += dt * 2;
       break;
@@ -286,7 +286,7 @@ function megaTrojan(w: World, e: Enemy, nx: number, ny: number, spd: number, dt:
     if (e.t2 >= 0.85) {
       e.state = 2;
       e.t2 = 0;
-      w.events.push(EV.DASH, e.x, e.y, e.def.color);
+      w.events.push(EV.DASH, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
     }
   } else {
     move(e, e.tx, e.ty, p(e, 'chargeSpeed', 430), dt);
@@ -325,7 +325,7 @@ function cryptolocker(w: World, e: Enemy, nx: number, ny: number, d: number, spd
       const base = Math.atan2(ny, nx);
       for (let i = -2; i <= 2; i++) w.fireEnemyBullet(e.x, e.y, base + i * 0.12, sp * 1.5, dmg, 0xff3df2, 7);
     }
-    w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+    w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
   }
   if (e.t2 >= 12) {
     e.t2 = 0;
@@ -343,7 +343,7 @@ function hydra(w: World, e: Enemy, nx: number, ny: number, spd: number, dt: numb
     const base = Math.atan2(ny, nx);
     const sp = p(e, 'bulletSpeed', 210);
     for (let i = -1; i <= 1; i++) w.fireEnemyBullet(e.x, e.y, base + i * 0.26, sp, p(e, 'bulletDmg', 13), e.def.color, 8);
-    w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+    w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
   }
   // sheds elite splitters at 75 / 50 / 25 %
   const thresholds = [0.75, 0.5, 0.25];
@@ -376,7 +376,7 @@ function overclock(w: World, e: Enemy, nx: number, ny: number, spd: number, dt: 
       e.t2 = 0;
       e.tx = nx;
       e.ty = ny;
-      w.events.push(EV.DASH, e.x, e.y, e.def.color);
+      w.events.push(EV.DASH, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
     }
   } else {
     move(e, e.tx, e.ty, p(e, 'dashSpeed', 520), dt);
@@ -386,7 +386,7 @@ function overclock(w: World, e: Enemy, nx: number, ny: number, spd: number, dt: 
       const n = p(e, 'ring', 10);
       const off = w.rng.angle();
       for (let i = 0; i < n; i++) w.fireEnemyBullet(e.x, e.y, off + (i / n) * TAU, p(e, 'bulletSpeed', 165), p(e, 'bulletDmg', 11), e.def.color, 7);
-      w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+      w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
       e.aux--;
       e.t2 = 0;
       e.state = e.aux > 0 ? 1 : 0;
@@ -417,7 +417,7 @@ function botnet(w: World, e: Enemy, nx: number, ny: number, d: number, spd: numb
     e.t = 0;
     const base = Math.atan2(ny, nx);
     for (let i = -1; i <= 1; i++) w.fireEnemyBullet(e.x, e.y, base + i * 0.18, p(e, 'bulletSpeed', 185), p(e, 'bulletDmg', 11), e.def.color, 8);
-    w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+    w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
   }
 }
 
@@ -460,7 +460,7 @@ function chaosCore(w: World, e: Enemy, nx: number, ny: number, d: number, spd: n
       const n = 20;
       const off = (Math.floor(e.t2 / 2) % 2) * (Math.PI / n);
       for (let i = 0; i < n; i++) w.fireEnemyBullet(e.x, e.y, off + (i / n) * TAU, sp, dmg, 0xff2a55, 9);
-      w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color);
+      w.events.push(EV.ENEMY_SHOOT, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
     }
     if (e.t2 >= 6) {
       e.t2 = 0;
@@ -486,7 +486,7 @@ function chaosCore(w: World, e: Enemy, nx: number, ny: number, d: number, spd: n
       // dash at the player
       e.tx = Math.atan2(ny, nx);
       e.ty = 0.55;
-      w.events.push(EV.DASH, e.x, e.y, e.def.color);
+      w.events.push(EV.DASH, e.x, e.y, e.def.color, e.def.boss ? 1 : 0);
       if (phase === 2) {
         const n = 20;
         for (let i = 0; i < n; i++) w.fireEnemyBullet(e.x, e.y, (i / n) * TAU, sp * 1.1, dmg, 0xffffff, 9);

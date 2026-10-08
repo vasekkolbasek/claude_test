@@ -557,6 +557,11 @@ export class App {
         const step = Math.min(sim, 1 / 30);
         if (this.godMode) w.player.hp = w.stats.maxHp;
         w.update(step);
+        // a single hit can exceed max HP (late bosses), so god mode also undoes the death
+        if (this.godMode && w.player.hp <= 0) {
+          w.state = 'playing';
+          w.player.hp = w.stats.maxHp;
+        }
         this.onEvents(w);
         sim -= step;
         if (w.state !== 'playing') break;
