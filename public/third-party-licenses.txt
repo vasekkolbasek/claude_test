@@ -1,4 +1,4 @@
-Neon Swarm — third-party software and fonts
+Неоновый Рой / Neon Hive — third-party software and fonts
 ============================================
 
 All game code, graphics, music and sound effects are original and generated procedurally.

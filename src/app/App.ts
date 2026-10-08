@@ -218,6 +218,15 @@ export class App {
     document.addEventListener('visibilitychange', () => onHidden(document.visibilityState === 'hidden'));
     window.addEventListener('blur', () => onHidden(true));
     window.addEventListener('focus', () => onHidden(document.visibilityState === 'hidden'));
+    // back from the background, a phone may not send `focus` to the game's frame: a touch on a
+    // visible page means the player is here again (sound and game come back with it)
+    window.addEventListener(
+      'pointerdown',
+      () => {
+        if (document.visibilityState === 'visible' && this.pauses.has('hidden')) onHidden(false);
+      },
+      true,
+    );
     window.addEventListener('pagehide', () => this.save.flushNow());
     this.platform.onPause(() => {
       this.setPause('platform', true);

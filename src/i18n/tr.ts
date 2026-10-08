@@ -1,7 +1,7 @@
 import type { Dict } from './index';
 
 export const tr: Dict = {
-  'game.title': "Neon Swarm",
+  'game.title': "Neon Hive",
   loading: 'Yükleniyor…',
 
   'menu.play': 'Oyna',

@@ -640,6 +640,11 @@ body {
   text-align: center;
   animation: popIn 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
   overflow-y: auto;
+  /* overflow-y: auto alone makes overflow-x auto too: a pixel of a slider thumb or a wider phone
+     font then lets the whole window slide sideways under the finger */
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 .dialog h3 { margin: 0; font-size: 1.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; text-shadow: 0 0 12px var(--cyan); }
 .dialog p { margin: 0; color: var(--dim); line-height: 1.35; }
@@ -904,7 +909,7 @@ body {
 .set-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 0.85rem; border-radius: 0.9rem; background: rgba(14, 8, 38, 0.82); border: 1.5px solid var(--line); }
 .set-row .ico { width: 1.4rem; height: 1.4rem; color: var(--cyan); flex: none; }
 .set-row .sl { flex: 1; font-weight: 700; }
-.slider { -webkit-appearance: none; appearance: none; width: 42%; height: 0.45rem; border-radius: 999px; background: linear-gradient(90deg, var(--cyan) var(--v, 50%), rgba(255, 255, 255, 0.15) var(--v, 50%)); outline: none; touch-action: pan-x; }
+.slider { -webkit-appearance: none; appearance: none; width: 42%; min-width: 0; height: 0.45rem; border-radius: 999px; background: linear-gradient(90deg, var(--cyan) var(--v, 50%), rgba(255, 255, 255, 0.15) var(--v, 50%)); outline: none; touch-action: pan-x; }
 .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: #fff; box-shadow: 0 0 10px var(--cyan); cursor: pointer; }
 .slider::-moz-range-thumb { width: 1.4rem; height: 1.4rem; border-radius: 50%; background: #fff; box-shadow: 0 0 10px var(--cyan); cursor: pointer; border: 0; }
 .toggle { width: 3.2rem; height: 1.8rem; border-radius: 999px; background: rgba(255, 255, 255, 0.15); border: 1.5px solid var(--line); position: relative; cursor: pointer; flex: none; transition: background 0.15s; }

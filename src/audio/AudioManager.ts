@@ -14,6 +14,8 @@ export type MuteReason = 'hidden' | 'ad' | 'platform';
 const SWARM: Partial<Record<SfxId, true>> = { hit: true, kill: true, gem: true, enemyShot: true, pulse: true, drone: true, mine: true, shield: true };
 const PRIORITY: Partial<Record<SfxId, true>> = { hurt: true, boss: true, bossPhase: true, levelup: true, evolve: true, chest: true, warn: true, revive: true, heal: true, magnet: true, victory: true, defeat: true };
 const SWARM_VOICES = 10;
+/** user gestures that browsers accept for starting / resuming audio */
+const GESTURES = ['pointerdown', 'touchend', 'keydown'] as const;
 /** averaging window of the swarm density, s */
 const RATE_TAU = 0.6;
 
@@ -91,6 +93,12 @@ export class AudioManager {
         this.buffers.set(id, buf);
       }
       this.unlocked = true;
+      // the system may stop the context by itself (iOS: a call, another app's audio, the
+      // background): when that happens while we want sound, get it back on the next touch
+      ctx.onstatechange = () => {
+        if (ctx.state === 'running') this.fadeIn();
+        else if (this.reasons.size === 0) this.resumeAudio();
+      };
       void ctx.resume().catch(() => undefined);
       this.music.setMode(this.musicMode);
       this.applyMute();
@@ -132,14 +140,61 @@ export class AudioManager {
       this.master.gain.setValueAtTime(0, t);
       void ctx.suspend().catch(() => undefined);
     } else {
-      void ctx
-        .resume()
-        .then(() => {
-          this.master.gain.setValueAtTime(0, ctx.currentTime);
-          this.master.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.25);
-        })
-        .catch(() => undefined);
+      this.resumeAudio();
     }
+  }
+
+  /**
+   * Brings the sound back after a mute. Phones often refuse `resume()` without a touch once the
+   * page was in the background (iOS even marks the context «interrupted»), so a refused or
+   * pending resume is retried on the next touch / key, and the volume fades in only once the
+   * context really runs.
+   */
+  private resumeAudio(): void {
+    const ctx = this.ctx;
+    if (!ctx || this.reasons.size > 0) return;
+    if (ctx.state === 'running') {
+      this.fadeIn();
+      return;
+    }
+    this.armGestureResume();
+    void ctx
+      .resume()
+      .then(() => this.fadeIn())
+      .catch(() => undefined);
+  }
+
+  private fadeIn(): void {
+    const ctx = this.ctx;
+    if (!ctx || this.reasons.size > 0 || ctx.state !== 'running') return;
+    const g = this.master.gain;
+    g.cancelScheduledValues(ctx.currentTime);
+    g.setValueAtTime(Math.min(g.value, 1), ctx.currentTime);
+    g.linearRampToValueAtTime(1, ctx.currentTime + 0.25);
+    this.disarmGestureResume();
+  }
+
+  private gestureArmed = false;
+  private readonly onGesture = () => {
+    const ctx = this.ctx;
+    if (!ctx || this.reasons.size > 0) return;
+    // inside the gesture: the one moment a phone always lets the context run again
+    void ctx
+      .resume()
+      .then(() => this.fadeIn())
+      .catch(() => undefined);
+  };
+
+  private armGestureResume(): void {
+    if (this.gestureArmed) return;
+    this.gestureArmed = true;
+    for (const ev of GESTURES) window.addEventListener(ev, this.onGesture, true);
+  }
+
+  private disarmGestureResume(): void {
+    if (!this.gestureArmed) return;
+    this.gestureArmed = false;
+    for (const ev of GESTURES) window.removeEventListener(ev, this.onGesture, true);
   }
 
   /** Swarm sounds per second over the last ~0.6 s. */

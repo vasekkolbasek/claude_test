@@ -214,3 +214,55 @@ test('menu screens open without errors', async ({ page }) => {
   expect(overflow).toEqual([false, false]);
   expect(errors).toEqual([]);
 });
+
+test('sound comes back after the page was in the background, even if the phone wants a touch', async ({ page }) => {
+  await page.addInitScript(() => {
+    let vis: DocumentVisibilityState = 'visible';
+    Object.defineProperty(document, 'visibilityState', { get: () => vis });
+    Object.defineProperty(document, 'hidden', { get: () => vis === 'hidden' });
+    const w = window as unknown as { __setVis(v: DocumentVisibilityState): void; __refuse: boolean };
+    w.__setVis = (v) => {
+      vis = v;
+      document.dispatchEvent(new Event('visibilitychange'));
+    };
+    // like a phone after the background: resume() outside a touch / key handler is refused
+    let inGesture = false;
+    for (const ev of ['pointerdown', 'touchend', 'keydown']) {
+      window.addEventListener(ev, () => {
+        inGesture = true;
+        setTimeout(() => (inGesture = false), 0);
+      }, true);
+    }
+    w.__refuse = false;
+    const orig = AudioContext.prototype.resume;
+    AudioContext.prototype.resume = function (this: AudioContext) {
+      return w.__refuse && !inGesture ? Promise.reject(new Error('not allowed')) : orig.call(this);
+    };
+  });
+  await page.goto('index.html?test=1&mock=1');
+  await expect(page.locator('[data-test=play]')).toBeVisible({ timeout: 20_000 });
+  await page.mouse.click(5, 200); // first gesture unlocks audio
+  const state = () => page.evaluate(() => (window as unknown as { __ns: { audio: { ctx: AudioContext | null } } }).__ns.audio.ctx?.state);
+  await expect.poll(state).toBe('running');
+  await page.evaluate(() => {
+    const w = window as unknown as { __setVis(v: string): void; __refuse: boolean };
+    w.__refuse = true;
+    w.__setVis('hidden');
+  });
+  await expect.poll(state).toBe('suspended');
+  await page.evaluate(() => (window as unknown as { __setVis(v: string): void }).__setVis('visible'));
+  await page.mouse.click(5, 200); // the first touch after coming back
+  await expect.poll(state).toBe('running');
+  expect(await page.evaluate(() => (window as unknown as { __ns: TestApp }).__ns.audio.muted)).toBe(false);
+});
+
+test('settings window never scrolls sideways', async ({ page }) => {
+  await page.goto('index.html?test=1&mock=1');
+  await expect(page.locator('[data-test=play]')).toBeVisible({ timeout: 20_000 });
+  await page.evaluate(() => (window as unknown as { __ns: { ui: { closeAllModals(): void } } }).__ns.ui.closeAllModals());
+  await page.locator('.menu .head .btn.icon-only').click();
+  const dialog = page.locator('.dialog');
+  await expect(dialog).toBeVisible();
+  expect(await dialog.evaluate((el) => getComputedStyle(el).overflowX)).toBe('hidden');
+  expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+});
