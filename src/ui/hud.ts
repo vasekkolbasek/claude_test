@@ -46,7 +46,8 @@ export class Hud {
   private lastLvl = -1;
   private lastSec = -1;
   private lastKills = -1;
-  private lastItems = '';
+  /** last rendered loadout: id, level, evolved flag per item (compared without building strings) */
+  private readonly seenItems: (string | number | boolean)[] = [];
   private dangerOn = false;
 
   constructor(onPause: () => void) {
@@ -95,7 +96,7 @@ export class Hud {
 
   reset(): void {
     this.lastXp = this.lastLvl = this.lastSec = this.lastKills = -1;
-    this.lastItems = '';
+    this.seenItems.length = 0;
     this.lastHpText = '';
     this.hpFrac = this.trailFrac = 1;
     this.lastHpT = 0;
@@ -130,14 +131,39 @@ export class Hud {
       this.kills.textContent = '';
       this.kills.append(icon('kills'), String(w.run.kills));
     }
-    const sig = w.weapons.map((x) => `${x.id}${x.level}${x.evo ? 'e' : ''}`).join(',') + '|' + w.passives.map((x) => `${x.id}${x.level}`).join(',');
-    if (sig !== this.lastItems) {
-      this.lastItems = sig;
-      this.renderItems(w);
-    }
+    if (this.loadoutChanged(w)) this.renderItems(w);
     this.updateBosses(w);
     this.updateHp(p.hp, w.stats.maxHp);
     this.setDanger(p.hp / w.stats.maxHp < 0.3 && w.state === 'playing');
+  }
+
+  /** True (and remembered) when a weapon or module was added, upgraded or evolved. */
+  private loadoutChanged(w: World): boolean {
+    const seen = this.seenItems;
+    let i = 0;
+    let changed = false;
+    const check = (v: string | number | boolean) => {
+      if (seen[i] !== v) {
+        seen[i] = v;
+        changed = true;
+      }
+      i++;
+    };
+    for (const x of w.weapons) {
+      check(x.id);
+      check(x.level);
+      check(x.evo);
+    }
+    check('|');
+    for (const x of w.passives) {
+      check(x.id);
+      check(x.level);
+    }
+    if (seen.length !== i) {
+      seen.length = i;
+      changed = true;
+    }
+    return changed;
   }
 
   /**

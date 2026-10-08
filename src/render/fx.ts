@@ -1,35 +1,47 @@
 import type { Texture } from 'pixi.js';
 import type { QuadLayer } from './layer';
 import { getAtlas, TS } from './textures';
+import { hypot } from '../core/math';
 
-interface Fx {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  max: number;
-  size: number;
-  grow: number;
-  rot: number;
-  vr: number;
-  color: number;
-  tex: Texture;
-  drag: number;
-  alpha: number;
+class Fx {
+  x = 0;
+  y = 0;
+  vx = 0;
+  vy = 0;
+  life = 0;
+  max = 1;
+  size = 1;
+  grow = 0;
+  rot = 0;
+  vr = 0;
+  color = 0;
+  tex: Texture | null = null;
+  drag = 3;
+  alpha = 1;
   /** stretch along velocity (sparks) */
-  stretch: boolean;
+  stretch = false;
 }
 
-interface Num {
-  x: number;
-  y: number;
-  vy: number;
-  life: number;
-  text: string;
-  crit: boolean;
-  color: number;
-  big: boolean;
+/** A floating number: digits of `value`, with a leading «+» (heals) or a trailing «!» (crits). */
+class Num {
+  x = 0;
+  y = 0;
+  vy = 0;
+  life = 0;
+  value = 0;
+  plus = false;
+  crit = false;
+  color = 0;
+  big = false;
+}
+
+function digitCount(v: number): number {
+  let n = 1;
+  while (v >= 10) {
+    v = Math.floor(v / 10);
+    n++;
+  }
+  return n;
 }
 
 interface Bolt {
@@ -52,11 +64,13 @@ export class FxSystem {
   private readonly list: Fx[] = [];
   private readonly free: Fx[] = [];
   private readonly nums: Num[] = [];
+  private readonly freeNums: Num[] = [];
   private readonly bolts: Bolt[] = [];
   q: FxQuality = { maxParticles: 1400, density: 1, numbers: true };
   /** 0..1 thinning for crowded scenes (set by the view from the enemy count) */
   crowd = 1;
-  private glyphs: Record<string, Texture | undefined> | null = null;
+  /** digit textures 0–9, then «!», «+» */
+  private glyphs: Texture[] | null = null;
 
   get count(): number {
     return this.list.length;
@@ -65,20 +79,23 @@ export class FxSystem {
   clear(): void {
     for (const f of this.list) this.free.push(f);
     this.list.length = 0;
+    for (const m of this.nums) this.freeNums.push(m);
     this.nums.length = 0;
     this.bolts.length = 0;
   }
 
-  spawn(tex: Texture, x: number, y: number, vx: number, vy: number, life: number, size: number, color: number, opts?: Partial<Fx>): void {
+  /**
+   * One particle. Extra parameters are positional (no options object: bursts spawn dozens a
+   * frame); `rot` NaN = random. Particles are pooled.
+   */
+  spawn(tex: Texture, x: number, y: number, vx: number, vy: number, life: number, size: number, color: number, drag = 3, grow = 0, rot = NaN, vr = 0, stretch = false): void {
     const cap = this.q.maxParticles;
     const n = this.list.length;
     if (n >= cap) return;
     // past 60 % of the budget only every other cosmetic particle survives, so big fights
     // keep the important flashes (bosses, level-ups) instead of a wall of sparks
     if (n > cap * 0.6 && Math.random() < (n - cap * 0.6) / (cap * 0.4)) return;
-    const f =
-      this.free.pop() ??
-      ({} as Fx);
+    const f = this.free.pop() ?? new Fx();
     f.x = x;
     f.y = y;
     f.vx = vx;
@@ -86,14 +103,14 @@ export class FxSystem {
     f.life = life;
     f.max = life;
     f.size = size;
-    f.grow = opts?.grow ?? 0;
-    f.rot = opts?.rot ?? Math.random() * 6.283;
-    f.vr = opts?.vr ?? 0;
+    f.grow = grow;
+    f.rot = rot === rot ? rot : Math.random() * 6.283;
+    f.vr = vr;
     f.color = color;
     f.tex = tex;
-    f.drag = opts?.drag ?? 3;
-    f.alpha = opts?.alpha ?? 1;
-    f.stretch = opts?.stretch ?? false;
+    f.drag = drag;
+    f.alpha = 1;
+    f.stretch = stretch;
     this.list.push(f);
   }
 
@@ -104,29 +121,23 @@ export class FxSystem {
       const a = Math.random() * 6.283;
       const s = speed * (0.35 + Math.random() * 0.9);
       if (i % 3 === 0) {
-        this.spawn(t.shard, x, y, Math.cos(a) * s * 0.7, Math.sin(a) * s * 0.7, life * (0.8 + Math.random() * 0.6), size * (0.7 + Math.random() * 0.6), color, {
-          vr: (Math.random() - 0.5) * 16,
-          drag: 2.5,
-        });
+        this.spawn(t.shard, x, y, Math.cos(a) * s * 0.7, Math.sin(a) * s * 0.7, life * (0.8 + Math.random() * 0.6), size * (0.7 + Math.random() * 0.6), color, 2.5, 0, NaN, (Math.random() - 0.5) * 16);
       } else {
-        this.spawn(t.spark, x, y, Math.cos(a) * s, Math.sin(a) * s, life * (0.6 + Math.random() * 0.6), size * (0.5 + Math.random() * 0.5), color, {
-          stretch: true,
-          drag: 4,
-        });
+        this.spawn(t.spark, x, y, Math.cos(a) * s, Math.sin(a) * s, life * (0.6 + Math.random() * 0.6), size * (0.5 + Math.random() * 0.5), color, 4, 0, NaN, 0, true);
       }
     }
   }
 
   /** Soft glow; `radius` and `grow` in world units. */
   flare(x: number, y: number, color: number, radius: number, life = 0.25, grow = 0): void {
-    this.spawn(getAtlas().tex.soft, x, y, 0, 0, life, radius / 15, color, { grow: grow / 15, drag: 0, rot: 0 });
+    this.spawn(getAtlas().tex.soft, x, y, 0, 0, life, radius / 15, color, 0, grow / 15, 0);
   }
 
   ring(x: number, y: number, color: number, radius: number, life = 0.4, thin = false): void {
     const t = getAtlas().tex;
     // expanding ring reaching `radius` (world units) at the end of its life
     const native = thin ? 28 : 58;
-    this.spawn(thin ? t.thinring : t.ring, x, y, 0, 0, life, (radius * 0.15) / native, color, { grow: (radius * 0.85) / native, drag: 0, rot: 0 });
+    this.spawn(thin ? t.thinring : t.ring, x, y, 0, 0, life, (radius * 0.15) / native, color, 0, (radius * 0.85) / native, 0);
   }
 
   number(x: number, y: number, value: number, crit: boolean, color = 0xffffff, big = false): void {
@@ -137,14 +148,29 @@ export class FxSystem {
       const skip = Math.min(0.92, (n - 14) / 22) * (crit ? 0.6 : 1);
       if (Math.random() < skip) return;
     }
-    if (this.nums.length > 60) this.nums.shift();
     const v = Math.round(value);
     if (v <= 0) return;
-    this.nums.push({ x: x + (Math.random() - 0.5) * 10, y, vy: -60, life: 0.7, text: crit ? `${v}!` : `${v}`, crit, color, big });
+    this.pushNum(x + (Math.random() - 0.5) * 10, y, -60, 0.7, v, false, crit, color, big);
   }
 
-  text(x: number, y: number, text: string, color: number): void {
-    this.nums.push({ x, y, vy: -40, life: 1.1, text, crit: false, color, big: true });
+  /** «+N» above the player (heals). */
+  plus(x: number, y: number, value: number, color: number): void {
+    this.pushNum(x, y, -40, 1.1, Math.round(value), true, false, color, true);
+  }
+
+  private pushNum(x: number, y: number, vy: number, life: number, value: number, plus: boolean, crit: boolean, color: number, big: boolean): void {
+    if (this.nums.length > 60) this.freeNums.push(this.nums.shift() as Num);
+    const m = this.freeNums.pop() ?? new Num();
+    m.x = x;
+    m.y = y;
+    m.vy = vy;
+    m.life = life;
+    m.value = value;
+    m.plus = plus;
+    m.crit = crit;
+    m.color = color;
+    m.big = big;
+    this.nums.push(m);
   }
 
   bolt(pts: number[], color: number, width: number): void {
@@ -157,7 +183,7 @@ export class FxSystem {
       const y1 = pts[i + 1];
       const dx = x1 - x0;
       const dy = y1 - y0;
-      const len = Math.hypot(dx, dy) || 1;
+      const len = hypot(dx, dy) || 1;
       const nx = -dy / len;
       const ny = dx / len;
       const k = Math.max(2, Math.min(6, Math.round(len / 28)));
@@ -191,18 +217,27 @@ export class FxSystem {
       list[n++] = f;
     }
     list.length = n;
-    for (let i = this.nums.length - 1; i >= 0; i--) {
-      const m = this.nums[i];
+    // in-place compaction (splice would allocate an array per removed item)
+    const nums = this.nums;
+    const fade = Math.exp(-3 * dt);
+    n = 0;
+    for (let i = 0; i < nums.length; i++) {
+      const m = nums[i];
       m.life -= dt;
       m.y += m.vy * dt;
-      m.vy *= Math.exp(-3 * dt);
-      if (m.life <= 0) this.nums.splice(i, 1);
+      m.vy *= fade;
+      if (m.life <= 0) this.freeNums.push(m);
+      else nums[n++] = m;
     }
-    for (let i = this.bolts.length - 1; i >= 0; i--) {
-      const b = this.bolts[i];
+    nums.length = n;
+    const bolts = this.bolts;
+    n = 0;
+    for (let i = 0; i < bolts.length; i++) {
+      const b = bolts[i];
       b.life -= dt;
-      if (b.life <= 0) this.bolts.splice(i, 1);
+      if (b.life > 0) bolts[n++] = b;
     }
+    bolts.length = n;
   }
 
   draw(add: QuadLayer, nums: QuadLayer, zoom: number): void {
@@ -210,20 +245,18 @@ export class FxSystem {
     for (const f of this.list) {
       const k = f.life / f.max;
       const a = f.alpha * (k < 0.5 ? k * 2 : 1);
+      const tex = f.tex as Texture;
       if (f.stretch) {
-        const sp = Math.hypot(f.vx, f.vy);
+        const sp = hypot(f.vx, f.vy);
         const ang = Math.atan2(f.vy, f.vx);
         const len = Math.min(3, 0.4 + sp / 260);
-        add.add(f.tex, f.x, f.y, f.size * len * inv, f.size * inv, ang, f.color, a);
+        add.add(tex, f.x, f.y, f.size * len * inv, f.size * inv, ang, f.color, a);
       } else {
-        add.add(f.tex, f.x, f.y, f.size * inv, f.size * inv, f.rot, f.color, a);
+        add.add(tex, f.x, f.y, f.size * inv, f.size * inv, f.rot, f.color, a);
       }
     }
     const t = getAtlas().tex;
-    if (!this.glyphs) {
-      this.glyphs = {};
-      for (const ch of '0123456789!+-') this.glyphs[ch] = t[`g_${ch}`];
-    }
+    if (!this.glyphs) this.glyphs = [...'0123456789!+'].map((ch) => t[`g_${ch}`]);
     const glyphs = this.glyphs;
     for (const b of this.bolts) {
       const k = b.life / b.max;
@@ -233,7 +266,7 @@ export class FxSystem {
         const y0 = pts[i - 1];
         const dx = pts[i] - x0;
         const dy = pts[i + 1] - y0;
-        const len = Math.hypot(dx, dy);
+        const len = hypot(dx, dy);
         const ang = Math.atan2(dy, dx);
         add.add(t.beam, x0, y0, len / 32, (b.width * 2.4 * (0.6 + k * 0.4)) / (24 * TS), ang, b.color, k, 0, 0.5);
         add.add(t.beam, x0, y0, len / 32, (b.width * 0.9) / (24 * TS), ang, 0xffffff, k, 0, 0.5);
@@ -247,12 +280,19 @@ export class FxSystem {
       const h = (m.big ? 22 : m.crit ? 19 : 14) * px * pop;
       const s = h / 36;
       const w = 18 * s;
-      const startX = m.x - ((m.text.length - 1) * w) / 2;
+      // «+», the digits, «!» — laid out without building a string
+      const digits = digitCount(m.value);
+      const len = digits + (m.plus ? 1 : 0) + (m.crit ? 1 : 0);
+      const startX = m.x - ((len - 1) * w) / 2;
       const color = m.crit ? 0xffd23d : m.color;
-      for (let i = 0; i < m.text.length; i++) {
-        const g = glyphs[m.text[i]] ?? t[`g_${m.text[i]}`];
-        if (g) nums.add(g, startX + i * w, m.y, s, s, 0, color, k);
+      let i = 0;
+      if (m.plus) nums.add(glyphs[11], startX + i++ * w, m.y, s, s, 0, color, k);
+      let div = 10 ** (digits - 1);
+      for (let d = 0; d < digits; d++) {
+        nums.add(glyphs[Math.floor(m.value / div) % 10], startX + i++ * w, m.y, s, s, 0, color, k);
+        div /= 10;
       }
+      if (m.crit) nums.add(glyphs[10], startX + i * w, m.y, s, s, 0, color, k);
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Rng } from '../core/math';
+import { hypot, Rng } from '../core/math';
 import { EVOLUTIONS, WEAPONS } from '../data/weapons';
 import type { UpgradeCard } from '../data/types';
 import type { World } from './World';
@@ -59,7 +59,7 @@ export class Bot {
       if (!e.alive) continue;
       const dx = p.x - e.x;
       const dy = p.y - e.y;
-      const d = Math.hypot(dx, dy) || 1;
+      const d = hypot(dx, dy) || 1;
       const healthy = p.hp > w.stats.maxHp * 0.6;
       const range = sense + e.r + (e.def.boss ? (healthy ? 40 : 120) : 0);
       if (d > range) continue;
@@ -71,16 +71,16 @@ export class Bot {
       if (!b.alive) continue;
       const dx = p.x - b.x;
       const dy = p.y - b.y;
-      const d = Math.hypot(dx, dy) || 1;
+      const d = hypot(dx, dy) || 1;
       if (d > sense * 0.8) continue;
       const wgt = Math.pow((sense * 0.8 - d) / (sense * 0.8), 2) * 2 * skill;
       // dodge sideways relative to the bullet direction
       const side = b.vx * dy - b.vy * dx > 0 ? 1 : -1;
-      const bl = Math.hypot(b.vx, b.vy) || 1;
+      const bl = hypot(b.vx, b.vy) || 1;
       ax += (-b.vy / bl) * side * wgt + (dx / d) * wgt * 0.5;
       ay += (b.vx / bl) * side * wgt + (dy / d) * wgt * 0.5;
     }
-    const danger = Math.hypot(ax, ay);
+    const danger = hypot(ax, ay);
     // seek crystals when it is reasonably safe
     let gx = 0;
     let gy = 0;
@@ -108,7 +108,7 @@ export class Bot {
       mx += this.rng.range(-1, 1);
       my += this.rng.range(-1, 1);
     }
-    const l = Math.hypot(mx, my);
+    const l = hypot(mx, my);
     if (l > 0.05) {
       this.dirX = mx / l;
       this.dirY = my / l;

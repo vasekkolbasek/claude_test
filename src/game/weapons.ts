@@ -3,6 +3,7 @@ import type { WeaponId, WeaponStats } from '../data/types';
 import type { Enemy } from './entities';
 import { EV } from './events';
 import type { World } from './World';
+import { hypot } from '../core/math';
 
 const TAU = Math.PI * 2;
 
@@ -137,7 +138,7 @@ function fireBullet(
   b.aoe = aoe;
   b.turn = turn;
   b.target = target;
-  b.hits.length = 0;
+  b.hitN = 0;
   world.bullets.push(b);
 }
 
@@ -223,14 +224,14 @@ function orbit(world: World, w: WeaponInst, e: Eff, dt: number): void {
     b.ang = ang + Math.PI / 2;
     b.r = br;
     b.evo = w.evo;
-    const list = world.enemiesInRadius(bx, by, br);
-    for (let j = list.length - 1; j >= 0; j--) {
+    const list = world.found;
+    for (let j = world.enemiesInRadius(bx, by, br) - 1; j >= 0; j--) {
       const en = list[j];
       if (world.t - en.hitT[w.slot] < interval) continue;
       en.hitT[w.slot] = world.t;
       const dx = en.x - p.x;
       const dy = en.y - p.y;
-      const d = Math.hypot(dx, dy) || 1;
+      const d = hypot(dx, dy) || 1;
       world.hurtEnemy(en, e.dmg, w.slot, (dx / d) * st.knock, (dy / d) * st.knock);
     }
   }
@@ -271,8 +272,14 @@ function laser(world: World, w: WeaponInst, e: Eff, dt: number): void {
   if (w.evo) {
     w.a += st.speed * dt;
     const n = e.count;
-    w.beams.length = 0;
-    for (let i = 0; i < n; i++) w.beams.push({ ang: w.a + (i / n) * TAU, life: 1, max: 1 });
+    // the evolved beams are re-aimed every frame: reuse their objects instead of new ones
+    if (w.beams.length > n) w.beams.length = n;
+    for (let i = 0; i < n; i++) {
+      const b = w.beams[i] ?? (w.beams[i] = { ang: 0, life: 1, max: 1 });
+      b.ang = w.a + (i / n) * TAU;
+      b.life = 1;
+      b.max = 1;
+    }
   } else {
     w.t -= dt;
     if (w.t <= 0 && w.beams.length === 0) {
@@ -353,7 +360,7 @@ function mines(world: World, w: WeaponInst, e: Eff, dt: number): void {
     m.arm -= dt;
     m.life -= dt;
     let boom = m.life <= 0;
-    if (!boom && m.arm <= 0) boom = world.enemiesInRadius(m.x, m.y, 20).length > 0;
+    if (!boom && m.arm <= 0) boom = world.enemiesInRadius(m.x, m.y, 20) > 0;
     if (!boom) continue;
     m.alive = false;
     world.explode(m.x, m.y, radius, e.dmg, w.slot, st.knock, w.evo ? 0xfff08a : 0xffd23d);

@@ -1,5 +1,5 @@
 import { SpatialHash } from '../core/grid';
-import { Rng, damp } from '../core/math';
+import { Rng, damp, hypot } from '../core/math';
 import { BALANCE, xpForLevel } from '../data/balance';
 import { CHARACTERS } from '../data/characters';
 import { ENEMIES, enemyFor } from '../data/enemies';
@@ -91,7 +91,6 @@ export interface PlayerState {
   noHitT: number;
 }
 
-const tmpEnemies: Enemy[] = [];
 const bulletNear: Enemy[] = [];
 const respawnPt = { x: 0, y: 0 };
 /** largest body among regular enemies, elites and bosses (collision query margin) */
@@ -162,6 +161,8 @@ export class World {
   boss: Enemy | null = null;
   /** alive mini/final bosses (for HUD bars) */
   readonly bosses: Enemy[] = [];
+  /** results of enemiesInRadius (the first N entries; reused) */
+  readonly found: Enemy[] = [];
   wave: WaveState;
 
   private uidSeq = 1;
@@ -320,7 +321,7 @@ export class World {
     for (const e of this.enemies) {
       const dx = e.x - p.x;
       const dy = e.y - p.y;
-      const d = Math.hypot(dx, dy) || 1;
+      const d = hypot(dx, dy) || 1;
       if (d < 320) {
         if (!e.def.boss) this.hurtEnemy(e, e.hp * 2, -1, 0, 0, false);
         else {
@@ -384,21 +385,24 @@ export class World {
     return this.nearestEnemy(x, y, maxDist);
   }
 
-  /** Enemies whose bodies overlap the circle. Returned array is reused. */
-  enemiesInRadius(x: number, y: number, r: number): Enemy[] {
+  /**
+   * Enemies whose bodies overlap the circle: they are written to the front of `world.found`,
+   * the count is returned (the array is reused and never shrunk — see SpatialHash.query).
+   */
+  enemiesInRadius(x: number, y: number, r: number): number {
+    const found = this.found;
     // the grid indexes centres: widen the query by the largest body so big enemies are found
-    this.grid.query(x, y, r + MAX_ENEMY_R, tmpEnemies);
+    const m = this.grid.query(x, y, r + MAX_ENEMY_R, found);
     let n = 0;
-    for (let i = 0; i < tmpEnemies.length; i++) {
-      const e = tmpEnemies[i];
+    for (let i = 0; i < m; i++) {
+      const e = found[i];
       if (!e.alive) continue;
       const dx = e.x - x;
       const dy = e.y - y;
       const rr = r + e.r;
-      if (dx * dx + dy * dy <= rr * rr) tmpEnemies[n++] = e;
+      if (dx * dx + dy * dy <= rr * rr) found[n++] = e;
     }
-    tmpEnemies.length = n;
-    return tmpEnemies;
+    return n;
   }
 
   /** Damages an enemy; `dmg` already includes might/weapon bonus. slot -1 = environment. */
@@ -635,7 +639,7 @@ export class World {
     const hw = this.view.hw + margin;
     const hh = this.view.hh + margin;
     const p = this.player;
-    const drift = Math.hypot(this.driftX, this.driftY);
+    const drift = hypot(this.driftX, this.driftY);
     const f = Math.min(1, drift / (BALANCE.player.baseSpeed * 0.7));
     // squared: ordinary dodging barely counts, holding one direction counts fully
     if ((ahead && f > 0.5) || this.rng.next() < f * f * BALANCE.aheadSpawnBias) {
@@ -688,19 +692,19 @@ export class World {
     g.color = color;
     g.cosmetic = cosmetic;
     g.slow = slow;
-    g.hits.length = 0;
+    g.hitN = 0;
     this.rings.push(g);
     return g;
   }
 
   /** Area damage helper used by mines, missiles, bombers. */
   explode(x: number, y: number, radius: number, dmg: number, slot: number, knock: number, color: number): void {
-    const list = this.enemiesInRadius(x, y, radius);
-    for (let i = list.length - 1; i >= 0; i--) {
+    const list = this.found;
+    for (let i = this.enemiesInRadius(x, y, radius) - 1; i >= 0; i--) {
       const e = list[i];
       const dx = e.x - x;
       const dy = e.y - y;
-      const d = Math.hypot(dx, dy) || 1;
+      const d = hypot(dx, dy) || 1;
       this.hurtEnemy(e, dmg, slot, (dx / d) * knock, (dy / d) * knock);
     }
     this.events.push(EV.EXPLODE, x, y, radius, color);
@@ -731,7 +735,7 @@ export class World {
     const sp = BALANCE.player.baseSpeed * this.stats.speed;
     let ix = this.input.x;
     let iy = this.input.y;
-    const il = Math.hypot(ix, iy);
+    const il = hypot(ix, iy);
     if (il > 1) {
       ix /= il;
       iy /= il;
@@ -920,9 +924,9 @@ export class World {
       const rr = p.r + e.r * 0.85;
       if (dxp * dxp + dyp * dyp < rr * rr && e.spawnT > 0.6) this.hurtPlayer(e.dmg, e.x, e.y);
       if (e.def.boss || (e.uid & 1) !== parity) continue;
-      grid.query(e.x, e.y, e.r * 2, near);
+      const m = grid.query(e.x, e.y, e.r * 2, near);
       let n = 0;
-      for (let i = 0; i < near.length && n < 6; i++) {
+      for (let i = 0; i < m && n < 6; i++) {
         const o = near[i];
         if (o === e || !o.alive) continue;
         const dx = e.x - o.x;
@@ -974,8 +978,8 @@ export class World {
       const sx = b.x - x0;
       const sy = b.y - y0;
       const len2 = sx * sx + sy * sy || 1;
-      this.grid.query((x0 + b.x) / 2, (y0 + b.y) / 2, Math.sqrt(len2) / 2 + b.r + MAX_ENEMY_R, near);
-      for (let i = 0; i < near.length; i++) {
+      const m = this.grid.query((x0 + b.x) / 2, (y0 + b.y) / 2, Math.sqrt(len2) / 2 + b.r + MAX_ENEMY_R, near);
+      for (let i = 0; i < m; i++) {
         const e = near[i];
         if (!e.alive || e.spawnT < 0.3) continue;
         const k = Math.max(0, Math.min(1, ((e.x - x0) * sx + (e.y - y0) * sy) / len2));
@@ -983,9 +987,9 @@ export class World {
         const dy = e.y - (y0 + sy * k);
         const rr = e.r + b.r;
         if (dx * dx + dy * dy > rr * rr) continue;
-        if (b.hits.includes(e.uid)) continue;
-        b.hits.push(e.uid);
-        const sp = Math.hypot(b.vx, b.vy) || 1;
+        if (hitBefore(b.hits, b.hitN, e.uid)) continue;
+        b.hits[b.hitN++] = e.uid;
+        const sp = hypot(b.vx, b.vy) || 1;
         if (b.aoe > 0) {
           this.explode(b.x, b.y, b.aoe, b.dmg * (b.turn > 0 ? 1 : 0.5), b.slot, b.knock, b.turn > 0 ? 0xff9a3d : 0x5ff2ff);
           if (b.turn > 0) {
@@ -1035,15 +1039,15 @@ export class World {
       const prevR = g.r;
       g.r = g.maxR * (1 - (1 - f) * (1 - f));
       if (!g.cosmetic) {
-        const list = this.enemiesInRadius(g.x, g.y, g.r);
-        for (let i = list.length - 1; i >= 0; i--) {
+        const list = this.found;
+        for (let i = this.enemiesInRadius(g.x, g.y, g.r) - 1; i >= 0; i--) {
           const e = list[i];
-          if (g.hits.includes(e.uid)) continue;
+          if (hitBefore(g.hits, g.hitN, e.uid)) continue;
           const dx = e.x - g.x;
           const dy = e.y - g.y;
-          const d = Math.hypot(dx, dy) || 1;
+          const d = hypot(dx, dy) || 1;
           if (d + e.r < prevR - 30) continue; // was inside before the wave started
-          g.hits.push(e.uid);
+          g.hits[g.hitN++] = e.uid;
           if (g.slow > 0) e.slow = Math.max(e.slow, g.slow);
           this.hurtEnemy(e, g.dmg, g.slot, (dx / d) * g.knock, (dy / d) * g.knock);
         }
@@ -1152,6 +1156,12 @@ export class World {
 
 export function gemTier(v: number): number {
   return v < 3 ? 0 : v < 12 ? 1 : v < 40 ? 2 : 3;
+}
+
+/** `uid` among the first `n` entries (hit lists are reused without being emptied). */
+function hitBefore(list: readonly number[], n: number, uid: number): boolean {
+  for (let i = 0; i < n; i++) if (list[i] === uid) return true;
+  return false;
 }
 
 function compactList<T extends { alive: boolean }>(list: T[], pool: Pool<T>): void {

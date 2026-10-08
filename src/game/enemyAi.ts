@@ -2,6 +2,7 @@ import { BALANCE } from '../data/balance';
 import type { Enemy } from './entities';
 import { EV } from './events';
 import type { World } from './World';
+import { hypot } from '../core/math';
 
 const TAU = Math.PI * 2;
 
@@ -19,7 +20,7 @@ export function updateEnemy(w: World, e: Enemy, dt: number): void {
   const pl = w.player;
   const dx = pl.x - e.x;
   const dy = pl.y - e.y;
-  const d = Math.hypot(dx, dy) || 1;
+  const d = hypot(dx, dy) || 1;
   const nx = dx / d;
   const ny = dy / d;
   const spd = e.speed * (e.slow > 0 ? 0.5 : 1) * (e.spawnT < 1 ? 0.3 + e.spawnT * 0.7 : 1);
@@ -176,7 +177,7 @@ export function updateEnemy(w: World, e: Enemy, dt: number): void {
       const side = Math.sin(e.age * p(e, 'freq', 5.5) + e.uid) * p(e, 'amp', 1.1);
       const vx = nx - ny * side;
       const vy = ny + nx * side;
-      const l = Math.hypot(vx, vy) || 1;
+      const l = hypot(vx, vy) || 1;
       move(e, vx / l, vy / l, spd, dt);
       e.ang = Math.atan2(vy, vx);
       break;

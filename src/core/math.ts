@@ -38,13 +38,48 @@ export function easeOutBack(t: number): number {
 }
 
 /** Deterministic, fast PRNG (mulberry32). */
+/**
+ * `Math.hypot(x, y)`, bit for bit: the same steps as V8's builtin (scale by the larger magnitude,
+ * Kahan sum, square root). V8 never inlines the builtin, and every call allocated a scratch
+ * array and boxed its arguments — hundreds of thousands of times a second in a big fight. A plain
+ * `Math.sqrt(x * x + y * y)` would differ in the last bit and the deterministic simulation would
+ * drift, so the algorithm is reproduced exactly (see perf-invariants.test.ts).
+ */
+export function hypot(x: number, y: number): number {
+  const xNaN = x !== x;
+  const yNaN = y !== y;
+  const ax = xNaN ? 0 : Math.abs(x);
+  const ay = yNaN ? 0 : Math.abs(y);
+  let max = 0;
+  if (ax > max) max = ax;
+  if (ay > max) max = ay;
+  if (max === Infinity) return Infinity;
+  if (xNaN || yNaN) return NaN;
+  if (max === 0) return 0;
+  let sum = 0;
+  let compensation = 0;
+  let n = ax / max;
+  let summand = n * n - compensation;
+  let preliminary = sum + summand;
+  compensation = preliminary - sum - summand;
+  sum = preliminary;
+  n = ay / max;
+  summand = n * n - compensation;
+  preliminary = sum + summand;
+  sum = preliminary;
+  return Math.sqrt(sum) * max;
+}
+
 export class Rng {
-  private s: number;
+  /** mulberry32 state; a typed array keeps the uint32 unboxed (a plain field above 2^30 makes V8
+   *  allocate a heap number on every call) — the sequence is exactly the same */
+  private readonly s = new Uint32Array(1);
   constructor(seed = Date.now() >>> 0) {
-    this.s = seed >>> 0;
+    this.s[0] = seed >>> 0;
   }
   next(): number {
-    let t = (this.s = (this.s + 0x6d2b79f5) >>> 0);
+    this.s[0] += 0x6d2b79f5;
+    let t = this.s[0];
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;

@@ -1,5 +1,5 @@
 import { Application, Container, Sprite, TilingSprite, type Texture } from 'pixi.js';
-import { clamp, damp, easeOutBack } from '../core/math';
+import { clamp, damp, easeOutBack, hypot } from '../core/math';
 import { ENEMIES } from '../data/enemies';
 import { SECTORS } from '../data/sectors';
 import type { SectorId } from '../data/types';
@@ -67,6 +67,7 @@ export class GameView {
   private readonly decor: { x: number; y: number; vx: number; vy: number; r: number; tex: string; rot: number; vr: number }[] = [];
   shakeEnabled = true;
   private readonly enemyTex = new Map<string, [Texture, Texture]>();
+  private gemTex: Texture[] | null = null;
 
   constructor(app: Application) {
     this.app = app;
@@ -233,8 +234,8 @@ export class GameView {
           fx.bolt(e.ref as number[], e.a === 1 ? 0xd6f4ff : 0x8fd8ff, e.a === 1 ? 7 : 5);
           break;
         case EV.HEAL:
-          for (let k = 0; k < 8; k++) fx.spawn(this.atlas.tex.shard, p.x + (Math.random() - 0.5) * 30, p.y + 10, 0, -60 - Math.random() * 60, 0.7, 0.8, 0x6dff8a, { drag: 1 });
-          fx.text(p.x, p.y - 30, `+${Math.round(e.a)}`, 0x6dff8a);
+          for (let k = 0; k < 8; k++) fx.spawn(this.atlas.tex.shard, p.x + (Math.random() - 0.5) * 30, p.y + 10, 0, -60 - Math.random() * 60, 0.7, 0.8, 0x6dff8a, 1);
+          fx.plus(p.x, p.y - 30, e.a, 0x6dff8a);
           break;
         case EV.BOSS:
           this.addTrauma(0.6);
@@ -388,13 +389,15 @@ export class GameView {
     const cullX = vh.hw + 120;
     const cullY = vh.hh + 120;
     const visible = (x: number, y: number, r: number) => Math.abs(x - cx) < cullX + r && Math.abs(y - cy) < cullY + r;
+    // crystal textures by tier, looked up once (no string building per crystal per frame)
+    const gemTex = (this.gemTex ??= [t.gem0, t.gem1, t.gem2, t.gem3]);
 
     // ---- gems / pickups
     for (const g of world.gems) {
       if (!g.alive || !visible(g.x, g.y, 20)) continue;
       const bob = 1 + Math.sin(time * 5 + g.x * 0.05) * 0.08;
       if (g.kind === GEM_XP) {
-        this.gemsL.add(t[`gem${g.tier}`], g.x, g.y, inv * bob, inv * bob, Math.sin(time * 2 + g.y) * 0.3, 0xffffff, 1);
+        this.gemsL.add(gemTex[g.tier], g.x, g.y, inv * bob, inv * bob, Math.sin(time * 2 + g.y) * 0.3, 0xffffff, 1);
       } else if (g.kind === GEM_HEAL) {
         glow(this.gemsL, g.x, g.y, 22, 0x3dff6e, 0.45);
         this.gemsL.add(t.heal, g.x, g.y, inv * bob, inv * bob, 0, 0xffffff, 1);
@@ -500,7 +503,7 @@ export class GameView {
         case BK.MISSILE_EVO: {
           this.bulletsL.add(t.missile, b.x, b.y, inv, inv, ang, b.kind === BK.MISSILE_EVO ? 0xffd9a8 : 0xffffff, 1);
           if (Math.random() < (this.quality === 2 ? 0.9 : 0.45)) {
-            this.fx.spawn(t.soft, b.x - Math.cos(ang) * 8, b.y - Math.sin(ang) * 8, (Math.random() - 0.5) * 30, (Math.random() - 0.5) * 30, 0.3, 0.35, 0xff9a3d, { drag: 2 });
+            this.fx.spawn(t.soft, b.x - Math.cos(ang) * 8, b.y - Math.sin(ang) * 8, (Math.random() - 0.5) * 30, (Math.random() - 0.5) * 30, 0.3, 0.35, 0xff9a3d, 2);
           }
           break;
         }
@@ -566,9 +569,9 @@ export class GameView {
       this.playerL.add(t.chevron, p.x + Math.cos(p.face) * d, p.y + Math.sin(p.face) * d, inv, inv, p.face, 0x29f6ff, 0.8);
     }
     // engine trail
-    const sp = Math.hypot(p.vx, p.vy);
+    const sp = hypot(p.vx, p.vy);
     if (sp > 40 && Math.random() < (this.quality === 0 ? 0.3 : 0.8)) {
-      this.fx.spawn(t.soft, p.x - (p.vx / sp) * 10, p.y - (p.vy / sp) * 10, -p.vx * 0.2 + (Math.random() - 0.5) * 20, -p.vy * 0.2 + (Math.random() - 0.5) * 20, 0.4, 0.55, 0x29f6ff, { drag: 2 });
+      this.fx.spawn(t.soft, p.x - (p.vx / sp) * 10, p.y - (p.vy / sp) * 10, -p.vx * 0.2 + (Math.random() - 0.5) * 20, -p.vy * 0.2 + (Math.random() - 0.5) * 20, 0.4, 0.55, 0x29f6ff, 2);
     }
     // HP bar under the player
     const bw = 34;

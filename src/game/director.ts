@@ -40,6 +40,26 @@ export function hpMultAt(t: number, mode: GameMode): number {
   return mult;
 }
 
+/** segment → sector → roster; the director asks every frame and the answer never changes */
+const rosterCache = new WeakMap<WaveSegment, Map<SectorDef, ReadonlyArray<readonly [EnemyId, number]>>>();
+
+function rosterFor(seg: WaveSegment, sector: SectorDef): ReadonlyArray<readonly [EnemyId, number]> {
+  let bySector = rosterCache.get(seg);
+  if (!bySector) rosterCache.set(seg, (bySector = new Map()));
+  let roster = bySector.get(sector);
+  if (!roster) {
+    // a virus the sector does not have yet is replaced by a stand-in of similar weight
+    const merged = new Map<EnemyId, number>();
+    for (const [id, w] of seg.roster) {
+      const real = enemyFor(sector.swap?.[id] ?? id, sector.id);
+      merged.set(real, (merged.get(real) ?? 0) + w * (sector.weights?.[real] ?? 1));
+    }
+    roster = [...merged.entries()] as (readonly [EnemyId, number])[];
+    bySector.set(sector, roster);
+  }
+  return roster;
+}
+
 /** Pure description of what the director wants at time t. Used by the spawner and tests. */
 export function waveStateAt(t: number, mode: GameMode, sector: SectorDef): WaveState {
   const endless = mode === 'endless' && t >= BALANCE.bossTime;
@@ -71,13 +91,7 @@ export function waveStateAt(t: number, mode: GameMode, sector: SectorDef): WaveS
   }
   min *= sector.spawnMult;
   rate *= sector.spawnMult;
-  // a virus the sector does not have yet is replaced by a stand-in of similar weight
-  const merged = new Map<EnemyId, number>();
-  for (const [id, w] of seg.roster) {
-    const real = enemyFor(sector.swap?.[id] ?? id, sector.id);
-    merged.set(real, (merged.get(real) ?? 0) + w * (sector.weights?.[real] ?? 1));
-  }
-  const roster = [...merged.entries()] as (readonly [EnemyId, number])[];
+  const roster = rosterFor(seg, sector);
   return {
     min: Math.min(min, BALANCE.maxEnemies),
     rate,

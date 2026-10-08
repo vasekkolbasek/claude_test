@@ -67,7 +67,9 @@ export class Bullet {
   turn = 0;
   target: Enemy | null = null;
   speed = 0;
+  /** uids already hit: the first `hitN` entries (the array is reused, never emptied) */
   readonly hits: number[] = [];
+  hitN = 0;
 }
 
 export class EnemyBullet {
@@ -126,7 +128,9 @@ export class Ring {
   color = 0xffffff;
   /** 0 = damaging wave, 1 = cosmetic only */
   cosmetic = false;
+  /** uids already hit: the first `hitN` entries (the array is reused, never emptied) */
   readonly hits: number[] = [];
+  hitN = 0;
 }
 
 export interface Beam {
